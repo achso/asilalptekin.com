@@ -3,7 +3,6 @@ import { ArrowRight, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
 import { projects } from "@/data/projects";
 import Image from "next/image";
-import { AdminEditMode } from "@/components/AdminEditMode";
 import { ImageLightbox } from "@/components/ImageLightbox";
 
 export default function CraftAppCaseStudy() {
@@ -21,7 +20,7 @@ export default function CraftAppCaseStudy() {
         {/* Hero image — constrained, sits just below navbar */}
         <div className={`${container} pt-6 md:pt-8`}>
           <div className="w-full aspect-[2/1] rounded-[16px] md:rounded-[24px] overflow-hidden relative">
-            <Image src="/craftapp/banner-craftapp.png" alt="CraftApp hero" fill className="object-cover" priority />
+            <Image src="/craftapp/handheldsplash3.png" alt="CraftApp hero" fill className="object-cover" priority />
           </div>
         </div>
 
@@ -80,7 +79,7 @@ export default function CraftAppCaseStudy() {
 
       {/* ─── 2. FULL-WIDTH IMAGE ─── */}
       <div className="w-full aspect-[3538/1280] relative overflow-hidden mb-[-16px]" style={{ clipPath: "inset(0 0 16px 0)" }}>
-        <Image src="/craftapp/handheldsplash3.png" alt="CraftApp in context" fill className="object-contain" />
+        <Image src="/craftapp/hero2.png" alt="CraftApp in context" fill className="object-contain" />
       </div>
 
       {/* ─── 3. DESIGN BRIEF ─── #252525 */}
@@ -839,7 +838,6 @@ export default function CraftAppCaseStudy() {
           </div>
         </div>
       </footer>
-      <AdminEditMode />
     </div>
   );
 }
