@@ -1,377 +1,845 @@
 import { Navbar } from "@/components/Navbar";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
 import { projects } from "@/data/projects";
 import Image from "next/image";
-import { ImageZoom } from "@/components/ImageZoom";
+import { AdminEditMode } from "@/components/AdminEditMode";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 export default function CraftAppCaseStudy() {
   const nextProject = projects.find((p) => p.slug !== "craftapp") || projects[1] || projects[0];
 
+  // Shared class for constrained content width — matches taamannae.dev container-1200 (1100px + 16px padding)
+  const container = "w-full max-w-[1100px] mx-auto px-4";
+
   return (
-    <div className="min-h-screen w-full bg-[#F1F1ED] text-zinc-950 font-sans selection:bg-black selection:text-white pb-32">
+    <div id="craft-content" className="min-h-screen w-full bg-[#f0eee9] text-zinc-950 font-sans selection:bg-black selection:text-white">
       <Navbar />
 
-      {/* 1. HOOK & CONTEXT */}
-      <section className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 pt-0 md:pt-2 pb-24">
-        {/* Rounded Hero Box (Figma Spec) */}
-        <div className="w-full aspect-[16/9] md:aspect-[2/1] bg-white rounded-[20px] mb-12 shadow-sm relative overflow-hidden">
-          <Image src="/craftapp/hero.png" alt="Hero background" fill className="object-cover" priority />
+      {/* ─── 1. HERO + INTRO ─── */}
+      <section className="w-full bg-[#f0eee9]">
+        {/* Hero image — constrained, sits just below navbar */}
+        <div className={`${container} pt-6 md:pt-8`}>
+          <div className="w-full aspect-[2/1] rounded-[16px] md:rounded-[24px] overflow-hidden relative">
+            <Image src="/craftapp/banner-craftapp.png" alt="CraftApp hero" fill className="object-cover" priority />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-[20px] w-full">
-          {/* Titles */}
-          <div className="max-w-[700px]">
-             <h1 className="text-4xl lg:text-[40px] font-poppins font-bold tracking-tight text-[#212529] leading-[1.5] mb-0">
-               CraftApp
-             </h1>
-             <p className="text-2xl md:text-3xl lg:text-[36px] font-sans font-medium text-black/40 leading-[1.5]">
-               A conversational technician app that fixed an unnoticed compliance chain.
-             </p>
+        {/* Intro */}
+        <div className={`${container} pt-10 md:pt-14 pb-16 md:pb-24`}>
+          <div className="mb-8 md:mb-10 max-w-[760px]">
+            <h1 className="font-poppins font-extrabold text-[28px] md:text-[32px] text-black leading-tight">
+              CraftApp
+            </h1>
+            <p className="font-sans font-medium text-[22px] md:text-[32px] lg:text-[36px] text-black/55 tracking-[0.36px] leading-[1.35]">
+              A conversational mobile app for solar installation workers that fixed a compliance chain nobody could see.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16">
-            {/* Left Content */}
-            <div className="md:col-span-8 flex flex-col gap-[28px]">
-               <p className="text-base lg:text-[18px] font-sans font-semibold leading-[1.7] text-black/40">
-                 Field operations tools are usually built by people who&apos;ve never been to a field. I wanted to understand what it actually felt like to do this job — the physical constraints, the waiting, the frustration of not knowing if your work was good enough. That shaped every decision I made.
-               </p>
-
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10">
-                 <div>
-                   <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-black leading-[1.6] mb-1">Problem</h3>
-                   <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7]">
-                     Installation crews take pride in their work. But as Enpal scaled, a broken documentation loop meant that pride didn&apos;t always translate into a completed job. Work got rejected, crews went back to redo, and growth started costing more than it should.
-                   </p>
-                 </div>
-                 <div>
-                   <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-black leading-[1.6] mb-1">Outcome</h3>
-                   <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7]">
-                     First-time-correct rate in task approvals went from 65% to 95%. QA cycles improved 3x. Technicians adopted it without being pushed. Company revenue increased in millions of Euros.
-                   </p>
-                 </div>
-               </div>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
+            <div className="flex-1 flex flex-col gap-8">
+              <p className="font-sans font-semibold text-[16px] md:text-[18px] text-black/55 leading-[1.7] tracking-[0.18px]">
+                Most tools for field workers are built by people who have never done field work. Before I opened Figma, I drove to Brandenburg and spent a full day on site with the installation teams. I wanted to understand what the job actually felt like. Everything I learned there shaped what I built.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="flex flex-col gap-1.5">
+                  <p className="font-sans font-extrabold text-[18px] md:text-[20px] text-black/85">The Problem</p>
+                  <p className="font-sans font-semibold text-[16px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                    As Enpal grew and new technicians were hired, more installations were being rejected before approval. Workers had to return to job sites and redo their documentation. Each callback cost time and money.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <p className="font-sans font-extrabold text-[18px] md:text-[20px] text-black/85">Outcome</p>
+                  <p className="font-sans font-semibold text-[16px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                    The FTC rate went from 65% to 95%. Quality review cycles improved by 3x. Technicians started using the app without any training push. The reduction in rework translated directly to millions of euros in recovered revenue.
+                  </p>
+                </div>
+              </div>
             </div>
-
-            {/* Right Meta Data */}
-            <div className="md:col-span-4 flex flex-col gap-4 md:pl-4">
+            <div className="flex flex-row lg:flex-col gap-8 lg:gap-5 lg:w-[180px] shrink-0">
               <div>
-                <span className="text-base lg:text-[18px] font-sans font-extrabold text-black leading-[1.6] mb-1 block">Role</span>
-                <span className="text-base lg:text-[18px] font-sans font-semibold text-black/40 block leading-[1.7]">Foundational designer,<br/>end to end</span>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Role</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Foundational designer, end to end</p>
               </div>
               <div>
-                <span className="text-base lg:text-[18px] font-sans font-extrabold text-black leading-[1.6] mb-1 block">Timeline</span>
-                <span className="text-base lg:text-[18px] font-sans font-semibold text-black/40 block leading-[1.7]">Sep 21 - May 22</span>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Team</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Senior Director Product, 1 Product Manager, 6+ Engineers</p>
               </div>
               <div>
-                <span className="text-base lg:text-[18px] font-sans font-extrabold text-black leading-[1.6] mb-1 block">Platform</span>
-                <span className="text-base lg:text-[18px] font-sans font-semibold text-black/40 block leading-[1.7]">Android</span>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Timeline</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Sep 21 – May 22</p>
+              </div>
+              <div>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Platform</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Android, Flutter</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. DESIGN BRIEF */}
-      <section className="w-full">
-        {/* Full Wide Context Image */}
-        <div className="w-full h-[40vh] md:h-[60vh] bg-zinc-200 relative mb-[-1px]">
-           <Image src="/craftapp/design_brief.png" alt="Office desk with phone and solar panel view" fill className="object-cover" />
-        </div>
-        
-        {/* Dark Brief Content */}
-        <div className="w-full bg-[#252525] py-20 lg:py-32">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24">
-            {/* Left Column */}
-            <div className="flex flex-col">
-              <h2 className="text-3xl lg:text-[36px] font-sans font-extrabold tracking-tight text-white mb-0 leading-[1.2]">
-                Design brief
-              </h2>
-              <p className="text-3xl lg:text-[36px] font-sans font-extrabold tracking-tight text-white/50 leading-[1.2] mb-2 md:mb-5">
-                Fix field documentation loop via CraftApp
-              </p>
-              <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7] pr-12">
-                How might we build a mobile tool that crews trust enough to actually use — and that gets work approved correctly the first time?
-              </p>
-            </div>
-            
-            {/* Right Column: Numbered List */}
-            <div className="flex flex-col gap-10 pt-2">
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6] flex items-baseline">
-                  <span className="w-10 flex-shrink-0">01</span>
-                  <span>Conversational approval flow</span>
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7] pl-10">
-                  How do we turn a stressful QA wait into a real-time dialogue between the field and the office?
+      {/* ─── 2. FULL-WIDTH IMAGE ─── */}
+      <div className="w-full aspect-[3538/1280] relative overflow-hidden mb-[-16px]" style={{ clipPath: "inset(0 0 16px 0)" }}>
+        <Image src="/craftapp/handheldsplash3.png" alt="CraftApp in context" fill className="object-contain" />
+      </div>
+
+      {/* ─── 3. DESIGN BRIEF ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        <div className={container}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+            <div className="flex flex-col gap-4 lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <h2 className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">Design brief</h2>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">
+                  Fix field documentation loop via CraftApp
                 </p>
               </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6] flex items-baseline">
-                  <span className="w-10 flex-shrink-0">02</span>
-                  <span>One-handed field interface</span>
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7] pl-10">
-                  How do we make documentation feel like part of the job rather than an interruption to it?
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6] flex items-baseline">
-                  <span className="w-10 flex-shrink-0">03</span>
-                  <span>Structured rejection communication</span>
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7] pl-10">
-                  How do we make sure a technician always knows exactly what to fix — regardless of what the QM wrote?
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. USER RESEARCH */}
-      <section className="w-full bg-[#F1F1ED]">
-        <div className="w-full py-20 lg:py-32">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24">
-            {/* Left Column */}
-            <div className="flex flex-col">
-              <h2 className="text-3xl lg:text-[36px] font-sans font-extrabold tracking-tight text-[#212529] mb-2 leading-[1.2]">
-                User research
-                <br />
-                <span className="text-[#212529]/40">process & plan</span>
-              </h2>
-              <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7] lg:pr-12">
-                Research spanned multiple visits across two branches, combining observation with direct conversation. The goal was to understand how the field actually worked — not how HQ assumed it did.
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                We should build a mobile tool that installation teams trust enough to actually use, and that gets work approved correctly the first time.
               </p>
             </div>
-            
-            {/* Right Column: Numbered List */}
-            <div className="flex flex-col gap-10 lg:gap-12 pt-2">
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-[#212529] leading-[1.6] flex items-baseline">
-                  <span className="w-10 flex-shrink-0">01</span>
-                  <span>Observatory field trips</span>
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7] pl-10">
-                  I joined EMG crews across Brandenburg and Erfurt — present at installation from setup through pack-up. A visit meant driving from Berlin to different branches specifically to compare how a second branch operated. These trips were the foundation of everything that followed.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-[#212529] leading-[1.6] flex items-baseline">
-                  <span className="w-10 flex-shrink-0">02</span>
-                  <span>Branch & stakeholder interviews</span>
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7] pl-10">
-                  At each branch I spoke with Branch Leads and Project Leads about performance, team structures, and operational pressure points. This surfaced the branch KPIs, the escalation problem, and the gap between how HQ assumed teams worked and how they actually did.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-[#212529] leading-[1.6] flex items-baseline">
-                  <span className="w-10 flex-shrink-0">03</span>
-                  <span>Semi-structured interviews</span>
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7] pl-10">
-                  I interviewed monteurs and Quality Managers — the two roles at the centre of the documentation loop. With technicians I explored their daily workflow and what rejection felt like in practice. With QMs I focused on how they reviewed submissions and what happened when clarification was needed. These conversations revealed the shadow network, the cherry-picking problem, and the dignity tension underneath the FTC metric.
-                </p>
-              </div>
+            <div className="flex-1 flex flex-col gap-8 md:gap-10">
+              {[
+                { n: "01", title: "Adoption must be tackled", body: "How do we turn a stressful wait into a live conversation between the field and the office?" },
+                { n: "02", title: "Enviromental factors should be considered", body: "How do we make documenting work feel like a natural part of the job, not something added on top of it?" },
+                { n: "03", title: "Attention on communication", body: "How do we make sure a technician always knows what to do when their submission is rejected, so they can fix it the same day without a second trip?" },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex gap-4 md:gap-5 items-start">
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95 shrink-0 w-8">{n}</p>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{title}</p>
+                    <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">{body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. USER RESEARCH RESULTS */}
-      <section className="w-full">
-        {/* Full Wide Context Image */}
-        <div className="w-full h-[40vh] md:h-[60vh] bg-zinc-200 relative mb-[-1px]">
-           <Image src="/craftapp/scaffolding.png" alt="Scaffolding on roof" fill className="object-cover" />
-        </div>
-        
-        {/* Dark Dark Content */}
-        <div className="w-full bg-[#252525] py-20 lg:py-32">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24">
-            {/* Left Column */}
-            <div className="flex flex-col">
-              <h2 className="text-3xl lg:text-[36px] font-sans font-extrabold tracking-tight text-white mb-2 leading-[1.2]">
-                User research
-                <br />
-                <span className="text-white/50">results & insights</span>
-              </h2>
-              <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7] lg:pr-12">
-                The field and the office were solving the same problem in completely different ways — and neither knew what the other was doing.
+      {/* ─── 4. USER RESEARCH — PROCESS & PLAN ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={container}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+            <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/85">User research</p>
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/55">process &amp; plan</p>
+              </div>
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                I visited two branches and spent time with the teams on site. The goal was to see how the work actually happened, not confirm what the office already believed.
               </p>
-              
-              <ImageZoom 
-                 src="/craftapp/researchinsights.png" 
-                 alt="Research insights data table" 
-                 width={1000} 
-                 height={800} 
-                 className="w-full h-auto"
-                 containerClassName="w-full mt-8 rounded-[4px] overflow-hidden shadow-2xl border border-white/5 bg-[#181614] hover:ring-2 hover:ring-white/20 transition-all duration-300" 
-              />
             </div>
-            
-            {/* Right Column: Key Insights List */}
-            <div className="flex flex-col gap-10 lg:gap-12 pt-2">
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6]">
-                  &quot;We just use WhatsApp&quot;
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7]">
-                  Every branch had built its own shadow network of group chats with Project Leads to get work done. The official tool existed in name only. This wasn&apos;t resistance — it was a workaround that worked better.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6]">
-                  Technicians didn&apos;t know why they were rejected
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7]">
-                  QM feedback was freeform and inconsistent. The same photo could pass in one branch and fail in another. Technicians had no reliable signal for what &quot;good enough&quot; looked like.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6]">
-                  The team structure in the Airtable was wrong
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7]">
-                  HQ assumed fixed crews with fixed roles. In reality, monteurs moved between teams and electricians operated independently. The app was being designed for an organisation that didn&apos;t exist.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-white leading-[1.6]">
-                  QMs were choosing which submissions to review
-                </h3>
-                <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7]">
-                  Working from an open table, they could see all pending tasks at once. Simpler submissions got picked first. Complex ones waited — and technicians had no idea why. This had to be tackled in an adjacent project.
-                </p>
-              </div>
+            <div className="flex-1 flex flex-col gap-8 md:gap-10">
+              {[
+                { n: "01", title: "Observatory field visits", body: "I joined installation crews in Brandenburg and Erfurt from early morning until the day was done. I drove to different branches specifically to compare how they operated differently. These visits became the foundation of everything." },
+                { n: "02", title: "Branch & stakeholder interviews", body: "At each branch office I spoke with branch managers and project leads about targets, pressure points, and team structure. The gap between what HQ assumed and what actually happened on the ground was larger than anyone had acknowledged." },
+                { n: "03", title: "Semi-structured interviews", body: "I spoke with teams and quality managers, those are the two people at the centre of this broken loop. With technicians I explored what rejection felt like in practice. With quality managers I focused on how they chose submissions and what happened when clarification was needed. These conversations surfaced things that no internal report had ever captured." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex gap-4 md:gap-5 items-start">
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85 shrink-0 w-8">{n}</p>
+                  <div className="flex flex-col gap-1.5">
+                    <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{title}</p>
+                    <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">{body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. PROBLEM STATEMENT */}
-      <section className="w-full bg-[#F1F1ED]">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 py-20 lg:py-32">
-          <div className="max-w-[900px]">
-             <h3 className="text-base lg:text-[18px] font-sans font-extrabold text-[#212529] block mb-6 leading-[1.6]">
-               Problem statement
-             </h3>
-             <p className="text-2xl md:text-3xl lg:text-[36px] font-sans font-medium text-black/40 leading-[1.5]">
-               EMG field technicians were completing installation work but failing to get it approved first time. How do we design a system that works on a rooftop, not just in an office — and fix the compliance chain that nobody could see?
-             </p>
+      {/* ─── 5. RESEARCH IMAGE ─── */}
+      <div className="w-full aspect-[2880/1200] overflow-hidden relative">
+        <Image src="/craftapp/frustratedtariq2.png" alt="Frustrated technician in the field" fill className="object-cover" />
+      </div>
+
+      {/* ─── 6. RESEARCH INSIGHTS ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={container}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+            <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">User research</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">results &amp; insights</p>
+              </div>
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                The field teams and the office were each trying to solve the same problem in completely different ways. Neither side knew what the other was doing.
+              </p>
+              <ImageLightbox src="/craftapp/research-insights.png" alt="Research insights">
+                <div className="mt-4 w-full aspect-[1960/1654] rounded-[8px] overflow-hidden relative">
+                  <Image src="/craftapp/research-insights.png" alt="Research insights" fill className="object-cover" />
+                </div>
+              </ImageLightbox>
+            </div>
+            <div className="flex-1 flex flex-col gap-8 md:gap-10">
+              {[
+                { title: "\u201cWe just use WhatsApp\u201d", body: "Every branch had built its own network of group chats with project leads. The official tool existed in name only \u2014 workers weren\u2019t resisting it out of laziness. They had already found something that worked better." },
+                { title: "Technicians didn\u2019t know why they were rejected", body: "Quality manager feedback was inconsistent and changed from branch to branch. The same photo could be accepted in one city and rejected in another. Technicians had no reliable signal for what good enough actually meant, and the FTC rate reflected that." },
+                { title: "The team structure in the Airtable was wrong", body: "HQ assumed fixed teams with fixed roles. In practice, technicians moved between crews and electricians worked independently. The app was being built for a company structure that did not exist on any roof." },
+                { title: "QMs were choosing which submissions to review", body: "With all pending submissions visible at once, simpler ones were picked first. Complex work waited, sometimes for hours. Technicians had no idea their job type was the reason for the delay. This became a separate project workstream." },
+              ].map(({ title, body }) => (
+                <div key={title} className="flex flex-col gap-1.5">
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85 leading-snug">{title}</p>
+                  <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">{body}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 6. PERSONA TARIQ */}
-      <section className="w-full bg-[#252525] py-20 lg:py-32">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 flex flex-col gap-12 lg:gap-20">
-          
-          {/* Header Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
-             <h2 className="text-3xl lg:text-[36px] font-sans font-extrabold tracking-tight text-white leading-[1.2]">
-               Introducing our<br/>
-               <span className="text-white/50">persona &ndash; Tariq</span>
-             </h2>
-             <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7] md:pt-4 pr-12 lg:pr-24">
-               I&apos;ve created a persona to ground every design decision in research and clarify who we were designing for.
-             </p>
+      {/* ─── 7 & 8. PROBLEM STATEMENT & THREE QUESTIONS ─── merged ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-14`}>
+          {/* Problem Statement block */}
+          <div className="flex flex-col gap-4">
+            <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95 opacity-60">Problem statement</p>
+            <p className="font-sans font-medium text-[20px] md:text-[28px] text-white/90 leading-[1.4] tracking-tight">
+              EMG installation technicians were completing high-quality work but failing to get it approved on the first try. The tools they had were built for desks, not rooftops. Documentation moved to 3rd party tools because that is what actually worked. The approval chain was invisible, and the FTC rate showed it.
+            </p>
           </div>
 
-          {/* Persona Card (Asset) */}
-          <ImageZoom 
-            src="/craftapp/Tariq.png" 
-            alt="Tariq Persona Profile Details" 
-            width={1200} 
-            height={600} 
-            className="w-full h-auto rounded-[4px]" 
-            containerClassName="w-full mt-4 md:mt-8 shadow-2xl hover:scale-[1.01] hover:shadow-white/5 transition-all duration-500 rounded-[4px]"
-          />
-        </div>
-      </section>
-
-      {/* 7. JOURNEY MAP */}
-      <section className="w-full bg-[#F1F1ED] py-20 lg:py-32">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 flex flex-col gap-12 lg:gap-16">
-          
-          {/* Header Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
-             <h2 className="text-3xl lg:text-[36px] font-sans font-extrabold tracking-tight text-[#212529] leading-[1.2]">
-               Journey map<br/>
-               <span className="text-[#212529]/40">for installation day</span>
-             </h2>
-             <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7] md:pt-4 pr-12 lg:pr-12">
-               I&apos;ve created a user journey map to align stakeholders and highlight pain points in the current installation and documentation experience.
-             </p>
-          </div>
-
-          {/* Map Asset Document */}
-          <ImageZoom 
-            src="/craftapp/userjourney.png" 
-            alt="Installation Day User Journey Map" 
-            width={1600} 
-            height={1200} 
-            className="w-full h-auto" 
-            containerClassName="w-full bg-white shadow-sm hover:shadow-md transition-shadow duration-300 relative"
-          />
-
-        </div>
-      </section>
-
-      {/* 8. UI SHOWCASE: Onboarding */}
-      <section className="w-full bg-white">
-        <div className="max-w-5xl mx-auto px-6 md:px-12 lg:px-8 py-20 lg:py-24 flex flex-col gap-12 lg:gap-16">
-          <div className="max-w-2xl">
-             <h3 className="text-2xl md:text-3xl lg:text-[36px] font-sans font-medium text-black/80 mb-4 leading-[1.5]">The Visual &quot;Pre-Flight&quot; Guide</h3>
-             <p className="text-base lg:text-[18px] font-sans font-semibold text-black/40 leading-[1.7]">
-               I designed a &quot;Smart Default&quot; entry flow presenting a high-contrast, visual-first guide before the native camera even triggers. This proactively establishes quality standards.
-             </p>
-          </div>
-          <div className="w-full aspect-video bg-zinc-100 flex items-center justify-center border border-zinc-200 shadow-sm rounded-2xl overflow-hidden relative">
-             <Image src="/craftapp/preflight.png" alt="Visual Pre-Flight Guide Screen" fill className="object-cover object-top" />
+          {/* Three Questions group */}
+          <div className="flex flex-col gap-10 md:gap-14">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+              <div className="lg:w-full shrink-0">
+                <div className="leading-[1.25]">
+                  <p className="font-sans font-extrabold text-[28px] md:text-[42px] text-white/95">Three questions</p>
+                  <p className="font-sans font-semibold text-[28px] md:text-[42px] text-white/70 tracking-[0.36px]">from the field</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
+              {[
+                { n: "HMW 01", title: "Make documentation part of the installation:", body: "How might we make taking photos and logging information feel like a natural step in the work, not something separate that gets in the way?" },
+                { n: "HMW 02", title: "Bring real-time feedback into a compliant system:", body: "Technicians already got fast, clear responses in WhatsApp. How might we give them the same experience inside a system the company could actually rely on?" },
+                { n: "HMW 03", title: "Make rejection something a technician can act on:", body: "How might we make sure a technician always knows what to do when their submission is rejected, so they can fix it the same day without a second trip?" },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex flex-col gap-2">
+                  <p className="font-sans font-extrabold text-[15px] md:text-[16px] text-white/50">{n}</p>
+                  <p className="font-sans font-extrabold text-[18px] md:text-[20px] text-white/95 leading-tight">{title}</p>
+                  <p className="font-sans font-semibold text-[15px] md:text-[17px] text-white/70 leading-[1.6]">{body}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 7. UI SHOWCASE: Documentation */}
-      <section className="w-full bg-[#252525]">
-        <div className="max-w-5xl mx-auto px-6 md:px-12 lg:px-8 py-20 lg:py-24 flex flex-col gap-12 lg:gap-16">
-          <div className="max-w-2xl">
-             <h3 className="text-2xl md:text-3xl lg:text-[36px] font-sans font-medium text-white/80 mb-4 leading-[1.5]">The Conversational Timeline</h3>
-             <p className="text-base lg:text-[18px] font-sans font-semibold text-white/40 leading-[1.7]">
-               Mirroring WhatsApp behavior, I constructed a real-time timeline where QA feedback instantly appears as a conversational bubble. The CTA is placed explicitly in the bottom thumb-zone.
-             </p>
-          </div>
-          <div className="w-full flex justify-center mt-8">
-             <div className="w-[320px] h-[693px] bg-zinc-800 flex items-center justify-center border-[12px] border-zinc-950 shadow-2xl rounded-[40px] overflow-hidden relative">
-               <Image src="/craftapp/conversational.png" alt="Conversational Timeline Screen" fill className="object-cover" />
-             </div>
+      {/* ─── 9. THE STRATEGY ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={container}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+            <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">The Strategy</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">that changed the loop</p>
+              </div>
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                The WhatsApp workaround, the inconsistent rejections, and the quiet frustration of skilled work being judged by a checklist all pointed to the same root problem. The approval chain was invisible to everyone inside it.
+              </p>
+            </div>
+            <div className="flex-1 flex flex-col gap-8 md:gap-10">
+              {[
+                { n: "01", title: "Make approval feel like a conversation", body: "Technicians were already using chat to get things done. The submission screen needed to work the same way. A thread, not a form result. Send a photo, see the status, get a response. No black box." },
+                { n: "02", title: "Build for one hand on a rooftop", body: "Every important action reachable with a single thumb. Every label readable in direct sunlight. Tags replace typing. The camera opens from the task itself, no extra steps needed." },
+                { n: "03", title: "Structured communication", body: "When a photo is rejected, the reviewer's exact message appears in the app. When the technician picks up the camera to retake the shot, those words stay visible on screen. No need to remember anything. Just read and shoot." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex flex-col gap-1.5">
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{n}</p>
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{title}</p>
+                  <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">{body}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
-      
-      {/* Massive Navigation Footer */}
-      <Link href={`/work/${nextProject?.slug || ""}`} className="group block w-full bg-black text-white py-24 px-6 md:px-12 lg:px-24 transition-colors duration-500 ease-out relative">
-         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-baseline justify-between gap-12 relative z-10 w-full">
+
+      {/* ─── 10. MEET TARIQ ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-14`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">Meet Tariq the Monteur</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">from on site research</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                Tariq is a solar panel installer at EMG Brandenburg. He moves between teams and works multiple jobs a week. He is very good at this work and he knows it. He does not think of himself as a technology user. His phone is a tool, the same as his drill.
+              </p>
+            </div>
+          </div>
+          <ImageLightbox src="/craftapp/persona-tariq.png" alt="Tariq the Monteur persona">
+            <div className="w-full aspect-[2362/1214] rounded-[8px] overflow-hidden relative">
+              <Image src="/craftapp/persona-tariq.png" alt="Tariq the Monteur persona" fill className="object-cover" />
+            </div>
+          </ImageLightbox>
+        </div>
+      </section>
+
+      {/* ─── 11. JOURNEY MAP ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/85">A day in the field</p>
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/55">before CraftApp</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                Mapped to show stakeholders where the experience broke down and where there was room to improve it.
+              </p>
+            </div>
+          </div>
+          <ImageLightbox src="/craftapp/journey-map.png" alt="A day in the field — journey map">
+            <div className="w-full aspect-[2940/3180] rounded-[8px] overflow-hidden relative">
+              <Image src="/craftapp/journey-map.png" alt="A day in the field — journey map" fill className="object-cover" />
+            </div>
+          </ImageLightbox>
+        </div>
+      </section>
+
+      {/* ─── 12. FROM THE ROOFTOP ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-12 md:gap-16`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">From the Rooftop</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">to the Interface</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                Three constraints shaped the design library and every interface decision.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { n: "01", title: "One hand, always", body: "Technicians hold ladders, cables, and tools while checking their phones. Every primary action in the app is reachable with a single thumb. There are no interactions that require two hands." },
+              { n: "02", title: "Readable in direct sunlight", body: "Rooftops in summer are bright and reflective. High-contrast text and large tap targets were not optional extras. They were the baseline for this environment." },
+              { n: "03", title: "No black box moments", body: "The biggest frustration technicians described was not knowing what was happening. Every state in the app has its own clear visual signal. Submitted, in review, approved, rejected. The technician always knows where things stand." },
+            ].map(({ n, title, body }) => (
+              <div key={n} className="flex flex-col gap-1.5">
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{n}</p>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{title}</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 13. LOW-FIDELITY LOGIC ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/85">Low-Fidelity Logic</p>
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/55">flow before form</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                Before any visual decisions, I sketched the full app to answer one question. Could a technician move from choosing their team to submitting a photo without ever stopping to think about where to tap?
+              </p>
+            </div>
+          </div>
+          <ImageLightbox src="/craftapp/lofi-wireframes.png" alt="Low-fidelity wireframes">
+            <div className="w-full rounded-[8px] overflow-hidden bg-[#f0eee9]">
+              <Image src="/craftapp/lofi-wireframes.png" alt="Low-fidelity wireframes" width={2400} height={1080} className="w-full h-auto" />
+            </div>
+          </ImageLightbox>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { n: "01", title: "Two-tab task structure", body: "A How-to Guide tab and a Submission tab appeared in the first sketch. Reading and documenting are separate things. They should not compete for the same screen." },
+              { n: "02", title: "Chapter status at a glance", body: "The chapter list needed to show more than names. Early sketches had simple checkmarks. The status ring system in the final design grew from that idea." },
+              { n: "03", title: "Submission as a conversation", body: "Technicians already trusted Slack or Whatsapp for real work coordination. The submission screen needed to feel the same way. That decision was made in pencil, before Figma was opened." },
+            ].map(({ n, title, body }) => (
+              <div key={n} className="flex flex-col gap-1.5">
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{n}</p>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{title}</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 14. DESIGN SYSTEM ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">Building a robust</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">design system</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                I&apos;ve created a design system built to scale across the full app without visual inconsistency.
+              </p>
+            </div>
+          </div>
+          <ImageLightbox src="/craftapp/design-system.png" alt="CraftApp design system">
+            <div className="w-full rounded-[8px] overflow-hidden bg-[#252525]">
+              <Image src="/craftapp/design-system.png" alt="CraftApp design system" width={2400} height={1080} className="w-full h-auto" />
+            </div>
+          </ImageLightbox>
+        </div>
+      </section>
+
+      {/* ─── 15. ONBOARDING ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/85">Onboarding</p>
+                <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/55">for installation day</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                Tariq begins each day by selecting his team and checking the week&apos;s jobs. One tap into an appointment shows everything he needs before arriving on site.
+              </p>
+            </div>
+          </div>
+          <ImageLightbox src="/craftapp/onboarding.png" alt="Onboarding screens">
+            <div className="w-full h-[260px] md:h-[403px] rounded-[8px] overflow-hidden relative">
+              <Image src="/craftapp/onboarding.png" alt="Onboarding screens" fill className="object-cover" />
+            </div>
+          </ImageLightbox>
+        </div>
+      </section>
+
+      {/* ─── 16. GUIDE FIRST ─── full-bleed images ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        {/* Header — constrained */}
+        <div className={`${container} mb-10 md:mb-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">Guide first</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">submit with context</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                Every task opens with a guide showing what to do, what a correct photo looks like, and what the reviewer will check. Tariq submits without typing a single word.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* MOBILE: phone + captions stacked, full-width */}
+        <div className="flex flex-col gap-8 lg:hidden px-4">
+          <div className="flex flex-col gap-4">
+            <ImageLightbox 
+              src="/craftapp/guide-first-phone-a.png" 
+              alt="Guide: reference photos"
+              captions={[
+                { title: "Photos from real approved submissions", body: "Swipeable reference images, selected by quality managers from actual past approvals. Not stock photos, not illustrations." },
+                { title: "The review criteria before the steps", body: "The first thing a technician reads is what the quality manager will check. No guessing about what a passing submission looks like." }
+              ]}
+            >
+              <div className="w-full h-[498px] rounded-[8px] overflow-hidden relative">
+                <Image 
+                  src="/craftapp/guide-first-phone-a.png" 
+                  alt="Guide: reference photos" 
+                  fill 
+                  className="object-contain" 
+                />
+              </div>
+            </ImageLightbox>
             <div className="flex flex-col gap-4">
-              <span className="text-sm font-black uppercase tracking-widest text-white/40">Next Case Study</span>
-              <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none group-hover:text-white/70 transition-colors font-sans">
-                {nextProject?.title?.split("—")[0].trim() || "Next"}
-              </h2>
+              {[
+                { n: "01", title: "Photos from real approved submissions", body: "Swipeable reference images, selected by quality managers from actual past approvals. Not stock photos, not illustrations." },
+                { n: "02", title: "The review criteria before the steps", body: "The first thing a technician reads is what the quality manager will check. No guessing about what a passing submission looks like." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex gap-3 items-start">
+                  <p className="font-sans font-extrabold text-[15px] text-white/95 shrink-0">{n}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-sans font-extrabold text-[15px] text-white/95">{title}</p>
+                    <p className="font-sans font-semibold text-[14px] text-white/70 leading-[1.4]">{body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="hidden md:flex flex-shrink-0 w-24 h-24 rounded-full border-2 border-white/20 items-center justify-center group-hover:bg-white group-hover:text-black group-hover:border-white transition-all duration-500 transform group-hover:scale-105">
-               <ArrowRight className="w-8 h-8" />
+          </div>
+          <div className="flex flex-col gap-4">
+            <ImageLightbox 
+              src="/craftapp/guide-first-phone-b.png" 
+              alt="Guide: submission & tagging"
+              captions={[
+                { title: "Tags instead of a keyboard", body: "After shooting, Tariq selects what the photo shows from a short list. One tap per tag, specific to the task type, no generic labels." },
+                { title: "Multiple photos, one submission", body: "Some tasks need more than one angle. Tariq can add shots before submitting. The tags apply across all of them." }
+              ]}
+            >
+              <div className="w-full h-[498px] rounded-[8px] overflow-hidden relative">
+                <Image 
+                  src="/craftapp/guide-first-phone-b.png" 
+                  alt="Guide: submission & tagging" 
+                  fill 
+                  className="object-contain" 
+                />
+              </div>
+            </ImageLightbox>
+            <div className="flex flex-col gap-4">
+              {[
+                { n: "01", title: "Tags instead of a keyboard", body: "After shooting, Tariq selects what the photo shows from a short list. One tap per tag, specific to the task type, no generic labels." },
+                { n: "02", title: "Multiple photos, one submission", body: "Some tasks need more than one angle. Tariq can add shots before submitting. The tags apply across all of them." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex gap-3 items-start">
+                  <p className="font-sans font-extrabold text-[15px] text-white/95 shrink-0">{n}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-sans font-extrabold text-[15px] text-white/95">{title}</p>
+                    <p className="font-sans font-semibold text-[14px] text-white/70 leading-[1.4]">{body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-         </div>
-      </Link>
+          </div>
+        </div>
 
+        {/* DESKTOP: [left captions] [phones] [right captions] — inside 1100px container */}
+        <div className="hidden lg:block">
+          <div className={`${container}`}>
+            <div className="flex flex-row gap-8 items-start justify-center">
+              {/* Left captions */}
+              <div className="flex flex-col gap-10 w-[200px] shrink-0 pt-16">
+                {[
+                  { n: "01", title: "Photos from real approved submissions", body: "Swipeable reference images, selected by quality managers from actual past approvals. Not stock photos, not illustrations." },
+                  { n: "02", title: "The review criteria before the steps", body: "The first thing a technician reads is what the quality manager will check. No guessing about what a passing submission looks like." },
+                ].map(({ n, title, body }) => (
+                  <div key={n} className="flex gap-3 items-start">
+                    <p className="font-sans font-extrabold text-[15px] text-white/95 shrink-0">{n}</p>
+                    <div className="flex flex-col gap-1">
+                      <p className="font-sans font-extrabold text-[15px] text-white/95">{title}</p>
+                      <p className="font-sans font-semibold text-[14px] text-white/70 leading-[1.4]">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Phone frames — fixed width so captions always have room */}
+              <div className="flex gap-4 shrink-0 relative">
+                <ImageLightbox 
+                  src="/craftapp/guide-first-phone-a.png" 
+                  alt="Guide: reference photos"
+                  captions={[
+                    { title: "Photos from real approved submissions", body: "Swipeable reference images, selected by quality managers from actual past approvals. Not stock photos, not illustrations." },
+                    { title: "The review criteria before the steps", body: "The first thing a technician reads is what the quality manager will check. No guessing about what a passing submission looks like." }
+                  ]}
+                >
+                  <div className="w-[280px] aspect-[9/16] rounded-[8px] overflow-hidden relative">
+                    <Image src="/craftapp/guide-first-phone-a.png" alt="Guide: reference photos" fill className="object-contain" />
+                  </div>
+                </ImageLightbox>
+                <ImageLightbox 
+                  src="/craftapp/guide-first-phone-b.png" 
+                  alt="Guide: submission & tagging"
+                  captions={[
+                    { title: "Tags instead of a keyboard", body: "After shooting, Tariq selects what the photo shows from a short list. One tap per tag, specific to the task type, no generic labels." },
+                    { title: "Multiple photos, one submission", body: "Some tasks need more than one angle. Tariq can add shots before submitting. The tags apply across all of them." }
+                  ]}
+                >
+                  <div className="w-[280px] aspect-[9/16] rounded-[8px] overflow-hidden relative">
+                    <Image src="/craftapp/guide-first-phone-b.png" alt="Guide: submission & tagging" fill className="object-contain" />
+                  </div>
+                </ImageLightbox>
+              </div>
+              {/* Right captions */}
+              <div className="flex flex-col gap-10 w-[200px] shrink-0 pt-16">
+                {[
+                  { n: "01", title: "Tags instead of a keyboard", body: "After shooting, Tariq selects what the photo shows from a short list. One tap per tag, specific to the task type, no generic labels." },
+                  { n: "02", title: "Multiple photos, one submission", body: "Some tasks need more than one angle. Tariq can add shots before submitting. The tags apply across all of them." },
+                ].map(({ n, title, body }) => (
+                  <div key={n} className="flex gap-3 items-start">
+                    <p className="font-sans font-extrabold text-[15px] text-white/95 shrink-0">{n}</p>
+                    <div className="flex flex-col gap-1">
+                      <p className="font-sans font-extrabold text-[15px] text-white/95">{title}</p>
+                      <p className="font-sans font-semibold text-[14px] text-white/70 leading-[1.4]">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 17. CLOSING THE LOOP ─── full-bleed images ─── #f4f4f0 */}
+      <section className="w-full bg-[#f4f4f0] py-16 md:py-[80px]">
+        {/* Header — constrained */}
+        <div className={`${container} mb-10 md:mb-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Closing the Loop</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">real-time feedback &amp; validation</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
+                After submitting, Tariq can see the status of his work in real time. When the QM responds, a clear result appears immediately. No waiting, no guessing.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* MOBILE */}
+        <div className="flex flex-col gap-8 lg:hidden px-4">
+          <div className="flex flex-col gap-4">
+            <ImageLightbox 
+              src="/craftapp/closing-loop-phone-a.png" 
+              alt="Closing loop: in-review state"
+              captions={[
+                { title: "Managing Expectations", body: "Estimated wait time and a clear nudge to continue eliminates the idle anxiety technicians felt waiting for a response that might never come." },
+                { title: "Non-Blocking Workflow", body: "Tariq doesn’t wait on the roof. He moves to the next task while QM reviews — the installation stays in flow." }
+              ]}
+            >
+              <div className="w-full h-[498px] rounded-[8px] overflow-hidden relative">
+                <Image 
+                  src="/craftapp/closing-loop-phone-a.png" 
+                  alt="Closing loop: in-review state" 
+                  fill 
+                  className="object-contain" 
+                />
+              </div>
+            </ImageLightbox>
+            <div className="flex flex-col gap-4">
+              {[
+                { n: "01", title: "Managing Expectations", body: "Estimated wait time and a clear nudge to continue eliminates the idle anxiety technicians felt waiting for a response that might never come." },
+                { n: "02", title: "Non-Blocking Workflow", body: "Tariq doesn\u2019t wait on the roof. He moves to the next task while QM reviews \u2014 the installation stays in flow." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex gap-3 items-start">
+                  <p className="font-sans font-extrabold text-[15px] text-black/85 shrink-0">{n}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-sans font-extrabold text-[15px] text-black/85">{title}</p>
+                    <p className="font-sans font-semibold text-[14px] text-black/55 leading-[1.4]">{body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <ImageLightbox 
+              src="/craftapp/closing-loop-phone-b.png" 
+              alt="Closing loop: approved state"
+              captions={[
+                { title: "Full audit trail preserved", body: "The submitted photo and tags remain visible after approval. What was captured, what was tagged, when it was sent — is permanently on record for compliance." },
+                { title: "The “Rapid Green Light”", body: "A timestamped verdict the moment QM responds. Tariq knows immediately — no waiting on site after installation, no guessing." }
+              ]}
+            >
+              <div className="w-full h-[498px] rounded-[8px] overflow-hidden relative">
+                <Image 
+                  src="/craftapp/closing-loop-phone-b.png" 
+                  alt="Closing loop: approved state" 
+                  fill 
+                  className="object-contain" 
+                />
+              </div>
+            </ImageLightbox>
+            <div className="flex flex-col gap-4">
+              {[
+                { n: "01", title: "Full audit trail preserved", body: "The submitted photo and tags remain visible after approval. What was captured, what was tagged, when it was sent \u2014 is permanently on record for compliance." },
+                { n: "02", title: "The \u201cRapid Green Light\u201d", body: "A timestamped verdict the moment QM responds. Tariq knows immediately \u2014 no waiting on site after installation, no guessing." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex gap-3 items-start">
+                  <p className="font-sans font-extrabold text-[15px] text-black/85 shrink-0">{n}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-sans font-extrabold text-[15px] text-black/85">{title}</p>
+                    <p className="font-sans font-semibold text-[14px] text-black/55 leading-[1.4]">{body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* DESKTOP: [left captions] [phones] [right captions] — inside 1100px container */}
+        <div className="hidden lg:block">
+          <div className={`${container}`}>
+            <div className="flex flex-row gap-8 items-start justify-center">
+              {/* Left captions */}
+              <div className="flex flex-col gap-10 w-[200px] shrink-0 pt-16">
+                {[
+                  { n: "01", title: "Managing Expectations", body: "Estimated wait time and a clear nudge to continue eliminates the idle anxiety technicians felt waiting for a response that might never come." },
+                  { n: "02", title: "Non-Blocking Workflow", body: "Tariq doesn\u2019t wait on the roof. He moves to the next task while QM reviews \u2014 the installation stays in flow." },
+                ].map(({ n, title, body }) => (
+                  <div key={n} className="flex gap-3 items-start">
+                    <p className="font-sans font-extrabold text-[15px] text-black/85 shrink-0">{n}</p>
+                    <div className="flex flex-col gap-1">
+                      <p className="font-sans font-extrabold text-[15px] text-black/85">{title}</p>
+                      <p className="font-sans font-semibold text-[14px] text-black/55 leading-[1.4]">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Phone frames */}
+              <div className="flex gap-4 shrink-0 relative">
+                <ImageLightbox 
+                  src="/craftapp/closing-loop-phone-a.png" 
+                  alt="Closing loop: in-review state"
+                  captions={[
+                    { title: "Managing Expectations", body: "Estimated wait time and a clear nudge to continue eliminates the idle anxiety technicians felt waiting for a response that might never come." },
+                    { title: "Non-Blocking Workflow", body: "Tariq doesn’t wait on the roof. He moves to the next task while QM reviews — the installation stays in flow." }
+                  ]}
+                >
+                  <div className="w-[280px] aspect-[9/16] rounded-[8px] overflow-hidden relative">
+                    <Image src="/craftapp/closing-loop-phone-a.png" alt="Closing loop: in-review state" fill className="object-contain" />
+                  </div>
+                </ImageLightbox>
+                <ImageLightbox 
+                  src="/craftapp/closing-loop-phone-b.png" 
+                  alt="Closing loop: approved state"
+                  captions={[
+                    { title: "Full audit trail preserved", body: "The submitted photo and tags remain visible after approval. What was captured, what was tagged, when it was sent — is permanently on record for compliance." },
+                    { title: "The “Rapid Green Light”", body: "A timestamped verdict the moment QM responds. Tariq knows immediately — no waiting on site after installation, no guessing." }
+                  ]}
+                >
+                  <div className="w-[280px] aspect-[9/16] rounded-[8px] overflow-hidden relative">
+                    <Image src="/craftapp/closing-loop-phone-b.png" alt="Closing loop: approved state" fill className="object-contain" />
+                  </div>
+                </ImageLightbox>
+              </div>
+              {/* Right captions */}
+              <div className="flex flex-col gap-10 w-[200px] shrink-0 pt-16">
+                {[
+                  { n: "01", title: "Full audit trail preserved", body: "The submitted photo and tags remain visible after approval. What was captured, what was tagged, when it was sent \u2014 is permanently on record for compliance." },
+                  { n: "02", title: "The \u201cRapid Green Light\u201d", body: "A timestamped verdict the moment QM responds. Tariq knows immediately \u2014 no waiting on site after installation, no guessing." },
+                ].map(({ n, title, body }) => (
+                  <div key={n} className="flex gap-3 items-start">
+                    <p className="font-sans font-extrabold text-[15px] text-black/85 shrink-0">{n}</p>
+                    <div className="flex flex-col gap-1">
+                      <p className="font-sans font-extrabold text-[15px] text-black/85">{title}</p>
+                      <p className="font-sans font-semibold text-[14px] text-black/55 leading-[1.4]">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 18. WHEN QM REJECTS ─── full-bleed images ─── #252525 */}
+      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+        {/* Header — constrained */}
+        <div className={`${container} mb-10 md:mb-12`}>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
+            <div className="lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">When QM rejects</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">the loop stays closed</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                Rejections arrive with the QM&apos;s exact words — no interpretation, no delay. Tariq retakes with full context in view, or escalates to the Project Lead if the situation genuinely can&apos;t be resolved on site.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 3 phones — inside 1100px container */}
+        <div className={container}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            {[
+              { img: "/craftapp/qm-reject-phone-1.png", title: "Clear rejection reason", body: "The QM\u2019s note appears verbatim, not paraphrased. Tariq knows exactly what to fix before touching the camera again." },
+              { img: "/craftapp/qm-reject-phone-2.png", title: "QM feedback in the viewfinder", body: "The rejection reason stays visible while Tariq reframes the shot \u2014 no switching screens, no memorising instructions." },
+              { img: "/craftapp/qm-reject-phone-3.png", title: "Escalate when retaking isn\u2019t possible", body: "If the situation genuinely can\u2019t be resolved on site, Tariq escalates to the Project Lead with one tap. Pre-written reasons keep it fast \u2014 no typing required." },
+            ].map(({ img, title, body }) => (
+              <div key={title} className="flex flex-col gap-5">
+                <ImageLightbox src={img} alt={title} captionTitle={title} captionDescription={body}>
+                  <div className="w-full aspect-[9/16] rounded-[8px] overflow-hidden relative">
+                    <Image 
+                      src={img} 
+                      alt={title} 
+                      fill 
+                      className="object-contain" 
+                    />
+                  </div>
+                </ImageLightbox>
+                <div className="flex flex-col gap-2">
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95 leading-tight">{title}</p>
+                  <p className="font-sans font-semibold text-[14px] md:text-[16px] text-white/70 leading-[1.6]">{body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 19. RESULTS ─── #f0eee9 */}
+      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+        <div className={`${container} flex flex-col gap-10 md:gap-14`}>
+          <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Results</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            {[
+              { stat: "65% → 95%", label: "First-time-correct rate helped more appointments being fulfilled" },
+              { stat: "3X", label: "QA cycle improvement eliminated the back and forth" },
+              { stat: "0", label: "Zero forced adoption. Technicians chose to use it" },
+              { stat: "€+ in Millions", label: "Revenue impact from reduced rework and faster completion" },
+            ].map(({ stat, label }) => (
+              <div key={stat} className="flex flex-col gap-2">
+                <p className="font-sans font-extrabold text-[20px] md:text-[24px] text-[#7257ff]">{stat}</p>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85 leading-snug">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* What I learned — merged */}
+          <div className="flex flex-col gap-4">
+            <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">What I learned</p>
+            <div className="flex flex-col gap-5 font-sans font-medium text-[18px] md:text-[24px] text-black/55 leading-[1.5] tracking-[0.24px]">
+              <p>
+                The most useful thing I did was, driving to the branches and spending a day with the installation teams. The WhatsApp & Slack workarounds, the "first-time-correct" pressure, the subtle frustration of skilled work being judged without context, none of it appeared in any brief or requirements document.
+              </p>
+              <p>
+                I found it by being in the right place and paying attention. The compliance chain that nobody could see was not hidden. It just had not been looked for from the perspective of the technician.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 21. FOOTER ─── */}
+      <footer className="w-full bg-[#252525] border-t border-white/10 p-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="font-sans font-medium text-[16px] text-white">
+            © 2026 · made with love on antigravity for first time :)
+          </p>
+          <div className="flex items-center gap-6">
+            <a 
+              href="https://www.linkedin.com/in/asil-alptekin/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-white hover:text-white/70 transition-colors"
+              aria-label="LinkedIn"
+            >
+              <Linkedin size={20} fill="currentColor" />
+            </a>
+            <a 
+              href="mailto:alptekin.contact@gmail.com" 
+              className="text-white hover:text-white/70 transition-colors"
+              aria-label="Email"
+            >
+              <Mail size={20} fill="currentColor" />
+            </a>
+          </div>
+        </div>
+      </footer>
+      <AdminEditMode />
     </div>
   );
 }

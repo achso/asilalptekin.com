@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-<body className={`${manrope.variable} ${caveat.variable} ${poppins.variable} font-sans antialiased bg-background text-foreground`}>
+<body className={`${manrope.variable} ${caveat.variable} ${poppins.variable} font-sans antialiased bg-background text-[#0c6747]`}>
         <BackgroundEffects />
         {children}
       </body>

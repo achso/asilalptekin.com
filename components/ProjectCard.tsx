@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { ProjectData } from "@/data/projects";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -35,26 +34,25 @@ export function ProjectCard({ project }: { project: ProjectData }) {
       />
 
       {/* Text */}
-      <div className="flex flex-col">
-        <div className="flex justify-between items-start gap-3 mb-2">
-          <h3 className="text-[22px] sm:text-2xl font-bold tracking-tight text-foreground pr-2">
-            {project.title}
-          </h3>
-          {project.statusBadge && (
-            <Badge variant="outline" className="rounded-full text-[10px] font-semibold px-2.5 py-0.5 border-border/80 text-muted-foreground uppercase tracking-widest whitespace-nowrap mt-1">
-              {project.statusBadge} ↗
-            </Badge>
-          )}
-        </div>
+      <div className="flex flex-col gap-2">
+        <h3 className="font-sans font-bold text-[26px] md:text-[28px] text-black/85 leading-tight tracking-[-0.01em]">
+          {project.title}
+        </h3>
 
-        <p className="text-[15px] sm:text-[16px] text-muted-foreground/90 leading-relaxed max-w-lg mb-4">
+        <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/45 leading-[1.6]">
           {project.description}
         </p>
 
-        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-foreground font-semibold">
-          <span>{project.role}</span>
-          <span className="text-muted-foreground font-normal">·</span>
-          <span className="text-foreground">{project.year}</span>
+        <div className="flex items-center gap-1.5 mt-1 font-sans font-semibold text-[13px] md:text-[14px] text-black/85">
+          {project.company && <span>{project.company}</span>}
+          {project.company && (project.type || project.year) && <span className="text-black/30 font-normal">·</span>}
+          {project.type && <span>{project.type}</span>}
+          {project.type && project.year && <span className="text-black/30 font-normal">·</span>}
+          {project.year && <span>{project.year}</span>}
+          {/* Fallback for cards without company/type */}
+          {!project.company && !project.type && project.role && <span>{project.role}</span>}
+          {!project.company && !project.type && project.role && project.year && <span className="text-black/30 font-normal">·</span>}
+          {!project.company && !project.type && !project.role && null}
         </div>
       </div>
       </motion.div>

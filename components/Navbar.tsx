@@ -28,10 +28,10 @@ export function Navbar() {
         </Link>
         {/* Desktop Menu (> 820px) */}
         <div className="hidden min-[821px]:flex items-center gap-2 text-[18px] font-[700] leading-[27px]">
-          <Link href="/" className={`${isWorkActive ? 'text-black bg-[#9ca3af]/40 backdrop-blur-[12px]' : 'text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px]'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>Work</Link>
-          <Link href="/fun" className={`${isFunActive ? 'text-black bg-[#9ca3af]/40 backdrop-blur-[12px]' : 'text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px]'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>Fun</Link>
-          <Link href="/about" className={`${isAboutActive ? 'text-black bg-[#9ca3af]/40 backdrop-blur-[12px]' : 'text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px]'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>About</Link>
-          <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" className="text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px] transition-all duration-[600ms] px-4 py-2 rounded-full">Resume</a>
+          <Link href="/" className={`${isWorkActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>Work</Link>
+          <Link href="/fun" className={`${isFunActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>Fun</Link>
+          <Link href="/about" className={`${isAboutActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>About</Link>
+          <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" className="text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10 transition-all duration-[600ms] px-4 py-2 rounded-full">Resume</a>
         </div>
 
         {/* Mobile/Tablet Menu Toggle (<= 820px) */}
@@ -39,7 +39,7 @@ export function Navbar() {
           <button
             aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px] transition-all duration-[600ms] w-12 h-12 rounded-full flex items-center justify-center"
+            className="text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10 transition-all duration-[600ms] w-12 h-12 rounded-full flex items-center justify-center"
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -56,10 +56,10 @@ export function Navbar() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="absolute top-24 left-8 right-8 flex flex-col items-end gap-2 min-[821px]:hidden z-40 bg-background/95 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-border"
           >
-            <Link href="/" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isWorkActive ? 'text-black bg-[#9ca3af]/40 backdrop-blur-[12px]' : 'text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px]'} transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Work</Link>
-            <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isFunActive ? 'text-black bg-[#9ca3af]/40 backdrop-blur-[12px]' : 'text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px]'} transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Fun</Link>
-            <Link href="/about" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isAboutActive ? 'text-black bg-[#9ca3af]/40 backdrop-blur-[12px]' : 'text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px]'} transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>About</Link>
-            <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="w-full text-right text-[#898989] hover:text-black hover:bg-[#9ca3af]/40 hover:backdrop-blur-[12px] transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]">Resume</a>
+            <Link href="/" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isWorkActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Work</Link>
+            <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isFunActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Fun</Link>
+            <Link href="/about" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isAboutActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>About</Link>
+            <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="w-full text-right text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10 transition-all duration-[600ms] px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]">Resume</a>
           </motion.div>
         )}
       </AnimatePresence>
