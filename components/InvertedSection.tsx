@@ -8,7 +8,7 @@ interface InvertedSectionProps {
 export function InvertedSection({ children, className = "" }: InvertedSectionProps) {
   return (
     <section 
-      className={`w-[100vw] ml-[calc(50%-50vw)] bg-foreground text-background py-24 px-8 md:px-12 relative overflow-hidden z-10 ${className}`}
+      className={`w-[100vw] ml-[calc(50%-50vw)] bg-[#252525] text-background py-24 px-8 md:px-12 relative overflow-hidden z-10 ${className}`}
     >
       {/* Light noise overlay for dark mode sections to preserve texture consistency */}
       <div

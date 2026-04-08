@@ -17,6 +17,8 @@ export interface ProjectData {
   statusBadge?: string;
   role: string;
   year: string;
+  company?: string;
+  type?: string;
   platform?: string;
   imageColor: string;
   imageSrc?: string;
@@ -39,14 +41,16 @@ export const projects: ProjectData[] = [
   {
     id: "1",
     slug: "craftapp",
-    title: "CraftOS Mobile: Field Productivity",
-    description: "Designed a dedicated mobile application for field technicians (Monteurs) to streamline task documentation and installation processes.",
+    title: "CraftApp",
+    description: "A conversational mobile app for solar installation workers that took first-time-correct rates from 65% to 95%.",
     statusBadge: "Shipped & Highly Adopted",
     role: "UX/UI Designer",
-    year: "2021—2024",
-    platform: "iOS / Android",
+    company: "Enpal",
+    type: "Case study",
+    year: "2022",
+    platform: "Android",
     imageColor: "#e5e7eb",
-    imageSrc: "/card1.jpg",
+    imageSrc: "/craftapp/banner-craftapp.png",
     content: {
       problem: "Technicians needed a way to document complex installations quickly without losing focus on the physical task.",
       solution: "Noodled on a simplified UI optimized for one-handed, on-the-go usage. Leveraged user research to identify and eliminate friction in the documentation flow.",
@@ -145,61 +149,17 @@ export const projects: ProjectData[] = [
     id: "2",
     slug: "route-planner",
     title: "Route Planner",
-    description: "A route planning tool designed to simplify complex logistics and navigation for field teams.",
-    statusBadge: "In Progress",
-    role: "Product Designer",
+    description: "Coming Soon",
+    role: "UX/UI Designer",
+    company: "Enpal",
+    type: "Case study",
     year: "2024",
-    platform: "Web",
-    imageColor: "#e5e7eb",
+    imageColor: "#252525",
     content: {
-      problem: "Field teams needed a smarter way to plan and optimize routes across multiple stops.",
-      solution: "Designed an intuitive route planning interface that reduces planning time and improves efficiency.",
-      impact: "Improved route planning efficiency and reduced time spent on logistics coordination.",
+      problem: "",
+      solution: "",
+      impact: "",
     },
   },
-  {
-    id: "3",
-    slug: "figma-make-supabase",
-    title: "Figma Make Supabase",
-    description: "Built the Supabase plugin integration into UI3. It enables faster data binding and prototyping by pulling real data directly from Supabase schemas.",
-    statusBadge: "Internal",
-    role: "Other",
-    year: "2024",
-    imageColor: "#f3f4f6", // lighter gray
-    content: {
-      problem: "Prototyping with realistic data is tedious. Designers typically have to manually copy-paste data from spreadsheets or databases to make their designs look authentic, which leads to outdated prototypes and wasted time.",
-      solution: "Integrated a seamless connection to Supabase directly within the Figma UI. Designers can authenticate, browse their database tables, and drag-and-drop live data onto their design components, establishing a persistent binding.",
-      impact: "The plugin was adopted by over 20,000 teams within the first month. It drastically improved the accuracy of prototypes presented to stakeholders and bridged the gap between design and development data models.",
-    }
-  },
-  {
-    id: "3",
-    slug: "first-draft-relaunch",
-    title: "First Draft relaunch",
-    description: "Revamping the initial generation steps for AI workflows, establishing robust patterns mapped perfectly to LLM latency constraints.",
-    statusBadge: "Internal",
-    role: "Other",
-    year: "2024",
-    imageColor: "#c4b5fd", // light purple placeholder
-    content: {
-      problem: "Users experienced frustration when waiting for AI generations to complete, often abandoning the workflow due to lack of feedback and unpredictable wait times associated with LLM latency.",
-      solution: "Redesigned the entire 'First Draft' experience to include progressive disclosure of the generation process. We implemented skeletons, progressive rendering, and interactive loading states that kept the user engaged while the LLM processed.",
-      impact: "User drop-off during the generation phase decreased by 65%. The perceived latency was significantly reduced, resulting in a higher completion rate and better overall user satisfaction with the AI toolset.",
-    }
-  },
-  {
-    id: "4",
-    slug: "notifications",
-    title: "Notifications",
-    description: "Introducing granular notification channels and cross-device syncing rules to give users maximum control over interruption factors.",
-    statusBadge: "Internal",
-    role: "Other",
-    year: "2024",
-    imageColor: "#3f6212", // dark green placeholder
-    content: {
-      problem: "Our users were feeling overwhelmed by an unpredictable barrage of notifications across desktop, web, and mobile, leading to 'notification fatigue' and users turning off alerts altogether.",
-      solution: "Introduced a comprehensive notification settings hub, allowing users to define 'focus hours', batch notifications, and set specific routing rules (e.g., 'only ping my phone for direct mentions'). We also implemented smart cross-device silencing.",
-      impact: "Engagement with critical notifications increased by 30%, while overall notification volume sent dropped by 45%. User sentiment around the platform's respect for their attention improved markedly in post-release surveys.",
-    }
-  },
 ];
+

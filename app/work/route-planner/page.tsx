@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Linkedin, Mail } from "lucide-react";
 import Image from "next/image";
+import { AdminEditMode } from "@/components/AdminEditMode";
 import { ImageLightbox } from "@/components/ImageLightbox";
 
 export default function RoutePlannerCaseStudy() {
@@ -409,6 +410,7 @@ export default function RoutePlannerCaseStudy() {
           </div>
         </div>
       </footer>
+      <AdminEditMode />
     </div>
   );
 }
