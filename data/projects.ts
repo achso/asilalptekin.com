@@ -143,6 +143,22 @@ export const projects: ProjectData[] = [
   },
   {
     id: "2",
+    slug: "route-planner",
+    title: "Route Planner",
+    description: "A route planning tool designed to simplify complex logistics and navigation for field teams.",
+    statusBadge: "In Progress",
+    role: "Product Designer",
+    year: "2024",
+    platform: "Web",
+    imageColor: "#e5e7eb",
+    content: {
+      problem: "Field teams needed a smarter way to plan and optimize routes across multiple stops.",
+      solution: "Designed an intuitive route planning interface that reduces planning time and improves efficiency.",
+      impact: "Improved route planning efficiency and reduced time spent on logistics coordination.",
+    },
+  },
+  {
+    id: "3",
     slug: "figma-make-supabase",
     title: "Figma Make Supabase",
     description: "Built the Supabase plugin integration into UI3. It enables faster data binding and prototyping by pulling real data directly from Supabase schemas.",
