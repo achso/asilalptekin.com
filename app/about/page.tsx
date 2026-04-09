@@ -76,27 +76,27 @@ export default function AboutPage() {
           {/* Section content (8 cols) */}
           <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-16">
             <div className="flex flex-col gap-4">
+              <h3 className="text-[18px] font-[900] text-black uppercase tracking-wider">Complexity at Scale</h3>
+              <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
+                I specialize in designing the hidden operating systems that power physical industries. From Sales OS to CraftOS, I turn deep operational bottlenecks into fluid, consumer-grade SaaS tools that recovered millions in revenue.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4">
               <h3 className="text-[18px] font-[900] text-black uppercase tracking-wider">Workshop Facilitation</h3>
               <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                I bring stakeholders and engineers to align on complex problems. I ensure we&apos;re solving the right problems before we open Figma.
+                I bridge the gap between office assumptions and field realities. By facilitating workshops with engineers, QMs, and technicians, I ensure we&apos;re solving the right compliance loops before a single pixel is drawn.
               </p>
             </div>
             <div className="flex flex-col gap-4">
               <h3 className="text-[18px] font-[900] text-black uppercase tracking-wider">Flow Architecture</h3>
               <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                I translate dense workflows into clear, structural flow diagrams that build the foundation for fluid, consumer-grade experiences.
+                I translate messy, multi-step manual processes into intuitive, non-blocking flow diagrams. My focus is on the &quot;Rooftop Reality&quot;—building mobile interfaces optimized for one-handed use in high-glare environments.
               </p>
             </div>
             <div className="flex flex-col gap-4">
-              <h3 className="text-[18px] font-[900] text-black uppercase tracking-wider">User Research</h3>
+              <h3 className="text-[18px] font-[900] text-black uppercase tracking-wider">Technical Empathy</h3>
               <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                I go into the field to observe users and validate assumptions. Real insights drive my design decisions to ensure we&apos;re building the right tools.
-              </p>
-            </div>
-            <div className="flex flex-col gap-4">
-              <h3 className="text-[18px] font-[900] text-black uppercase tracking-wider">Design Systems</h3>
-              <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                I build and maintain living design systems that enable teams to ship fast while maintaining a high bar for visual and functional consistency.
+                With a background in Full Stack development, I build design systems that speak the language of engineering. I bridge the divide between Figma and production, ensuring design integrity survives the build.
               </p>
             </div>
           </div>
