@@ -193,8 +193,8 @@ export default function CraftAppCaseStudy() {
         <div className={`${container} flex flex-col gap-10 md:gap-14`}>
           {/* Problem Statement block */}
           <div className="flex flex-col gap-4">
-            <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95 opacity-60">Problem statement</p>
-            <p className="font-sans font-medium text-[20px] md:text-[28px] text-white/90 leading-[1.4] tracking-tight">
+            <p className="font-sans font-extrabold text-[15px] md:text-[16px] text-white/50 uppercase tracking-wider">Problem statement</p>
+            <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
               EMG installation technicians were completing high-quality work but failing to get it approved on the first try. The tools they had were built for desks, not rooftops. Documentation moved to 3rd party tools because that is what actually worked. The approval chain was invisible, and the FTC rate showed it.
             </p>
           </div>
@@ -413,11 +413,23 @@ export default function CraftAppCaseStudy() {
               </p>
             </div>
           </div>
-          <ImageLightbox src="/craftapp/onboarding.png" alt="Onboarding screens">
-            <div className="w-full h-[260px] md:h-[403px] rounded-[8px] overflow-hidden relative">
-              <Image src="/craftapp/onboarding.png" alt="Onboarding screens" fill className="object-cover" />
+          {/* Onboarding carousel — mobile scroll, desktop grid */}
+          <div className="md:hidden -mx-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
+            <div className="flex gap-4 px-4 w-[200%] sm:w-[150%] h-[400px] snap-start">
+              <ImageLightbox src="/craftapp/onboarding.png" alt="Onboarding screens">
+                <div className="w-full h-full rounded-[8px] overflow-hidden relative">
+                  <Image src="/craftapp/onboarding.png" alt="Onboarding screens" fill className="object-cover" />
+                </div>
+              </ImageLightbox>
             </div>
-          </ImageLightbox>
+          </div>
+          <div className="hidden md:block">
+            <ImageLightbox src="/craftapp/onboarding.png" alt="Onboarding screens">
+              <div className="w-full h-[403px] rounded-[8px] overflow-hidden relative">
+                <Image src="/craftapp/onboarding.png" alt="Onboarding screens" fill className="object-cover" />
+              </div>
+            </ImageLightbox>
+          </div>
         </div>
       </section>
 

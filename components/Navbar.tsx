@@ -15,10 +15,13 @@ export function Navbar() {
   const isAboutActive = pathname === "/about";
 
   return (
-    <nav className="sticky top-0 z-50 w-full pt-8 px-8 pb-8 flex items-center justify-between transition-colors duration-300">
+    <nav className="sticky top-0 z-50 w-full pt-6 md:pt-8 px-8 pb-8 flex items-center justify-between transition-all duration-300">
       {/* Premium Multi-Layer Gradient Blur */}
       <ProgressiveBlur />
       
+      {/* Subtle global backdrop to ensure dark text visibility on dark sections */}
+      <div className="absolute inset-x-0 top-0 h-full bg-background/20 backdrop-blur-[4px] pointer-events-none" />
+
       <div className="relative flex items-center justify-between w-full">
         <Link href="/"
           className="w-12 h-12 rounded-full bg-foreground flex items-center justify-center text-background font-[800] text-3xl hover:scale-105 transition-transform shrink-0 shadow-lg"
@@ -28,10 +31,10 @@ export function Navbar() {
         </Link>
         {/* Desktop Menu (> 820px) */}
         <div className="hidden min-[821px]:flex items-center gap-2 text-[18px] font-[700] leading-[27px]">
-          <Link href="/" className={`${isWorkActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>Work</Link>
-          {/* <Link href="/fun" className={`${isFunActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>Fun</Link> */}
-          <Link href="/about" className={`${isAboutActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full`}>About</Link>
-          <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" className="text-black/45 hover:text-[#0c6747] hover:bg-[#0c6747]/10 transition-all duration-[600ms] px-4 py-2 rounded-full">Resume</a>
+          <Link href="/" className={`${isWorkActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/60 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full backdrop-blur-sm`}>Work</Link>
+          {/* <Link href="/fun" className={`${isFunActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/60 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full backdrop-blur-sm`}>Fun</Link> */}
+          <Link href="/about" className={`${isAboutActive ? 'text-[#0c6747] bg-[#0c6747]/10' : 'text-black/60 hover:text-[#0c6747] hover:bg-[#0c6747]/10'} transition-all duration-[600ms] px-4 py-2 rounded-full backdrop-blur-sm`}>About</Link>
+          <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" className="text-black/60 hover:text-[#0c6747] hover:bg-[#0c6747]/10 transition-all duration-[600ms] px-4 py-2 rounded-full backdrop-blur-sm">Resume</a>
         </div>
 
         {/* Mobile/Tablet Menu Toggle (<= 820px) */}
