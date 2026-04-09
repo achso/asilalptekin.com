@@ -55,7 +55,7 @@ export default function CraftAppCaseStudy() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-row lg:flex-col gap-8 lg:gap-5 lg:w-[180px] shrink-0">
+            <div className="grid grid-cols-2 lg:flex lg:flex-col gap-y-10 gap-x-6 md:gap-8 lg:gap-5 lg:w-[180px] shrink-0">
               <div>
                 <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Role</p>
                 <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Foundational designer, end to end</p>
