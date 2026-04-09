@@ -119,14 +119,13 @@ export default function AboutPage() {
           </div>
           {/* Section content (8 cols) */}
           <div className="md:col-span-8 flex flex-col gap-16">
-            {/* FIGMA Pattern Experience entries */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-8">
               <span className="text-[18px] font-[900] text-black whitespace-nowrap uppercase tracking-wider">2021&ndash;Now</span>
               <div className="sm:col-span-3 flex flex-col gap-2">
                 <h3 className="text-[20px] font-[900] text-black">Enpal</h3>
                 <p className="text-[18px] font-[600] text-[#212529]/40 mb-2 italic">Senior Product Designer</p>
                 <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                  Designing the Sales OS to optimize sales workflows and CraftOS to improve field team performance and simplify installation documentation.
+                  Designing the backbone of Germany&apos;s leading solar platform. Created Sales OS to optimize customer acquisition and CraftOS to fix the multi-million euro compliance gap between rooftops and the home office by streamlining field documentation.
                 </p>
               </div>
             </div>
@@ -137,7 +136,7 @@ export default function AboutPage() {
                 <h3 className="text-[20px] font-[900] text-black">Skill Yoga</h3>
                 <p className="text-[18px] font-[600] text-[#212529]/40 mb-2 italic">UX/UI Designer</p>
                 <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                  Focused on building better onboarding flows and applying user research to mobile application architecture.
+                  Streamlined the mobile onboarding logic for a global health-tech platform. Worked at the intersection of architecture and user research to reduce friction and build a foundational design system from the ground up.
                 </p>
               </div>
             </div>
@@ -145,10 +144,10 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-8">
               <span className="text-[18px] font-[900] text-black whitespace-nowrap uppercase tracking-wider">2019&ndash;2020</span>
               <div className="sm:col-span-3 flex flex-col gap-2">
-                <h3 className="text-[20px] font-[900] text-black">Urban AR Productions</h3>
+                <h3 className="text-[20px] font-[900] text-black">Urban AR</h3>
                 <p className="text-[18px] font-[600] text-[#212529]/40 mb-2 italic">UX/UI Designer</p>
                 <p className="text-[18px] font-[600] text-[#212529]/50 leading-[1.6]">
-                  Interaction design for augmented reality audio stories. Conducted stakeholder sessions to define audience and core assignment.
+                  Defined the interaction models for AR-driven storytelling. Transformed complex stakeholder visions into &quot;Karla,&quot; a spatial audio experience that connects physical history with digital interfaces.
                 </p>
               </div>
             </div>
