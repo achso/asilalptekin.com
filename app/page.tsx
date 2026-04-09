@@ -4,7 +4,7 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { HeroSlider } from "@/components/HeroSlider";
 import { projects } from "@/data/projects";
 import { Navbar } from "@/components/Navbar";
-import { Linkedin } from "lucide-react";
+import { Linkedin, Mail } from "lucide-react";
 
 export default function Home() {
   return (
@@ -65,14 +65,13 @@ export default function Home() {
             </div>
             
             <div className="flex flex-wrap gap-x-16 gap-y-6 mt-8 min-[821px]:mt-12">
-              <div>
-                <p className="hero-subtitle">Currently</p>
-                <p className="body-text">SalesOS @ Enpal</p>
-              </div>
-              <div>
-                <p className="hero-subtitle">Previously at</p>
-                <p className="body-text">Craft OS, Enpal</p>
-              </div>
+              <a
+                href="mailto:alptekin.contact@gmail.com"
+                className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground text-background font-bold text-[16px] hover:bg-[#0c6747] transition-all duration-300 transform hover:scale-105 shadow-lg"
+              >
+                <Mail size={18} />
+                <span>Contact me</span>
+              </a>
             </div>
           </div>
 
