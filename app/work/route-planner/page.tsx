@@ -11,8 +11,8 @@ export default function RoutePlannerCaseStudy() {
       <Navbar />
 
       {/* ─── 1. HERO + INTRO ─── */}
-      <section className="w-full bg-[#f0eee9]">
-        <div className={`${container} pt-6 md:pt-8`}>
+      <section className="w-full bg-[#f0eee9] pt-24 md:pt-32">
+        <div className={`${container}`}>
           <div className="w-full aspect-[2/1] rounded-[16px] md:rounded-[24px] overflow-hidden relative">
             <Image src="/route-planner/hero.png" alt="Route Planner hero" fill className="object-cover" priority />
           </div>

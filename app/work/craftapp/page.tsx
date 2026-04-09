@@ -16,9 +16,9 @@ export default function CraftAppCaseStudy() {
       <Navbar />
 
       {/* ─── 1. HERO + INTRO ─── */}
-      <section className="w-full bg-[#f0eee9]">
+      <section className="w-full bg-[#f0eee9] pt-24 md:pt-32">
         {/* Hero image — constrained, sits just below navbar */}
-        <div className={`${container} pt-6 md:pt-8`}>
+        <div className={`${container}`}>
           <div className="w-full aspect-[2/1] rounded-[16px] md:rounded-[24px] overflow-hidden relative">
             <Image src="/craftapp/handheldsplash3.png" alt="CraftApp hero" fill className="object-cover" priority />
           </div>

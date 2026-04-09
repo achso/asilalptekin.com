@@ -8,7 +8,7 @@ export default function AboutPage() {
       <Navbar />
 
       {/* 1. HERO SECTION */}
-      <section className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 pt-12 md:pt-20 pb-24">
+      <section className="max-w-[1200px] mx-auto px-6 md:px-12 lg:px-16 pt-32 md:pt-40 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           
           {/* Left: Portrait Image Placeholder */}

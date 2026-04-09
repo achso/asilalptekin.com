@@ -15,13 +15,13 @@ export function Navbar() {
   const isAboutActive = pathname === "/about";
 
   return (
-    <nav className="fixed top-0 left-0 z-50 w-full pt-6 md:pt-8 px-8 pb-8 flex items-center justify-between transition-all duration-600 ease-[cubic-bezier(0.23,1,0.32,1)]">
+    <nav className="fixed top-0 left-0 z-50 w-full pt-4 md:pt-6 px-4 md:px-8 pb-10 flex items-center justify-between transition-all duration-600 ease-[cubic-bezier(0.23,1,0.32,1)]">
       {/* Premium Multi-Layer Gradient Blur */}
       <ProgressiveBlur />
       
       <div className="relative flex items-center justify-between w-full">
         <Link href="/"
-          className="w-12 h-12 rounded-full bg-black flex items-center justify-center text-white font-[800] text-3xl hover:scale-105 transition-transform shrink-0 shadow-lg"
+          className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-[800] text-2xl hover:scale-105 transition-transform shrink-0 shadow-lg"
           style={{ fontFamily: "var(--font-script)" }}
         >
           A.
@@ -55,21 +55,21 @@ export function Navbar() {
             animate={{ height: "100dvh", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            className="fixed top-0 left-0 w-full flex flex-col items-end pt-32 pb-12 px-8 gap-4 min-[821px]:hidden z-40 bg-white/95 backdrop-blur-xl overflow-hidden"
+            className="fixed top-0 left-0 w-full flex flex-col items-end pt-32 pb-12 px-4 gap-4 min-[821px]:hidden z-40 bg-transparent backdrop-blur-xl overflow-hidden"
           >
             {/* The "Work" link with her massive signature pill background */}
             <Link 
               href="/" 
               onClick={() => setIsMenuOpen(false)} 
-              className={`w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isWorkActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}
+              className={`w-full text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isWorkActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}
             >
               Work
             </Link>
-            {/* <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isFunActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}>Fun</Link> */}
+            {/* <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-full text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isFunActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}>Fun</Link> */}
             <Link 
               href="/about" 
               onClick={() => setIsMenuOpen(false)} 
-              className={`w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isAboutActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}
+              className={`w-full text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isAboutActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}
             >
               About
             </Link>
@@ -78,7 +78,7 @@ export function Navbar() {
               target="_blank" 
               rel="noopener noreferrer" 
               onClick={() => setIsMenuOpen(false)} 
-              className="w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60"
+              className="w-full text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60"
             >
               Resume
             </a>

@@ -11,7 +11,7 @@ export default function Home() {
     <div className="min-h-screen w-full flex flex-col">
       <Navbar />
       {/* Hero Section */}
-      <div className="py-8 px-8 w-full relative overflow-hidden">
+      <div className="pt-32 pb-8 px-8 w-full relative overflow-hidden">
         {/* Localized dotted background pattern for Hero only */}
         <div 
           className="absolute inset-0 z-[-1] pointer-events-none opacity-80" 
