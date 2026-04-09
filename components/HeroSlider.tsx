@@ -35,22 +35,28 @@ export function HeroSlider() {
   }, []);
 
   return (
-    <div className="relative mt-3 grid [grid-template-areas:'stack'] overflow-hidden h-[120px] lg:h-[160px]">
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.div
-          key={index}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={transition}
-          className="[grid-area:stack] relative"
-        >
-          <div className="text-black/45 font-[800] text-[48px] lg:text-[64px] leading-[1.2]">
-            {statements[index]}
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </div>
+    <motion.div 
+      className="relative mt-3 overflow-hidden"
+      animate={{ height: "auto" }}
+      transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+    >
+      <div className="grid [grid-template-areas:'stack']">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={index}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={transition}
+            className="[grid-area:stack] relative"
+          >
+            <div className="text-black/45 font-[800] text-[48px] lg:text-[64px] leading-[1.2]">
+              {statements[index]}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
