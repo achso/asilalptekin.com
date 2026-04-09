@@ -39,28 +39,49 @@ export function Navbar() {
           <button
             aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-[#898989] hover:text-black transition-all duration-[600ms] ease-in-out w-12 h-12 rounded-full flex items-center justify-center"
+            className="text-[#898989] hover:text-black transition-all duration-[600ms] ease-in-out w-12 h-12 rounded-full flex items-center justify-center -mr-2"
           >
-            {/* Tammy's menu remains a hamburger even when open */}
+            {/* Tammy's menu icon is a simple hamburger that persists */}
             <Menu className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      {/* Mobile Expansion (Top-down) */}
+      {/* Mobile Expansion (Top-down, Full-width Integrated) */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
+            animate={{ height: "100dvh", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            className="fixed top-0 left-0 w-full pt-24 pb-12 px-8 flex flex-col items-end gap-2 min-[821px]:hidden z-40 bg-white/95 backdrop-blur-xl overflow-hidden border-b border-white/10 shadow-lg"
+            className="fixed top-0 left-0 w-full flex flex-col items-end pt-32 pb-12 px-8 gap-4 min-[821px]:hidden z-40 bg-white/95 backdrop-blur-xl overflow-hidden"
           >
-            <Link href="/" onClick={() => setIsMenuOpen(false)} className={`w-fit text-right ${isWorkActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Work</Link>
-            {/* <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-fit text-right ${isFunActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Fun</Link> */}
-            <Link href="/about" onClick={() => setIsMenuOpen(false)} className={`w-fit text-right ${isAboutActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>About</Link>
-            <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="w-fit text-right text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60 transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]">Resume</a>
+            {/* The "Work" link with her massive signature pill background */}
+            <Link 
+              href="/" 
+              onClick={() => setIsMenuOpen(false)} 
+              className={`w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isWorkActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}
+            >
+              Work
+            </Link>
+            {/* <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isFunActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}>Fun</Link> */}
+            <Link 
+              href="/about" 
+              onClick={() => setIsMenuOpen(false)} 
+              className={`w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out ${isAboutActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'}`}
+            >
+              About
+            </Link>
+            <a 
+              href="/asil_alptekin_resume.pdf" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              onClick={() => setIsMenuOpen(false)} 
+              className="w-[calc(100%-16px)] text-right px-6 py-4 rounded-[20px] text-[20px] font-[700] leading-none transition-all duration-[600ms] ease-in-out text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60"
+            >
+              Resume
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
