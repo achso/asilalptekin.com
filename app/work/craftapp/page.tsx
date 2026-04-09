@@ -414,13 +414,17 @@ export default function CraftAppCaseStudy() {
             </div>
           </div>
           {/* Onboarding carousel — mobile scroll, desktop grid */}
-          <div className="md:hidden -mx-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
-            <div className="flex gap-4 px-4 w-[200%] sm:w-[150%] h-[400px] snap-start">
-              <ImageLightbox src="/craftapp/onboarding.png" alt="Onboarding screens">
-                <div className="w-full h-full rounded-[8px] overflow-hidden relative">
-                  <Image src="/craftapp/onboarding.png" alt="Onboarding screens" fill className="object-cover" />
-                </div>
-              </ImageLightbox>
+          <div className="md:hidden -mx-4 overflow-x-auto pb-6 scrollbar-hide snap-x px-4">
+            <div className="flex gap-4 w-fit h-[300px] md:h-[400px]">
+              <div className="snap-start shrink-0 relative h-full aspect-[1960/806]">
+                <ImageLightbox src="/craftapp/onboarding.png" alt="Onboarding screens">
+                  <div className="w-full h-full rounded-[8px] overflow-hidden relative">
+                    <Image src="/craftapp/onboarding.png" alt="Onboarding screens" fill className="object-contain" />
+                  </div>
+                </ImageLightbox>
+              </div>
+              {/* Spacer to ensure right-side padding works when scrolled to end */}
+              <div className="w-8 shrink-0" />
             </div>
           </div>
           <div className="hidden md:block">
