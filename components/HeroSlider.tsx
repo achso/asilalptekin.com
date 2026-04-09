@@ -51,7 +51,7 @@ export function HeroSlider() {
             transition={transition}
             className="[grid-area:stack] relative"
           >
-            <div className="text-black/45 font-[800] text-[36px] sm:text-[48px] lg:text-[64px] leading-[1.2]">
+            <div className="text-black/45 font-[800] text-[40px] sm:text-[48px] lg:text-[64px] leading-[1.2]">
               {statements[index]}
             </div>
           </motion.div>
