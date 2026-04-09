@@ -39,27 +39,28 @@ export function Navbar() {
           <button
             aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60 transition-all duration-[600ms] ease-in-out w-12 h-12 rounded-full flex items-center justify-center"
+            className="text-[#898989] hover:text-black transition-all duration-[600ms] ease-in-out w-12 h-12 rounded-full flex items-center justify-center"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {/* Tammy's menu remains a hamburger even when open */}
+            <Menu className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      {/* Mobile Dropdown Options */}
+      {/* Mobile Expansion (Top-down) */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="absolute top-24 left-8 right-8 flex flex-col items-end gap-2 min-[821px]:hidden z-40 bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/10"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+            className="fixed top-0 left-0 w-full pt-24 pb-12 px-8 flex flex-col items-end gap-2 min-[821px]:hidden z-40 bg-white/95 backdrop-blur-xl overflow-hidden border-b border-white/10 shadow-lg"
           >
-            <Link href="/" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isWorkActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Work</Link>
-            {/* <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isFunActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Fun</Link> */}
-            <Link href="/about" onClick={() => setIsMenuOpen(false)} className={`w-full text-right ${isAboutActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>About</Link>
-            <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="w-full text-right text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60 transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]">Resume</a>
+            <Link href="/" onClick={() => setIsMenuOpen(false)} className={`w-fit text-right ${isWorkActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Work</Link>
+            {/* <Link href="/fun" onClick={() => setIsMenuOpen(false)} className={`w-fit text-right ${isFunActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>Fun</Link> */}
+            <Link href="/about" onClick={() => setIsMenuOpen(false)} className={`w-fit text-right ${isAboutActive ? 'text-black bg-[#c8c8c8]/60' : 'text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60'} transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]`}>About</Link>
+            <a href="/asil_alptekin_resume.pdf" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="w-fit text-right text-[#898989] hover:text-black hover:bg-[#c8c8c8]/60 transition-all duration-[600ms] ease-in-out px-4 py-2 rounded-full text-[18px] font-[700] leading-[27px]">Resume</a>
           </motion.div>
         )}
       </AnimatePresence>
