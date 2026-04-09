@@ -384,27 +384,27 @@ export default function RoutePlannerCaseStudy() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="w-full bg-[#252525] border-t border-white/10 p-8">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="font-sans font-medium text-[16px] text-white">
-            © 2026 · made with love on antigravity for first time :)
+      <footer className="w-full bg-[#252525] border-t border-white/10 p-10 md:p-14">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+          <p className="font-sans font-medium text-[14px] text-white opacity-40 uppercase tracking-widest">
+            © 2026 Asil Alptekin
           </p>
-          <div className="flex items-center gap-6">
-            <a
-              href="https://www.linkedin.com/in/asil-alptekin/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-white/70 transition-colors"
+          <div className="flex items-center gap-4">
+            <a 
+              href="https://www.linkedin.com/in/asil-alptekin/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 text-white hover:bg-white/10 transition-all duration-300 transform hover:scale-110 border border-white/10"
               aria-label="LinkedIn"
             >
-              <Linkedin size={20} fill="currentColor" />
+              <Linkedin size={20} strokeWidth={1.5} />
             </a>
-            <a
-              href="mailto:alptekin.contact@gmail.com"
-              className="text-white hover:text-white/70 transition-colors"
+            <a 
+              href="mailto:alptekin.contact@gmail.com" 
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 text-white hover:bg-white/10 transition-all duration-300 transform hover:scale-110 border border-white/10"
               aria-label="Email"
             >
-              <Mail size={20} fill="currentColor" />
+              <Mail size={20} strokeWidth={1.5} />
             </a>
           </div>
         </div>

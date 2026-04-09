@@ -1,9 +1,10 @@
 import { Navbar } from "@/components/Navbar";
 import Image from "next/image";
+import { Linkedin, Mail } from "lucide-react";
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen w-full bg-[#F4F4F0] text-zinc-950 font-sans selection:bg-black selection:text-white pb-32">
+    <div className="min-h-screen w-full bg-[#F4F4F0] text-zinc-950 font-sans selection:bg-black selection:text-white">
       <Navbar />
 
       {/* 1. HERO SECTION */}
@@ -232,6 +233,28 @@ export default function AboutPage() {
           </div>
       </section>
 
+      {/* FOOTER */}
+      <footer className="mt-20 px-8 py-10 w-full border-t border-black/5 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground font-medium uppercase tracking-wider">
+        <p>© 2026 Asil Alptekin</p>
+        <div className="flex gap-4 mt-4 sm:mt-0">
+          <a
+            href="https://www.linkedin.com/in/asil-alptekin/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background hover:bg-[#0c6747] transition-all duration-300 transform hover:scale-110 shadow-sm"
+          >
+            <Linkedin size={18} strokeWidth={2} />
+          </a>
+          <a
+            href="mailto:alptekin.contact@gmail.com"
+            aria-label="Email"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-foreground text-background hover:bg-[#0c6747] transition-all duration-300 transform hover:scale-110 shadow-sm"
+          >
+            <Mail size={18} strokeWidth={2} />
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
