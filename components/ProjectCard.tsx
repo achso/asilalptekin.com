@@ -5,14 +5,13 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 export function ProjectCard({ project }: { project: ProjectData }) {
-  return (
-    <Link href={`/work/${project.slug}`} className="block">
-      <motion.div
-        className="project-card flex flex-col gap-6"
-        initial="rest"
-        whileHover="hover"
-        animate="rest"
-      >
+  const CardContent = (
+    <motion.div
+      className={`project-card flex flex-col gap-6 ${project.isComingSoon ? 'cursor-default' : 'cursor-pointer'}`}
+      initial="rest"
+      whileHover={project.isComingSoon ? "rest" : "hover"}
+      animate="rest"
+    >
       {/* Image Frame Container */}
       <motion.div
         className="relative w-full overflow-hidden rounded-[12px] aspect-[16/10]"
@@ -55,7 +54,16 @@ export function ProjectCard({ project }: { project: ProjectData }) {
           {!project.company && !project.type && !project.role && null}
         </div>
       </div>
-      </motion.div>
+    </motion.div>
+  );
+
+  if (project.isComingSoon) {
+    return <div className="block">{CardContent}</div>;
+  }
+
+  return (
+    <Link href={`/work/${project.slug}`} className="block">
+      {CardContent}
     </Link>
   );
 }

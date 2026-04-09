@@ -35,6 +35,7 @@ export interface ProjectData {
     accessibilityNote?: string;
     makerNotes?: { title: string; text: string }[];
   };
+  isComingSoon?: boolean;
 }
 
 export const projects: ProjectData[] = [
@@ -50,7 +51,7 @@ export const projects: ProjectData[] = [
     year: "2022",
     platform: "Android",
     imageColor: "#e5e7eb",
-    imageSrc: "/craftapp/banner-craftapp.png",
+    imageSrc: "/craftapp/handheldsplash3.png",
     content: {
       problem: "Technicians needed a way to document complex installations quickly without losing focus on the physical task.",
       solution: "Noodled on a simplified UI optimized for one-handed, on-the-go usage. Leveraged user research to identify and eliminate friction in the documentation flow.",
@@ -155,6 +156,7 @@ export const projects: ProjectData[] = [
     type: "Case study",
     year: "2024",
     imageColor: "#252525",
+    isComingSoon: true,
     content: {
       problem: "",
       solution: "",

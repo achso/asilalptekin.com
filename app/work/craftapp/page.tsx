@@ -79,7 +79,7 @@ export default function CraftAppCaseStudy() {
 
       {/* ─── 2. FULL-WIDTH IMAGE ─── */}
       <div className="w-full aspect-[3538/1280] relative overflow-hidden mb-[-16px]" style={{ clipPath: "inset(0 0 16px 0)" }}>
-        <Image src="/craftapp/hero2.png" alt="CraftApp in context" fill className="object-contain" />
+        <Image src="/craftapp/panocraft1-Recovered.png" alt="CraftApp panoramic view" fill className="object-cover" />
       </div>
 
       {/* ─── 3. DESIGN BRIEF ─── #252525 */}
