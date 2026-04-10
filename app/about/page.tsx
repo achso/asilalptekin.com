@@ -2,6 +2,7 @@
 
 import { Navbar } from "@/components/Navbar";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Linkedin, Mail } from "lucide-react";
 import { MarqueeGallery } from "@/components/MarqueeGallery";
 
@@ -13,10 +14,15 @@ export default function AboutPage() {
       <Navbar />
 
       {/* 1. HERO SECTION */}
-      <section className="pt-32 md:pt-48 pb-20">
+      <section className="pt-32 md:pt-48 pb-20 overflow-hidden">
         <div className={containerClass}>
           {/* Left: Portrait (4 cols) */}
-          <div className="md:col-span-4 mb-10 md:mb-0">
+          <motion.div 
+            className="md:col-span-4 mb-10 md:mb-0"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="w-full aspect-[4/5] md:aspect-[3/4] rounded-[20px] overflow-hidden relative shadow-sm bg-zinc-200">
                <Image 
                   src="/avatar4.png" 
@@ -26,10 +32,15 @@ export default function AboutPage() {
                   priority 
                />
             </div>
-          </div>
+          </motion.div>
 
           {/* Right: Intro (8 cols) */}
-          <div className="md:col-span-8 flex flex-col gap-8 md:pt-4">
+          <motion.div 
+            className="md:col-span-8 flex flex-col gap-8 md:pt-4"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          >
             <div className="flex flex-col gap-6">
               <h1 className="text-[64px] md:text-[80px] lg:text-[100px] leading-[0.85] tracking-[-0.02em] text-foreground">
                 <span className="block font-[700] italic" style={{ fontFamily: "var(--font-script)" }}>
@@ -59,7 +70,7 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
