@@ -6,12 +6,6 @@ import { Pencil, X, Save, Copy, Check, AlertCircle, Loader2 } from "lucide-react
 // ─── Dev-only guard ───────────────────────────────────────────────────────────
 // process.env.NODE_ENV is replaced at build time by Next.js.
 // In production builds this component returns null immediately.
-if (process.env.NODE_ENV !== "development") {
-  // eslint-disable-next-line import/no-anonymous-default-export
-  const Noop = () => null;
-  Noop.displayName = "AdminEditMode";
-  module.exports = { AdminEditMode: Noop };
-}
 
 interface ChangeEntry {
   original: string;
