@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-const imageCount = 10;
+const imageCount = 11;
 const galleryImages = Array.from({ length: imageCount }, (_, i) => `/about/gallery/${i + 1}.jpg`);
 
 // Double the images for a seamless loop
@@ -15,7 +15,7 @@ export const MarqueeGallery = () => {
       <motion.div
         className="flex gap-0 whitespace-nowrap"
         animate={{
-          x: [0, -4500], // 10 images * 450px width = 4500px
+          x: [0, -4950], // 11 images * 450px width = 4950px
         }}
         transition={{
           x: {
