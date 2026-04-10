@@ -119,8 +119,7 @@ export default function Home() {
             <div key={project.id} className="overflow-hidden">
               <motion.div
                 initial={{ opacity: 0, y: "100%" }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ 
                   duration: 1, 
                   ease: [0.25, 0.1, 0.25, 1], 
