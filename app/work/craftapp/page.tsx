@@ -796,9 +796,17 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 19. RESULTS ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
-        <div className={`${container} flex flex-col gap-10 md:gap-14`}>
+      <section className="w-full bg-[#f0eee9] pt-16 md:pt-[80px]">
+        <div className={`${container} mb-10`}>
           <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Results</p>
+        </div>
+
+        {/* Full-width Banner */}
+        <div className="w-full aspect-[6600/2160] relative overflow-hidden mb-10 md:mb-14">
+          <Image src="/craftapp/resultbanner.png" alt="CraftApp results banner" fill className="object-cover" />
+        </div>
+
+        <div className={`${container} flex flex-col gap-10 md:gap-14 pb-16 md:pb-[80px]`}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {[
               { stat: "65% → 95%", label: "First-time-correct rate helped more appointments being fulfilled" },
