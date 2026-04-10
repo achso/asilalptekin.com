@@ -11,17 +11,17 @@ const images = [...galleryImages, ...galleryImages];
 
 export const MarqueeGallery = () => {
   return (
-    <div className="w-full overflow-hidden bg-[#f1f1f1] py-20 my-10 border-y border-border/50">
+    <div className="w-full overflow-hidden bg-background py-0 my-0 border-y border-black/5">
       <motion.div
-        className="flex gap-8 whitespace-nowrap"
+        className="flex gap-0 whitespace-nowrap"
         animate={{
-          x: [0, -1000],
+          x: [0, -3600], // 8 images * 450px width = 3600px
         }}
         transition={{
           x: {
             repeat: Infinity,
             repeatType: "loop",
-            duration: 30,
+            duration: 40,
             ease: "linear",
           },
         }}
@@ -29,7 +29,7 @@ export const MarqueeGallery = () => {
         {images.map((img, idx) => (
           <div
             key={idx}
-            className="relative w-[300px] md:w-[450px] aspect-[4/3] shrink-0 rounded-[12px] overflow-hidden shadow-sm"
+            className="relative w-[300px] md:w-[450px] aspect-[4/3] shrink-0 overflow-hidden"
           >
             <Image
               src={img}
