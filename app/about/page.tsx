@@ -9,7 +9,7 @@ const containerClass = "max-w-[1376px] mx-auto px-6 md:px-12 grid grid-cols-1 md
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen w-full bg-[#f1f1f1] text-[#212529] font-sans selection:bg-black selection:text-white">
+    <div id="editable-content" className="min-h-screen w-full bg-[#f1f1f1] text-[#212529] font-sans selection:bg-black selection:text-white">
       <Navbar />
 
       {/* 1. HERO SECTION */}

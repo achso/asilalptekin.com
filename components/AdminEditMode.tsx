@@ -40,7 +40,7 @@ export function AdminEditMode() {
     originals.current.clear();
 
     document
-      .querySelectorAll("#craft-content p, #craft-content h1, #craft-content h2, #craft-content h3")
+      .querySelectorAll("#editable-content p, #editable-content h1, #editable-content h2, #editable-content h3")
       .forEach((el) => {
         const html = el as HTMLElement;
         originals.current.set(el, html.innerText);
@@ -79,7 +79,7 @@ export function AdminEditMode() {
   const disableEditing = useCallback(() => {
     setIsEditing(false);
     document
-      .querySelectorAll("#craft-content p, #craft-content h1, #craft-content h2, #craft-content h3")
+      .querySelectorAll("#editable-content p, #editable-content h1, #editable-content h2, #editable-content h3")
       .forEach((el) => {
         const html = el as HTMLElement;
         html.contentEditable = "false";

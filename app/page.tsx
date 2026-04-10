@@ -8,7 +8,7 @@ import { Linkedin, Mail } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen w-full flex flex-col">
+    <div id="editable-content" className="min-h-screen w-full flex flex-col">
       <Navbar />
       {/* Hero Section */}
       <div className="pt-32 pb-8 px-8 w-full relative overflow-hidden">

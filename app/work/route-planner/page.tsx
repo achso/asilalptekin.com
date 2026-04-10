@@ -7,7 +7,7 @@ export default function RoutePlannerCaseStudy() {
   const container = "w-full max-w-[1100px] mx-auto px-4";
 
   return (
-    <div id="craft-content" className="min-h-screen w-full bg-[#f0eee9] text-zinc-950 font-sans selection:bg-black selection:text-white">
+    <div id="editable-content" className="min-h-screen w-full bg-white text-zinc-950 font-sans selection:bg-black selection:text-white">
       <Navbar />
 
       {/* ─── 1. HERO + INTRO ─── */}

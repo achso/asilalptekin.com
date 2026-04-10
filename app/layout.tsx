@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Caveat, Poppins } from "next/font/google";
 import "./globals.css";
 import { BackgroundEffects } from "@/components/BackgroundEffects";
+import { AdminEditMode } from "@/components/AdminEditMode";
 
 const manrope = Manrope({
   variable: "--font-sans",
@@ -32,9 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-<body className={`${manrope.variable} ${caveat.variable} ${poppins.variable} font-sans antialiased bg-background text-[#0c6747]`}>
+      <body className={`${manrope.variable} ${caveat.variable} ${poppins.variable} font-sans antialiased bg-background text-[#0c6747]`}>
         <BackgroundEffects />
         {children}
+        <AdminEditMode />
       </body>
     </html>
   );

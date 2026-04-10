@@ -12,7 +12,7 @@ export default function CraftAppCaseStudy() {
   const container = "w-full max-w-[1100px] mx-auto px-4";
 
   return (
-    <div id="craft-content" className="min-h-screen w-full bg-[#f0eee9] text-zinc-950 font-sans selection:bg-black selection:text-white">
+    <div id="editable-content" className="min-h-screen w-full bg-[#f0eee9] text-zinc-950 font-sans selection:bg-black selection:text-white">
       <Navbar />
 
       {/* ─── 1. HERO + INTRO ─── */}
@@ -38,13 +38,13 @@ export default function CraftAppCaseStudy() {
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
             <div className="flex-1 flex flex-col gap-8">
               <p className="font-sans font-semibold text-[16px] md:text-[18px] text-black/55 leading-[1.7] tracking-[0.18px]">
-                Most tools for field workers are built by people who have never done field work. Before I opened Figma, I drove to Brandenburg and spent a full day on site with the installation teams. I wanted to understand what the job actually felt like. Everything I learned there shaped what I built.
+                Most tools for field workers are built by people who have never done field work. I wanted to understand what the job actually felt like. Before I opened Figma, I drove to Brandenburg and spent a full day on site with the installation teams. Everything I learned there shaped what I built.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="flex flex-col gap-1.5">
                   <p className="font-sans font-extrabold text-[18px] md:text-[20px] text-black/85">The Problem</p>
                   <p className="font-sans font-semibold text-[16px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
-                    As Enpal grew and new technicians were hired, more installations were being rejected before approval. Workers had to return to job sites and redo their documentation. Each callback cost time and money.
+                    As Enpal grew and new technicians were hired, more tasks were being rejected due to QA. Workers had to return to job sites and redo their documentation. Each callback cost time and money.
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -62,7 +62,7 @@ export default function CraftAppCaseStudy() {
               </div>
               <div>
                 <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Team</p>
-                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Senior Director Product, 1 Product Manager, 6+ Engineers</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Senior Director Product, Product Manager, 6+ Engineers</p>
               </div>
               <div>
                 <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Timeline</p>
@@ -100,8 +100,8 @@ export default function CraftAppCaseStudy() {
             <div className="flex-1 flex flex-col gap-8 md:gap-10">
               {[
                 { n: "01", title: "Adoption must be tackled", body: "How do we turn a stressful wait into a live conversation between the field and the office?" },
-                { n: "02", title: "Enviromental factors should be considered", body: "How do we make documenting work feel like a natural part of the job, not something added on top of it?" },
-                { n: "03", title: "Attention on communication", body: "How do we make sure a technician always knows what to do when their submission is rejected, so they can fix it the same day without a second trip?" },
+                { n: "02", title: "Working conditions should be considered", body: "How do we make documenting work feel like a natural part of the job, not something added on top of it?" },
+                { n: "03", title: "Empathetic communication", body: "How do we make sure a technician always knows what to do when their submission is rejected, so they can fix it the same day without a second trip?" },
               ].map(({ n, title, body }) => (
                 <div key={n} className="flex gap-4 md:gap-5 items-start">
                   <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95 shrink-0 w-8">{n}</p>
@@ -126,14 +126,14 @@ export default function CraftAppCaseStudy() {
                 <p className="font-sans font-bold text-[28px] md:text-[36px] text-black/55">process &amp; plan</p>
               </div>
               <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
-                I visited two branches and spent time with the teams on site. The goal was to see how the work actually happened, not confirm what the office already believed.
+                I visited two branches and spent time with the teams on site. The goal was to see how the work actually happened, to validate what the office  believed.
               </p>
             </div>
             <div className="flex-1 flex flex-col gap-8 md:gap-10">
               {[
                 { n: "01", title: "Observatory field visits", body: "I joined installation crews in Brandenburg and Erfurt from early morning until the day was done. I drove to different branches specifically to compare how they operated differently. These visits became the foundation of everything." },
                 { n: "02", title: "Branch & stakeholder interviews", body: "At each branch office I spoke with branch managers and project leads about targets, pressure points, and team structure. The gap between what HQ assumed and what actually happened on the ground was larger than anyone had acknowledged." },
-                { n: "03", title: "Semi-structured interviews", body: "I spoke with teams and quality managers, those are the two people at the centre of this broken loop. With technicians I explored what rejection felt like in practice. With quality managers I focused on how they chose submissions and what happened when clarification was needed. These conversations surfaced things that no internal report had ever captured." },
+                { n: "03", title: "Semi-structured interviews", body: "I spoke with teams and quality managers, those are the two people at the centre of this broken loop. With technicians I explored what rejections were handled in practice. With quality managers I focused on how they chose submissions and what happened when clarification was needed. " },
               ].map(({ n, title, body }) => (
                 <div key={n} className="flex gap-4 md:gap-5 items-start">
                   <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85 shrink-0 w-8">{n}</p>
@@ -175,7 +175,7 @@ export default function CraftAppCaseStudy() {
               {[
                 { title: "\u201cWe just use WhatsApp\u201d", body: "Every branch had built its own network of group chats with project leads. The official tool existed in name only \u2014 workers weren\u2019t resisting it out of laziness. They had already found something that worked better." },
                 { title: "Technicians didn\u2019t know why they were rejected", body: "Quality manager feedback was inconsistent and changed from branch to branch. The same photo could be accepted in one city and rejected in another. Technicians had no reliable signal for what good enough actually meant, and the FTC rate reflected that." },
-                { title: "The team structure in the Airtable was wrong", body: "HQ assumed fixed teams with fixed roles. In practice, technicians moved between crews and electricians worked independently. The app was being built for a company structure that did not exist on any roof." },
+                { title: "The team structure in the Airtable was wrong", body: "HQ assumed fixed teams. In practice, technicians moved between crews and electricians worked independently. The structure was being built for an organization that did not exist on the field." },
                 { title: "QMs were choosing which submissions to review", body: "With all pending submissions visible at once, simpler ones were picked first. Complex work waited, sometimes for hours. Technicians had no idea their job type was the reason for the delay. This became a separate project workstream." },
               ].map(({ title, body }) => (
                 <div key={title} className="flex flex-col gap-1.5">
@@ -212,7 +212,7 @@ export default function CraftAppCaseStudy() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
               {[
                 { n: "HMW 01", title: "Make documentation part of the installation:", body: "How might we make taking photos and logging information feel like a natural step in the work, not something separate that gets in the way?" },
-                { n: "HMW 02", title: "Bring real-time feedback into a compliant system:", body: "Technicians already got fast, clear responses in WhatsApp. How might we give them the same experience inside a system the company could actually rely on?" },
+                { n: "HMW 02", title: "Bring real-time feedback into a compliant system:", body: "How might we give them the experience from messaging services inside a system the company could actually rely on?" },
                 { n: "HMW 03", title: "Make rejection something a technician can act on:", body: "How might we make sure a technician always knows what to do when their submission is rejected, so they can fix it the same day without a second trip?" },
               ].map(({ n, title, body }) => (
                 <div key={n} className="flex flex-col gap-2">
@@ -236,14 +236,14 @@ export default function CraftAppCaseStudy() {
                 <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">that changed the loop</p>
               </div>
               <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
-                The WhatsApp workaround, the inconsistent rejections, and the quiet frustration of skilled work being judged by a checklist all pointed to the same root problem. The approval chain was invisible to everyone inside it.
+                User research revealed that the friction wasn't just technical; it was emotional. Technicians felt judged by a "black box" system, leading them to abandon official channels for the transparency of WhatsApp. To fix the loop, I established three core pillars for the interaction model.
               </p>
             </div>
             <div className="flex-1 flex flex-col gap-8 md:gap-10">
               {[
-                { n: "01", title: "Make approval feel like a conversation", body: "Technicians were already using chat to get things done. The submission screen needed to work the same way. A thread, not a form result. Send a photo, see the status, get a response. No black box." },
-                { n: "02", title: "Build for one hand on a rooftop", body: "Every important action reachable with a single thumb. Every label readable in direct sunlight. Tags replace typing. The camera opens from the task itself, no extra steps needed." },
-                { n: "03", title: "Structured communication", body: "When a photo is rejected, the reviewer's exact message appears in the app. When the technician picks up the camera to retake the shot, those words stay visible on screen. No need to remember anything. Just read and shoot." },
+                { n: "01", title: "Make approval feel like a conversation", body: "Instead of a rigid submission-feedback loop, the UX should mimic the cadence of a conversation. Success meant moving away from \"forms\" and toward a \"thread\" mental model where information flows bi-directionally." },
+                { n: "02", title: "Build for one hand on a rooftop", body: "The interface must respect the environment. I adopted a \"rooftop-first\" philosophy, prioritizing high-contrast legibility and single-thumb ergonomics to reduce the cognitive and physical load of field documentation." },
+                { n: "03", title: "Structured communication", body: "To close the loop efficiently, feedback must be persistent, not ephemeral. My strategy focused on embedding reviewer insights directly into the capture workflow to prevent context-switching." },
               ].map(({ n, title, body }) => (
                 <div key={n} className="flex flex-col gap-1.5">
                   <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{n}</p>
@@ -292,7 +292,7 @@ export default function CraftAppCaseStudy() {
             </div>
             <div className="flex-1">
               <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
-                Mapped to show stakeholders where the experience broke down and where there was room to improve it.
+                I mapped to show stakeholders where the experience broke down and where there was room to improve it.
               </p>
             </div>
           </div>
@@ -322,9 +322,9 @@ export default function CraftAppCaseStudy() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { n: "01", title: "One hand, always", body: "Technicians hold ladders, cables, and tools while checking their phones. Every primary action in the app is reachable with a single thumb. There are no interactions that require two hands." },
-              { n: "02", title: "Readable in direct sunlight", body: "Rooftops in summer are bright and reflective. High-contrast text and large tap targets were not optional extras. They were the baseline for this environment." },
-              { n: "03", title: "No black box moments", body: "The biggest frustration technicians described was not knowing what was happening. Every state in the app has its own clear visual signal. Submitted, in review, approved, rejected. The technician always knows where things stand." },
+              { n: "01", title: "One hand, always", body: "If an action requires two hands, it’s a failure. I optimized for the single thumb to keep the technician’s other hand free for their work." },
+              { n: "02", title: "Readable in direct sunlight", body: "I prioritized high-contrast values and large-scale elements to ensure the UI stays functional in direct, reflective light." },
+              { n: "03", title: "No black box moments", body: "I made sure every action has a clear, immediate response. By surfacing live status signals, I removed the guesswork and \"black box\" frustration from the user experience." },
             ].map(({ n, title, body }) => (
               <div key={n} className="flex flex-col gap-1.5">
                 <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{n}</p>
