@@ -13,15 +13,26 @@ export default function AboutPage() {
     <div id="editable-content" className="min-h-screen w-full bg-background text-foreground font-sans selection:bg-black selection:text-white">
       <Navbar />
 
-      {/* 1. HERO SECTION */}
-      <section className="pt-32 md:pt-48 pb-20">
+      {/* 1. MOBILE MARQUEE (Top of page on mobile only) */}
+      <div className="md:hidden pt-24">
+        <motion.div
+           initial={{ opacity: 0, y: "100%" }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <MarqueeGallery />
+        </motion.div>
+      </div>
+
+      {/* 2. HERO SECTION */}
+      <section className="pt-10 md:pt-48 pb-20">
         <div className={containerClass}>
-          {/* Left: Portrait (4 cols) */}
-          <div className="md:col-span-4 mb-10 md:mb-0 overflow-hidden">
+          {/* Left: Portrait (4 cols) - HIDDEN ON MOBILE */}
+          <div className="hidden md:block md:col-span-4 mb-10 md:mb-0 overflow-hidden">
             <motion.div 
               initial={{ opacity: 0, y: "100%" }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
             >
               <div className="w-full aspect-[4/5] md:aspect-[3/4] rounded-[20px] overflow-hidden relative shadow-sm bg-zinc-200">
                  <Image 
@@ -41,7 +52,7 @@ export default function AboutPage() {
               className="flex flex-col gap-8"
               initial={{ opacity: 0, y: "100%" }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.1 }}
+              transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
             >
               <div className="flex flex-col gap-6">
                 <h1 className="text-[64px] md:text-[80px] lg:text-[100px] leading-[0.85] tracking-[-0.02em] text-foreground">
@@ -49,7 +60,7 @@ export default function AboutPage() {
                     Hello, I&apos;m Asil
                   </span>
                   <span className="text-[18px] md:text-[20px] font-extrabold text-foreground/40 mt-4 block">
-                    (ah-sil Alp-teh-kin)
+                    /ah · seel/
                   </span>
                 </h1>
                 <p className="text-[20px] md:text-[24px] lg:text-[28px] font-semibold text-foreground/60 leading-[1.4] max-w-[700px]">
@@ -77,7 +88,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 2. SUPER POWERS */}
+      {/* 3. SUPER POWERS */}
       <section className="py-24 md:py-32 border-t border-black/5">
         <div className={containerClass}>
           {/* Section title (4 cols) */}
@@ -117,8 +128,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 3. MARQUEE GALLERY (Full Width) */}
-      <section className="w-full">
+      {/* 4. MARQUEE GALLERY (Desktop Only here) */}
+      <section className="hidden md:block w-full">
         <MarqueeGallery />
       </section>
 
