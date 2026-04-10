@@ -801,9 +801,11 @@ export default function CraftAppCaseStudy() {
           <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Results</p>
         </div>
 
-        {/* Full-width Banner */}
-        <div className="w-full aspect-[6600/2160] relative overflow-hidden mb-10 md:mb-14">
-          <Image src="/craftapp/resultbanner.png" alt="CraftApp results banner" fill className="object-cover" />
+        {/* Container-aligned Banner */}
+        <div className={`${container} mb-10 md:mb-14`}>
+          <div className="w-full aspect-[6600/2160] relative overflow-hidden rounded-[8px] md:rounded-[12px]">
+            <Image src="/craftapp/resultbanner.png" alt="CraftApp results banner" fill className="object-cover" />
+          </div>
         </div>
 
         <div className={`${container} flex flex-col gap-10 md:gap-14 pb-16 md:pb-[80px]`}>
