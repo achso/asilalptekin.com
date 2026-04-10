@@ -803,8 +803,8 @@ export default function CraftAppCaseStudy() {
 
         {/* Container-aligned Banner */}
         <div className={`${container} mb-10 md:mb-14`}>
-          <div className="w-full aspect-[6600/2160] relative overflow-hidden rounded-[8px] md:rounded-[12px]">
-            <Image src="/craftapp/resultbanner.png" alt="CraftApp results banner" fill className="object-cover" />
+          <div className="w-full aspect-[16/9] relative overflow-hidden rounded-[8px] md:rounded-[12px]">
+            <Image src="/craftapp/banner2-craftapp.png" alt="CraftApp results banner" fill className="object-cover" />
           </div>
         </div>
 
