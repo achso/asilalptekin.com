@@ -3,21 +3,11 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-const images = [
-  "/avatar4.png", // Reusing existing assets or placeholders
-  "/craftapp/handheldsplash3.png",
-  "/route-planner/hero.png",
-  "/avatar4.png",
-  "/craftapp/panocraft1-Recovered.png",
-  "/avatar4.png",
-  // Duplicating for seamless loop
-  "/avatar4.png", 
-  "/craftapp/handheldsplash3.png",
-  "/route-planner/hero.png",
-  "/avatar4.png",
-  "/craftapp/panocraft1-Recovered.png",
-  "/avatar4.png",
-];
+const imageCount = 6;
+const galleryImages = Array.from({ length: imageCount }, (_, i) => `/about/gallery/${i + 1}.jpg`);
+
+// Double the images for a seamless loop
+const images = [...galleryImages, ...galleryImages];
 
 export const MarqueeGallery = () => {
   return (
