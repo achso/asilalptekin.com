@@ -14,63 +14,66 @@ export default function AboutPage() {
       <Navbar />
 
       {/* 1. HERO SECTION */}
-      <section className="pt-32 md:pt-48 pb-20 overflow-hidden">
+      <section className="pt-32 md:pt-48 pb-20">
         <div className={containerClass}>
           {/* Left: Portrait (4 cols) */}
-          <motion.div 
-            className="md:col-span-4 mb-10 md:mb-0"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="w-full aspect-[4/5] md:aspect-[3/4] rounded-[20px] overflow-hidden relative shadow-sm bg-zinc-200">
-               <Image 
-                  src="/avatar4.png" 
-                  alt="Asil Alptekin portrait" 
-                  fill 
-                  className="object-cover" 
-                  priority 
-               />
-            </div>
-          </motion.div>
+          <div className="md:col-span-4 mb-10 md:mb-0 overflow-hidden">
+            <motion.div 
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            >
+              <div className="w-full aspect-[4/5] md:aspect-[3/4] rounded-[20px] overflow-hidden relative shadow-sm bg-zinc-200">
+                 <Image 
+                    src="/avatar4.png" 
+                    alt="Asil Alptekin portrait" 
+                    fill 
+                    className="object-cover" 
+                    priority 
+                 />
+              </div>
+            </motion.div>
+          </div>
 
           {/* Right: Intro (8 cols) */}
-          <motion.div 
-            className="md:col-span-8 flex flex-col gap-8 md:pt-4"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-          >
-            <div className="flex flex-col gap-6">
-              <h1 className="text-[64px] md:text-[80px] lg:text-[100px] leading-[0.85] tracking-[-0.02em] text-foreground">
-                <span className="block font-[700] italic" style={{ fontFamily: "var(--font-script)" }}>
-                  Hello, I&apos;m Asil
-                </span>
-                <span className="text-[18px] md:text-[20px] font-extrabold text-foreground/40 mt-4 block">
-                  (ah-sil Alp-teh-kin)
-                </span>
-              </h1>
-              <p className="text-[20px] md:text-[24px] lg:text-[28px] font-semibold text-foreground/60 leading-[1.4] max-w-[700px]">
-                I am a Product Designer with a knack for bringing clarity and structure through visual design, storytelling, and high-velocity output.
-              </p>
-            </div>
-            
-            {/* Meta Grid (Inline with reference pattern) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mt-12 pt-12 border-t border-black/5">
-              <div>
-                <span className="label-text mb-3 block uppercase tracking-wider text-foreground">Currently</span>
-                <p className="body-text text-foreground/50">
-                  Senior UX/UI Designer<br/>at Enpal
+          <div className="md:col-span-8 flex flex-col gap-8 md:pt-4 overflow-hidden">
+            <motion.div 
+              className="flex flex-col gap-8"
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.1 }}
+            >
+              <div className="flex flex-col gap-6">
+                <h1 className="text-[64px] md:text-[80px] lg:text-[100px] leading-[0.85] tracking-[-0.02em] text-foreground">
+                  <span className="block font-[700] italic" style={{ fontFamily: "var(--font-script)" }}>
+                    Hello, I&apos;m Asil
+                  </span>
+                  <span className="text-[18px] md:text-[20px] font-extrabold text-foreground/40 mt-4 block">
+                    (ah-sil Alp-teh-kin)
+                  </span>
+                </h1>
+                <p className="text-[20px] md:text-[24px] lg:text-[28px] font-semibold text-foreground/60 leading-[1.4] max-w-[700px]">
+                  I am a Product Designer with a knack for bringing clarity and structure through visual design, storytelling, and high-velocity output.
                 </p>
               </div>
-              <div>
-                <span className="label-text mb-3 block uppercase tracking-wider text-foreground">Previously</span>
-                <p className="body-text text-foreground/50">
-                  UX Designer at Skill Yoga<br/>Junior Designer at Urban AR
-                </p>
+              
+              {/* Meta Grid (Inline with reference pattern) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mt-12 pt-12 border-t border-black/5">
+                <div>
+                  <span className="label-text mb-3 block uppercase tracking-wider text-foreground">Currently</span>
+                  <p className="body-text text-foreground/50">
+                    Senior UX/UI Designer<br/>at Enpal
+                  </p>
+                </div>
+                <div>
+                  <span className="label-text mb-3 block uppercase tracking-wider text-foreground">Previously</span>
+                  <p className="body-text text-foreground/50">
+                    UX Designer at Skill Yoga<br/>Junior Designer at Urban AR
+                  </p>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
