@@ -5,7 +5,7 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { HeroSlider } from "@/components/HeroSlider";
 import { projects } from "@/data/projects";
 import { Navbar } from "@/components/Navbar";
-import { Linkedin, Mail } from "lucide-react";
+import { Linkedin, Mail, FileText } from "lucide-react";
 
 export default function Home() {
   return (
@@ -65,13 +65,21 @@ export default function Home() {
                 <HeroSlider />
               </div>
               
-              <div className="flex flex-wrap gap-x-16 gap-y-6 mt-8 min-[821px]:mt-12">
+              <div className="flex flex-wrap gap-4 mt-8 min-[821px]:mt-12">
                 <a
                   href="mailto:alptekin.contact@gmail.com"
                   className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground text-background font-bold text-[16px] hover:bg-[#0c6747] transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   <Mail size={18} />
                   <span>Contact me</span>
+                </a>
+                <a
+                  href="/asil_alptekin_resume.pdf"
+                  download
+                  className="flex items-center gap-2 px-6 py-3 rounded-full border-2 border-foreground/10 text-foreground font-bold text-[16px] hover:border-foreground/20 hover:bg-foreground/5 transition-all duration-300 transform hover:scale-105"
+                >
+                  <FileText size={18} />
+                  <span>Download Resume</span>
                 </a>
               </div>
             </motion.div>
