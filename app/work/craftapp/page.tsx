@@ -4,9 +4,27 @@ import Link from "next/link";
 import { projects } from "@/data/projects";
 import Image from "next/image";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { CaseStudyNav } from "@/components/CaseStudyNav";
 
 export default function CraftAppCaseStudy() {
   const nextProject = projects.find((p) => p.slug !== "craftapp") || projects[1] || projects[0];
+
+  const navItems = [
+    { id: "intro", label: "Intro" },
+    { id: "brief", label: "Design Brief" },
+    { id: "research-process", label: "Research Process" },
+    { id: "research-insights", label: "Research Insights" },
+    { id: "strategy", label: "The Strategy" },
+    { id: "persona", label: "Persona" },
+    { id: "journey", label: "Journey Map" },
+    { id: "wireframes", label: "Wireframes" },
+    { id: "system", label: "Design System" },
+    { id: "onboarding", label: "Onboarding" },
+    { id: "guide", label: "Guide First" },
+    { id: "loop", label: "Closing Loop" },
+    { id: "rejections", label: "QM Rejections" },
+    { id: "results", label: "Results" },
+  ];
 
   // Shared class for constrained content width — matches taamannae.dev container-1200 (1100px + 16px padding)
   const container = "w-full max-w-[1100px] mx-auto px-4";
@@ -14,9 +32,10 @@ export default function CraftAppCaseStudy() {
   return (
     <div id="editable-content" className="min-h-screen w-full bg-[#f0eee9] text-zinc-950 font-sans selection:bg-black selection:text-white">
       <Navbar />
+      <CaseStudyNav items={navItems} />
 
       {/* ─── 1. HERO + INTRO ─── */}
-      <section className="w-full bg-[#f0eee9] pt-24 md:pt-32">
+      <section id="intro" className="w-full bg-[#f0eee9] pt-24 md:pt-32 scroll-mt-32">
         {/* Hero image — constrained, sits just below navbar */}
         <div className={`${container}`}>
           <div className="w-full aspect-[2/1] rounded-[16px] md:rounded-[24px] overflow-hidden relative">
@@ -83,7 +102,7 @@ export default function CraftAppCaseStudy() {
       </div>
 
       {/* ─── 3. DESIGN BRIEF ─── #252525 */}
-      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+      <section id="brief" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
         <div className={container}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
             <div className="flex flex-col gap-4 lg:w-[42%] shrink-0">
@@ -117,7 +136,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 4. USER RESEARCH — PROCESS & PLAN ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+      <section id="research-process" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={container}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
             <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
@@ -154,7 +173,7 @@ export default function CraftAppCaseStudy() {
       </div>
 
       {/* ─── 6. RESEARCH INSIGHTS ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+      <section id="research-insights" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={container}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
             <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
@@ -227,7 +246,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 9. THE STRATEGY ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+      <section id="strategy" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={container}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
             <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
@@ -257,7 +276,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 10. MEET TARIQ ─── #252525 */}
-      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+      <section id="persona" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-14`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
@@ -281,7 +300,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 11. JOURNEY MAP ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+      <section id="journey" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
@@ -337,7 +356,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 13. LOW-FIDELITY LOGIC ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+      <section id="wireframes" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
@@ -374,7 +393,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 14. DESIGN SYSTEM ─── #252525 */}
-      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+      <section id="system" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
@@ -398,7 +417,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 15. ONBOARDING ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] py-16 md:py-[80px]">
+      <section id="onboarding" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
@@ -438,7 +457,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 16. GUIDE FIRST ─── full-bleed images ─── #252525 */}
-      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+      <section id="guide" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
         {/* Header — constrained */}
         <div className={`${container} mb-10 md:mb-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
@@ -593,7 +612,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 17. CLOSING THE LOOP ─── full-bleed images ─── #f4f4f0 */}
-      <section className="w-full bg-[#f4f4f0] py-16 md:py-[80px]">
+      <section id="loop" className="w-full bg-[#f4f4f0] py-16 md:py-[80px] scroll-mt-32">
         {/* Header — constrained */}
         <div className={`${container} mb-10 md:mb-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
@@ -748,7 +767,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 18. WHEN QM REJECTS ─── full-bleed images ─── #252525 */}
-      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+      <section id="rejections" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
         {/* Header — constrained */}
         <div className={`${container} mb-10 md:mb-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
@@ -796,7 +815,7 @@ export default function CraftAppCaseStudy() {
       </section>
 
       {/* ─── 19. RESULTS ─── #f0eee9 */}
-      <section className="w-full bg-[#f0eee9] pt-16 md:pt-[80px]">
+      <section id="results" className="w-full bg-[#f0eee9] pt-16 md:pt-[80px] scroll-mt-32">
         <div className={`${container} mb-10`}>
           <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Results</p>
         </div>

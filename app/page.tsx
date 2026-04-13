@@ -124,7 +124,7 @@ export default function Home() {
       <main className="px-8 w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
           {projects.map((project, index) => (
-            <div key={project.id} className="overflow-hidden">
+            <div key={project.id}>
               <motion.div
                 initial={{ opacity: 0, y: "100%" }}
                 animate={{ opacity: 1, y: 0 }}
