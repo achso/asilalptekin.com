@@ -17,7 +17,7 @@ export default function CraftAppCaseStudy() {
     { id: "persona", label: "Persona" },
     { id: "journey", label: "Journey Map" },
     { id: "strategy", label: "The Strategy" },
-    { id: "constraints", label: "Constraints" },
+    { id: "constraints", label: "Design Principles" },
     { id: "wireframes", label: "Wireframes" },
     { id: "system", label: "Design System" },
     { id: "onboarding", label: "Onboarding" },
@@ -110,7 +110,7 @@ export default function CraftAppCaseStudy() {
               <div className="leading-[1.25]">
                 <h2 className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">Design brief</h2>
                 <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">
-                  Fix field documentation loop via CraftApp
+                  fix field documentation loop via CraftApp
                 </p>
               </div>
               <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
@@ -329,8 +329,8 @@ export default function CraftAppCaseStudy() {
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
               <div className="leading-[1.25]">
-                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Core Interaction Rules</p>
-                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">Design Principles</p>
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Design Principles</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">core interaction rules</p>
               </div>
             </div>
             <div className="flex-1">
