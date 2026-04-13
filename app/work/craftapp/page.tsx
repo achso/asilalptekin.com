@@ -14,9 +14,10 @@ export default function CraftAppCaseStudy() {
     { id: "brief", label: "Design Brief" },
     { id: "research-process", label: "Research Process" },
     { id: "research-insights", label: "Research Insights" },
-    { id: "strategy", label: "The Strategy" },
     { id: "persona", label: "Persona" },
     { id: "journey", label: "Journey Map" },
+    { id: "strategy", label: "The Strategy" },
+    { id: "constraints", label: "Constraints" },
     { id: "wireframes", label: "Wireframes" },
     { id: "system", label: "Design System" },
     { id: "onboarding", label: "Onboarding" },
@@ -132,6 +133,13 @@ export default function CraftAppCaseStudy() {
               ))}
             </div>
           </div>
+          {/* Problem Statement */}
+          <div className="mt-10 pt-10 border-t border-white/10">
+            <p className="font-sans font-extrabold text-[15px] md:text-[16px] text-white/50 uppercase tracking-wider mb-3">Problem statement</p>
+            <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px] max-w-[760px]">
+              EMG installation technicians were completing high-quality work but failing to get it approved on the first try. The tools they had were built for desks, not rooftops. Documentation moved to 3rd party tools because that is what actually worked. The approval chain was invisible, and the FTC rate showed it.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -207,17 +215,9 @@ export default function CraftAppCaseStudy() {
         </div>
       </section>
 
-      {/* ─── 7 & 8. PROBLEM STATEMENT & THREE QUESTIONS ─── merged ─── #252525 */}
+      {/* ─── THREE QUESTIONS FROM THE FIELD ─── #252525 */}
       <section className="w-full bg-[#252525] py-16 md:py-[80px]">
         <div className={`${container} flex flex-col gap-10 md:gap-14`}>
-          {/* Problem Statement block */}
-          <div className="flex flex-col gap-4">
-            <p className="font-sans font-extrabold text-[15px] md:text-[16px] text-white/50 uppercase tracking-wider">Problem statement</p>
-            <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
-              EMG installation technicians were completing high-quality work but failing to get it approved on the first try. The tools they had were built for desks, not rooftops. Documentation moved to 3rd party tools because that is what actually worked. The approval chain was invisible, and the FTC rate showed it.
-            </p>
-          </div>
-
           {/* Three Questions group */}
           <div className="flex flex-col gap-10 md:gap-14">
             <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
@@ -245,48 +245,18 @@ export default function CraftAppCaseStudy() {
         </div>
       </section>
 
-      {/* ─── 9. THE STRATEGY ─── #f0eee9 */}
-      <section id="strategy" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
-        <div className={container}>
-          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
-            <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
-              <div className="leading-[1.25]">
-                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">The Strategy</p>
-                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">that changed the loop</p>
-              </div>
-              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
-                User research revealed that the friction wasn't just technical; it was emotional. Technicians felt judged by a "black box" system, leading them to abandon official channels for the transparency of WhatsApp. To fix the loop, I established three core pillars for the interaction model.
-              </p>
-            </div>
-            <div className="flex-1 flex flex-col gap-8 md:gap-10">
-              {[
-                { n: "01", title: "Make approval feel like a conversation", body: "Instead of a rigid submission-feedback loop, the UX should mimic the cadence of a conversation. Success meant moving away from \"forms\" and toward a \"thread\" mental model where information flows bi-directionally." },
-                { n: "02", title: "Build for one hand on a rooftop", body: "The interface must respect the environment. I adopted a \"rooftop-first\" philosophy, prioritizing high-contrast legibility and single-thumb ergonomics to reduce the cognitive and physical load of field documentation." },
-                { n: "03", title: "Structured communication", body: "To close the loop efficiently, feedback must be persistent, not ephemeral. My strategy focused on embedding reviewer insights directly into the capture workflow to prevent context-switching." },
-              ].map(({ n, title, body }) => (
-                <div key={n} className="flex flex-col gap-1.5">
-                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{n}</p>
-                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{title}</p>
-                  <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">{body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 10. MEET TARIQ ─── #252525 */}
-      <section id="persona" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
+      {/* ─── MEET TARIQ ─── #f0eee9 */}
+      <section id="persona" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-14`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
               <div className="leading-[1.25]">
-                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">Meet Tariq the Monteur</p>
-                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">from on site research</p>
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Meet Tariq the Monteur</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">from on site research</p>
               </div>
             </div>
             <div className="flex-1">
-              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
                 Tariq is a solar panel installer at EMG Brandenburg. He moves between teams and works multiple jobs a week. He is very good at this work and he knows it. He does not think of himself as a technology user. His phone is a tool, the same as his drill.
               </p>
             </div>
@@ -299,7 +269,7 @@ export default function CraftAppCaseStudy() {
         </div>
       </section>
 
-      {/* ─── 11. JOURNEY MAP ─── #f0eee9 */}
+      {/* ─── JOURNEY MAP ─── #f0eee9 */}
       <section id="journey" className="w-full bg-[#f0eee9] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-10 md:gap-12`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
@@ -323,18 +293,48 @@ export default function CraftAppCaseStudy() {
         </div>
       </section>
 
-      {/* ─── 12. FROM THE ROOFTOP ─── #252525 */}
-      <section className="w-full bg-[#252525] py-16 md:py-[80px]">
+      {/* ─── THE STRATEGY ─── #252525 */}
+      <section id="strategy" className="w-full bg-[#252525] py-16 md:py-[80px] scroll-mt-32">
+        <div className={container}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+            <div className="flex flex-col gap-3 lg:w-[42%] shrink-0">
+              <div className="leading-[1.25]">
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">The Strategy</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">that changed the loop</p>
+              </div>
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+                User research revealed that the friction wasn't just technical; it was emotional. Technicians felt judged by a "black box" system, leading them to abandon official channels for the transparency of WhatsApp. To fix the loop, I established three core pillars for the interaction model.
+              </p>
+            </div>
+            <div className="flex-1 flex flex-col gap-8 md:gap-10">
+              {[
+                { n: "01", title: "Make approval feel like a conversation", body: "Instead of a rigid submission-feedback loop, the UX should mimic the cadence of a conversation. Success meant moving away from \"forms\" and toward a \"thread\" mental model where information flows bi-directionally." },
+                { n: "02", title: "Build for one hand on a rooftop", body: "The interface must respect the environment. I adopted a \"rooftop-first\" philosophy, prioritizing high-contrast legibility and single-thumb ergonomics to reduce the cognitive and physical load of field documentation." },
+                { n: "03", title: "Structured communication", body: "To close the loop efficiently, feedback must be persistent, not ephemeral. My strategy focused on embedding reviewer insights directly into the capture workflow to prevent context-switching." },
+              ].map(({ n, title, body }) => (
+                <div key={n} className="flex flex-col gap-1.5">
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{n}</p>
+                  <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{title}</p>
+                  <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CONSTRAINTS ─── #DBD4FF */}
+      <section id="constraints" className="w-full bg-[#DBD4FF] py-16 md:py-[80px] scroll-mt-32">
         <div className={`${container} flex flex-col gap-12 md:gap-16`}>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-16 items-start">
             <div className="lg:w-[42%] shrink-0">
               <div className="leading-[1.25]">
-                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-white/95">From the Rooftop</p>
-                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-white/70 tracking-[0.36px]">to the Interface</p>
+                <p className="font-sans font-extrabold text-[28px] md:text-[36px] text-black/85">Core Interaction Rules</p>
+                <p className="font-sans font-semibold text-[28px] md:text-[36px] text-black/55 tracking-[0.36px]">Design Principles</p>
               </div>
             </div>
             <div className="flex-1">
-              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">
+              <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">
                 Three constraints shaped the design library and every interface decision.
               </p>
             </div>
@@ -343,12 +343,12 @@ export default function CraftAppCaseStudy() {
             {[
               { n: "01", title: "One hand, always", body: "If an action requires two hands, it’s a failure. I optimized for the single thumb to keep the technician’s other hand free for their work." },
               { n: "02", title: "Readable in direct sunlight", body: "I prioritized high-contrast values and large-scale elements to ensure the UI stays functional in direct, reflective light." },
-              { n: "03", title: "No black box moments", body: "I made sure every action has a clear, immediate response. By surfacing live status signals, I removed the guesswork and \"black box\" frustration from the user experience." },
+              { n: "03", title: "Status at a glance", body: "I made sure every action has a clear, immediate response. By surfacing live status signals, I removed the guesswork and \"black box\" frustration from the user experience." },
             ].map(({ n, title, body }) => (
               <div key={n} className="flex flex-col gap-1.5">
-                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{n}</p>
-                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-white/95">{title}</p>
-                <p className="font-sans font-semibold text-[15px] md:text-[18px] text-white/70 leading-[1.6] tracking-[0.18px]">{body}</p>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/40">{n}</p>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">{title}</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[18px] text-black/55 leading-[1.6] tracking-[0.18px]">{body}</p>
               </div>
             ))}
           </div>
