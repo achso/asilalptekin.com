@@ -16,7 +16,8 @@ export interface ProjectData {
   description: string;
   statusBadge?: string;
   role: string;
-  year: string;
+  duration: string;
+  focus?: string;
   company?: string;
   type?: string;
   platform?: string;
@@ -48,7 +49,8 @@ export const projects: ProjectData[] = [
     role: "UX/UI Designer",
     company: "Enpal",
     type: "Case study",
-    year: "2022",
+    duration: "8 Months",
+    focus: "Operations & UX",
     platform: "Android",
     imageColor: "#e5e7eb",
     imageSrc: "/craftapp/handheldsplash3.png",
@@ -154,7 +156,8 @@ export const projects: ProjectData[] = [
     role: "UX/UI Designer",
     company: "Enpal",
     type: "Case study",
-    year: "2024",
+    duration: "3 Months",
+    focus: "Logistics UX",
     imageColor: "#252525",
     isComingSoon: true,
     content: {

@@ -44,14 +44,10 @@ export function ProjectCard({ project }: { project: ProjectData }) {
 
         <div className="flex items-center gap-1.5 mt-1 font-sans font-semibold text-[13px] md:text-[14px] text-black/85">
           {project.company && <span>{project.company}</span>}
-          {project.company && (project.type || project.year) && <span className="text-black/30 font-normal">·</span>}
-          {project.type && <span>{project.type}</span>}
-          {project.type && project.year && <span className="text-black/30 font-normal">·</span>}
-          {project.year && <span>{project.year}</span>}
-          {/* Fallback for cards without company/type */}
-          {!project.company && !project.type && project.role && <span>{project.role}</span>}
-          {!project.company && !project.type && project.role && project.year && <span className="text-black/30 font-normal">·</span>}
-          {!project.company && !project.type && !project.role && null}
+          {project.company && (project.duration || project.focus) && <span className="text-black/30 font-normal">·</span>}
+          {project.duration && <span>{project.duration}</span>}
+          {project.duration && project.focus && <span className="text-black/30 font-normal">·</span>}
+          {project.focus && <span>{project.focus}</span>}
         </div>
       </div>
     </motion.div>

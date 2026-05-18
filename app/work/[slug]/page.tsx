@@ -82,23 +82,29 @@ export default async function CaseStudyPage(props: PageProps) {
               </div>
            </div>
 
-           {/* Right Column (Metadata Stack) */}
-           <div className="flex flex-col gap-8 pt-2">
-             <div className="flex flex-col gap-1">
-               <span className="font-[800] text-[15px] text-black/85">Role</span>
-               <span className="text-black/30 font-[500] text-[14px]">{project.role}</span>
-             </div>
-             <div className="flex flex-col gap-1">
-               <span className="font-[800] text-[15px] text-black/85">Timeline</span>
-               <span className="text-black/30 font-[500] text-[14px]">{project.year}</span>
-             </div>
-             <div className="flex flex-col gap-1">
-               <span className="font-[800] text-[15px] text-black/85">Team</span>
-               <span className="text-black/30 font-[500] text-[14px]">
-                 {('team' in project ? project.team : "Cross-functional team") as string}
-               </span>
-             </div>
-           </div>
+            {/* Right Column (Metadata Stack) */}
+            <div className="flex flex-col gap-8 pt-2">
+              <div className="flex flex-col gap-1">
+                <span className="font-[800] text-[15px] text-black/85">Role</span>
+                <span className="text-black/30 font-[500] text-[14px]">{project.role}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="font-[800] text-[15px] text-black/85">Duration</span>
+                <span className="text-black/30 font-[500] text-[14px]">{project.duration}</span>
+              </div>
+              {project.focus && (
+                <div className="flex flex-col gap-1">
+                  <span className="font-[800] text-[15px] text-black/85">Focus</span>
+                  <span className="text-black/30 font-[500] text-[14px]">{project.focus}</span>
+                </div>
+              )}
+              <div className="flex flex-col gap-1">
+                <span className="font-[800] text-[15px] text-black/85">Team</span>
+                <span className="text-black/30 font-[500] text-[14px]">
+                  {('team' in project ? project.team : "Cross-functional team") as string}
+                </span>
+              </div>
+            </div>
         </div>
       </header>
 

@@ -85,8 +85,12 @@ export default function CraftAppCaseStudy() {
                 <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Senior Director Product, Product Manager, 6+ Engineers</p>
               </div>
               <div>
-                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Timeline</p>
-                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Sep 21 – May 22</p>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Duration</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">8 Months</p>
+              </div>
+              <div>
+                <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Focus</p>
+                <p className="font-sans font-semibold text-[15px] md:text-[16px] text-black/55 leading-[1.6]">Operations & UX</p>
               </div>
               <div>
                 <p className="font-sans font-extrabold text-[16px] md:text-[18px] text-black/85">Platform</p>
