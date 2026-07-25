@@ -145,34 +145,45 @@ export default function AboutPage() {
           {/* Section content (8 cols) */}
           <div className="md:col-span-8 flex flex-col gap-16">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-8">
-              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">2021&ndash;Now</span>
+              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">11/2024&ndash;Present</span>
               <div className="sm:col-span-3 flex flex-col gap-2">
                 <h3 className="text-[20px] font-extrabold text-foreground">Enpal</h3>
-                <p className="body-text text-foreground/40 mb-2 italic">Senior Product Designer</p>
+                <p className="body-text text-foreground/40 mb-2 italic">Senior UX/UI Designer</p>
                 <p className="body-text text-foreground/50">
-                  Designing the backbone of Germany&apos;s leading solar platform. Created Sales OS to optimize customer acquisition and CraftOS to fix the multi-million euro compliance gap between rooftops and the home office by streamlining field documentation.
+                  Led end-to-end design for the flagship SalesOS platform, integrating partner financial advisors to scale system adoption to <strong>25,000+ active users</strong>. Tokenized the Ant Design UI library using Figma variables to unify developer handoffs and UI consistency.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-8">
-              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">2021 (6mo)</span>
+              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">09/2021&ndash;10/2024</span>
+              <div className="sm:col-span-3 flex flex-col gap-2">
+                <h3 className="text-[20px] font-extrabold text-foreground">Enpal</h3>
+                <p className="body-text text-foreground/40 mb-2 italic">UX/UI Designer</p>
+                <p className="body-text text-foreground/50">
+                  Served as dedicated lead designer for 3 fulfillment teams. Designed the automated backend Planner matching tool for logistics and shipped the Mobile Field App for solar technicians on rooftops. Maintained the CraftOS design system.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-8">
+              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">04/2021&ndash;08/2021</span>
               <div className="sm:col-span-3 flex flex-col gap-2">
                 <h3 className="text-[20px] font-extrabold text-foreground">Skill Yoga</h3>
-                <p className="body-text text-foreground/40 mb-2 italic">UX/UI Designer</p>
+                <p className="body-text text-foreground/40 mb-2 italic">Junior UX/UI Designer</p>
                 <p className="body-text text-foreground/50">
-                  Streamlined the mobile onboarding logic for a global health-tech platform. Worked at the intersection of architecture and user research to reduce friction and build a foundational design system from the ground up.
+                  Collaborated with ML engineers to design UI/UX patterns for real-time computer vision body tracking. Conducted user interviews and refined onboarding habit loops to boost user retention metrics.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 md:gap-8">
-              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">2019&ndash;2020</span>
+              <span className="label-text whitespace-nowrap uppercase tracking-wider text-foreground">03/2014&ndash;08/2018</span>
               <div className="sm:col-span-3 flex flex-col gap-2">
-                <h3 className="text-[20px] font-extrabold text-foreground">Urban AR</h3>
-                <p className="body-text text-foreground/40 mb-2 italic">UX/UI Designer</p>
+                <h3 className="text-[20px] font-extrabold text-foreground">Booking.com</h3>
+                <p className="body-text text-foreground/40 mb-2 italic">Partner Account Executive</p>
                 <p className="body-text text-foreground/50">
-                  Defined the interaction models for AR-driven storytelling. Transformed complex stakeholder visions into &quot;Karla,&quot; a spatial audio experience that connects physical history with digital interfaces.
+                  Managed enterprise partner accounts and provided direct advisory on extranet platform usability, building early expertise in complex enterprise UX workflows.
                 </p>
               </div>
             </div>
