@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
  * PhotoEvidenceCapture (molecule)
  *
  * The native magicplan "Photos & Notes" layout, reused as evidence capture:
- * a 4-column grid (add tile + 7 slots) and a free-text note.
+ * a 4-column grid (add tile + 7 slots) and a free-text note. Used by every
+ * "Photos & Notes" tab and by the DeviationForm's evidence step.
  *
  * Controlled: the parent owns `photos` and `note`. The DeviationForm keeps
  * its submit disabled until `photos.length >= 1`; this component makes that
@@ -60,12 +61,7 @@ export function PhotoEvidenceCapture({
   return (
     <div className={cn("flex flex-col", className)}>
       {/* ── Photos ─────────────────────────────────────────────── */}
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <h4 className="text-[15px] font-semibold text-mp-muted">Photos</h4>
-        <span className="text-[12px] tabular-nums text-mp-muted">
-          {photos.length}/{MAX_PHOTOS}
-        </span>
-      </div>
+      <h4 className="mb-2 whitespace-nowrap px-1 text-[15px] font-semibold text-mp-muted">Photos</h4>
 
       <input
         ref={input}
@@ -154,7 +150,10 @@ export function PhotoEvidenceCapture({
       )}
 
       {/* ── Notes ──────────────────────────────────────────────── */}
-      <label htmlFor={noteId} className="mb-2 mt-4 px-1 text-[15px] font-semibold text-mp-muted">
+      <label
+        htmlFor={noteId}
+        className="mb-2 mt-4 whitespace-nowrap px-1 text-[15px] font-semibold text-mp-muted"
+      >
         Notes
       </label>
       <div className="rounded-2xl bg-white p-2.5">

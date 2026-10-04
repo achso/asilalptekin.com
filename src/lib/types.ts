@@ -63,3 +63,6 @@ export type EscalationDraft = Omit<
 
 /** See store/deviationMachine.ts for the full lifecycle. */
 export type EscalationStatus = "sending" | "delivered" | "in_review" | "resolved";
+
+/** Photos & Notes attached to a plan element (the native tab's content). */
+export type ElementMedia = { photos: string[]; note: string };

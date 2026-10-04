@@ -4,11 +4,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { Info, Loader2, Lock, X } from "lucide-react";
 import { ROOM, elementInfo, wallById } from "@/lib/floorplan";
-import type { Escalation, EscalationDraft, EscalationStatus, SelectedElement } from "@/lib/types";
+import type {
+  ElementMedia,
+  Escalation,
+  EscalationDraft,
+  EscalationStatus,
+  SelectedElement,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { isActive } from "@/store/deviationMachine";
 import { EscalationCard, toEscalationCardProps } from "@/components/molecules/EscalationCard";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
+import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { DeviationForm } from "./DeviationForm";
 import { RoomDefaultSidebar } from "./RoomDefaultSidebar";
 
@@ -43,6 +50,15 @@ type Mode = "summary" | "inspector" | "form";
 export function RightSidebar(props: Props) {
   const { selected, captureAnchor } = props;
   const mode: Mode = captureAnchor ? "form" : selected ? "inspector" : "summary";
+
+  // Photos & Notes per element, kept here (always mounted) so switching
+  // between elements doesn't lose them. The room panel and the floor share
+  // the room's entry.
+  const [media, setMedia] = useState<Record<string, ElementMedia>>({});
+  const mediaFor = (el: SelectedElement) => media[mediaKey(el)] ?? EMPTY_MEDIA;
+  const setMediaFor = (el: SelectedElement) => (m: ElementMedia) =>
+    setMedia((all) => ({ ...all, [mediaKey(el)]: m }));
+  const roomEl: SelectedElement = { type: "room", id: ROOM.id };
   const activeEscalations = props.escalations.filter(isActive); // newest first
 
   return (
@@ -75,10 +91,14 @@ export function RightSidebar(props: Props) {
               onReport={props.onReport}
               onClear={props.onClear}
               onRevoke={props.onRevoke}
+              media={mediaFor(selected)}
+              onMediaChange={setMediaFor(selected)}
             />
           ) : (
             <RoomDefaultSidebar
               className="w-full"
+              media={mediaFor(roomEl)}
+              onMediaChange={setMediaFor(roomEl)}
               // Full cards (photo, status, Revoke) for every unresolved report, newest first.
               // Tapping a card selects its element on the plan.
               escalations={activeEscalations.map((e) => ({
@@ -106,6 +126,8 @@ function Inspector({
   onReport,
   onClear,
   onRevoke,
+  media,
+  onMediaChange,
 }: {
   target: SelectedElement;
   escalation?: Escalation;
@@ -113,6 +135,8 @@ function Inspector({
   onReport: (anchor: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
+  media: ElementMedia;
+  onMediaChange: (m: ElementMedia) => void;
 }) {
   const [tab, setTab] = useState<Tab>("Details");
   const { label } = elementInfo(target);
@@ -155,7 +179,14 @@ function Inspector({
         ) : null}
 
         {tab === "Details" && <DetailsTab target={target} />}
-        {tab === "Photos & Notes" && <PhotosTab onReport={() => onReport(target)} escalated={isActive(escalation)} />}
+        {tab === "Photos & Notes" && (
+          <PhotoEvidenceCapture
+            photos={media.photos}
+            onPhotosChange={(photos) => onMediaChange({ ...media, photos })}
+            note={media.note}
+            onNoteChange={(note) => onMediaChange({ ...media, note })}
+          />
+        )}
         {tab === "Forms" && (
           <div className="rounded-2xl bg-white p-4 text-[14px] text-mp-muted">
             No forms attached to this {target.type}.
@@ -211,31 +242,6 @@ function dimensionRows(target: SelectedElement): [string, string][] {
   }
 }
 
-function PhotosTab({ onReport, escalated }: { onReport: () => void; escalated: boolean }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <Group title="Photos">
-        <div className="grid grid-cols-4 gap-2 p-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <span key={i} className="aspect-square rounded-lg border-2 border-dashed border-mp-line" />
-          ))}
-        </div>
-      </Group>
-      {!escalated && (
-        <button
-          onClick={onReport}
-          className="rounded-2xl border-2 border-dashed border-mp-red/40 bg-white p-4 text-left"
-        >
-          <div className="text-[15px] font-semibold text-mp-red">Notes replaced by Report Deviation</div>
-          <div className="text-[12px] text-mp-muted">
-            Structured issue type, photo and voice memo go straight to the remote expert.
-          </div>
-        </button>
-      )}
-    </div>
-  );
-}
-
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
@@ -285,3 +291,6 @@ function RevokeInFlight({ e }: { e: Escalation }) {
   );
 }
 
+
+const EMPTY_MEDIA: ElementMedia = { photos: [], note: "" };
+const mediaKey = (el: SelectedElement) => `${el.type}:${el.id}`;

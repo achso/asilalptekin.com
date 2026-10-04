@@ -6,7 +6,9 @@ import { useState } from "react";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { Switch } from "@/components/atoms/Switch";
 import { EscalationCard, type EscalationCardProps } from "@/components/molecules/EscalationCard";
+import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { PROJECT, ROOM } from "@/lib/floorplan";
+import type { ElementMedia } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -37,6 +39,9 @@ export type RoomDefaultSidebarProps = {
   livingAreaPct?: number;
   /** Unresolved escalations in this room, newest first. */
   escalations?: RoomEscalation[];
+  /** Photos & Notes tab content. Uncontrolled (local state) if omitted. */
+  media?: ElementMedia;
+  onMediaChange?: (m: ElementMedia) => void;
   onClose?: () => void;
   className?: string;
 };
@@ -59,10 +64,15 @@ export function RoomDefaultSidebar({
   ceilingHeight = ROOM.stats.ceilingHeight,
   livingAreaPct = 100,
   escalations = [],
+  media: mediaProp,
+  onMediaChange,
   onClose,
   className,
 }: RoomDefaultSidebarProps) {
   const [tab, setTab] = useState<Tab>("Details");
+  const [localMedia, setLocalMedia] = useState<ElementMedia>({ photos: [], note: "" });
+  const media = mediaProp ?? localMedia;
+  const setMedia = onMediaChange ?? setLocalMedia;
 
   return (
     <section
@@ -225,11 +235,17 @@ export function RoomDefaultSidebar({
               </span>
             </p>
           </div>
+        ) : tab === "Photos & Notes" ? (
+          <PhotoEvidenceCapture
+            className="mt-4"
+            photos={media.photos}
+            onPhotosChange={(photos) => setMedia({ ...media, photos })}
+            note={media.note}
+            onNoteChange={(note) => setMedia({ ...media, note })}
+          />
         ) : (
           <div className="mt-4 rounded-2xl bg-white p-4 text-[14px] text-mp-muted">
-            {tab === "Photos & Notes"
-              ? "No photos or notes yet. Something wrong on site? Tap the wall, corner or floor, then Report Deviation."
-              : "No forms attached to this room."}
+            No forms attached to this room.
           </div>
         )}
       </div>

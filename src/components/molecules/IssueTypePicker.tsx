@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   BrickWall,
+  Check,
   CircleHelp,
   Construction,
   DoorOpen,
@@ -22,7 +22,13 @@ const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; stroke
   other: CircleHelp,
 };
 
-/** IssueTypePicker (molecule): radio group of large tiles, structured instead of free text. */
+/**
+ * IssueTypePicker (molecule): structured choice instead of free text.
+ *
+ * An iOS grouped list, one row per type, so every label gets the full width
+ * and never wraps ("Dimension Mismatch" didn't fit a half-width tile in
+ * SF Pro). Rows are 52px tall, for gloved, one-handed taps.
+ */
 export function IssueTypePicker({
   value,
   onChange,
@@ -31,28 +37,44 @@ export function IssueTypePicker({
   onChange: (v: IssueType) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Issue type" className="grid grid-cols-2 gap-2">
+    <div
+      role="radiogroup"
+      aria-label="Issue type"
+      className="divide-y divide-mp-line overflow-hidden rounded-2xl bg-white"
+    >
       {ISSUE_TYPES.map((t) => {
         const Icon = ISSUE_ICONS[t.id];
         const active = value === t.id;
         return (
-          <motion.button
+          <button
             key={t.id}
             type="button"
             role="radio"
             aria-checked={active}
-            whileTap={{ scale: 0.97 }}
             onClick={() => onChange(t.id)}
             className={cn(
-              "flex h-[58px] items-center gap-2.5 rounded-xl border-2 px-3 text-left transition-colors",
-              active
-                ? "border-mp-blue bg-mp-blue text-white"
-                : "border-transparent bg-white text-mp-ink active:bg-mp-line",
+              "flex h-[52px] w-full items-center gap-3 px-4 text-left transition-colors",
+              active ? "bg-mp-blue/10" : "active:bg-mp-panel",
             )}
           >
-            <Icon size={22} strokeWidth={2} />
-            <span className="text-[14px] font-semibold leading-tight">{t.label}</span>
-          </motion.button>
+            <span
+              className={cn(
+                "grid size-8 shrink-0 place-items-center rounded-lg",
+                active ? "bg-mp-blue text-white" : "bg-mp-panel text-mp-ink",
+              )}
+            >
+              <Icon size={18} strokeWidth={2} />
+            </span>
+            <span
+              className={cn(
+                "flex-1 truncate whitespace-nowrap text-[16px]",
+                active ? "font-semibold text-mp-blue" : "text-mp-ink",
+              )}
+            >
+              {t.label}
+            </span>
+            {active && <Check size={20} strokeWidth={2.75} className="shrink-0 text-mp-blue" aria-hidden />}
+          </button>
         );
       })}
     </div>
