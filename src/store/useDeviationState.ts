@@ -7,6 +7,7 @@ import type {
   Escalation,
   EscalationDraft,
   EscalationStatus,
+  Point,
   SelectedElement,
 } from "@/lib/types";
 import {
@@ -31,6 +32,9 @@ import {
  *   startReport(anchor)  open the DeviationForm anchored to { id, type }
  *   cancelReport()       discard the form, keep the selection
  *   submitEscalation(d)  fire-and-forget: closes the form, uploads in background
+ *   setPlacing(on)       Undocumented Element: canvas taps place the Ghost Marker
+ *                        instead of changing the selection (off clears the marker)
+ *   placeDraftMarker(p)  drop / move the Ghost Marker at p (plan metres)
  *   revokeEscalation()   optimistic; FAILS while in_review (race guard, see below)
  *   mockExpertReview()   the expert opens the selected (or newest) report → in_review
  *   mediaFor(el) / setMediaFor(el, m) / standardPhotoCount(el)
@@ -66,6 +70,10 @@ type State = {
   selectedElement: SelectedElement | null;
   /** Element the open DeviationForm is anchored to (null = form closed). */
   captureAnchor: SelectedElement | null;
+  /** While true, canvas taps place the Ghost Marker (Undocumented Element). */
+  placing: boolean;
+  /** Where the undocumented element is, in plan metres; null = not placed yet. */
+  draftMarker: Point | null;
   escalations: Escalation[];
   /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
   media: Record<string, ElementMedia>;
@@ -78,6 +86,8 @@ type Action =
   | { type: "select"; element: SelectedElement | null }
   | { type: "startReport"; anchor: SelectedElement }
   | { type: "cancelReport" }
+  | { type: "setPlacing"; on: boolean }
+  | { type: "placeMarker"; point: Point }
   | { type: "submit"; escalation: Escalation }
   /** Munich / server side. `force` = dev-tools override that ignores the transition table. */
   | { type: "serverStatus"; id: string; status: EscalationStatus; force?: boolean }
@@ -92,12 +102,17 @@ type Action =
 const initialState: State = {
   selectedElement: null,
   captureAnchor: null,
+  placing: false,
+  draftMarker: null,
   escalations: [],
   media: {},
   pendingRevokes: {},
   demo: { autoAdvance: false, slowNetwork: true },
   toast: null,
 };
+
+/** Closing the form also ends marker placement. */
+const NO_DRAFT = { captureAnchor: null, placing: false, draftMarker: null } as const;
 
 const toast = (text: string, tone: ToastTone) => ({ id: Date.now() + Math.random(), text, tone });
 
@@ -125,7 +140,7 @@ function reducer(state: State, action: Action): State {
         if (sameElement(anchor, action.element)) return state; // same element: keep drafting
         return {
           ...state,
-          captureAnchor: null,
+          ...NO_DRAFT,
           selectedElement: action.element,
           toast: toast(`Report draft for ${elementInfo(anchor).label} discarded.`, "hint"),
         };
@@ -135,16 +150,24 @@ function reducer(state: State, action: Action): State {
 
     case "startReport":
       // Keep selection in sync with the anchor so the canvas highlights it.
-      return { ...state, captureAnchor: action.anchor, selectedElement: action.anchor };
+      return { ...state, ...NO_DRAFT, captureAnchor: action.anchor, selectedElement: action.anchor };
 
     case "cancelReport":
-      return { ...state, captureAnchor: null };
+      return { ...state, ...NO_DRAFT };
+
+    case "setPlacing":
+      if (!state.captureAnchor && action.on) return state;
+      return { ...state, placing: action.on, draftMarker: action.on ? state.draftMarker : null };
+
+    case "placeMarker":
+      if (!state.placing) return state;
+      return { ...state, draftMarker: action.point };
 
     case "submit": {
       const e = action.escalation;
       return {
         ...state,
-        captureAnchor: null,
+        ...NO_DRAFT,
         selectedElement: null,
         // A resolved element can be reported again; the new report replaces the old one.
         escalations: [e, ...state.escalations.filter((x) => !sameElement(x.target, e.target))],
@@ -320,6 +343,11 @@ export function useDeviationState() {
     [],
   );
   const cancelReport = useCallback(() => dispatch({ type: "cancelReport" }), []);
+  const setPlacing = useCallback((on: boolean) => dispatch({ type: "setPlacing", on }), []);
+  const placeDraftMarker = useCallback(
+    (point: Point) => dispatch({ type: "placeMarker", point }),
+    [],
+  );
 
   const submitEscalation = useCallback(
     (draft: EscalationDraft) => {
@@ -420,6 +448,8 @@ export function useDeviationState() {
     // state
     selectedElement: state.selectedElement,
     captureAnchor: state.captureAnchor,
+    placing: state.placing,
+    draftMarker: state.draftMarker,
     escalations: state.escalations,
     pendingRevokes: state.pendingRevokes,
     demo: state.demo,
@@ -437,6 +467,8 @@ export function useDeviationState() {
     clearSelection,
     startReport,
     cancelReport,
+    setPlacing,
+    placeDraftMarker,
     submitEscalation,
     revokeEscalation,
     mockExpertReview,

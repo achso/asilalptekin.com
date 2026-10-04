@@ -29,7 +29,7 @@ export type IssueType =
   | "dimension-mismatch"
   | "undocumented-element"
   | "element-not-on-site"
-  | "structural-obstacle";
+  | "site-condition-hazard";
 
 /**
  * What kind of thing an "Undocumented Element" is. Mirrors the top-level
@@ -53,8 +53,13 @@ export type Escalation = {
   issueType: IssueType;
   /** Only for undocumented-element: which object category was found. */
   category?: ElementCategory;
-  /** Only for dimension-mismatch: what the contractor measured on site. */
+  /**
+   * What the contractor measured on site: the wall length for
+   * dimension-mismatch, the physical element's length for undocumented-element.
+   */
   measuredM?: number;
+  /** Only for undocumented-element: where it is, in plan metres (Ghost Marker). */
+  marker?: Point;
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */
   photoUrls: string[];

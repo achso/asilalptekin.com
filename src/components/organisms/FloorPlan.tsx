@@ -9,12 +9,15 @@ import {
   WALL_THICKNESS,
   PX_PER_M,
   ROOM,
+  toMetres,
   toPx,
   wallGeometry,
 } from "@/lib/floorplan";
-import type { EscalationStatus, SelectedElement, Wall } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import type { EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
+import { GhostMarker } from "@/components/atoms/GhostMarker";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
@@ -37,6 +40,12 @@ type Props = {
   statusFor: (t: SelectedElement) => EscalationStatus | undefined;
   photoCountFor?: (t: SelectedElement) => number;
   onSelect: (t: SelectedElement | null) => void;
+  /** Ghost Marker placement mode: taps inside the room place the marker instead of selecting. */
+  placing?: boolean;
+  draftMarker?: Point | null;
+  onPlace?: (p: Point) => void;
+  /** Markers of submitted Undocumented Element reports, drawn in their status colour. */
+  markers?: { id: string; point: Point; status: EscalationStatus }[];
 };
 
 const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
@@ -47,13 +56,39 @@ const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
  * tapping empty canvas (outside the room) clears the selection. The dot grid
  * behind it is CanvasArea's CSS background, so the SVG background is transparent.
  */
-export function FloorPlan({ width, height, selected, statusFor, photoCountFor, onSelect }: Props) {
+export function FloorPlan({
+  width,
+  height,
+  selected,
+  statusFor,
+  photoCountFor,
+  onSelect,
+  placing,
+  draftMarker,
+  onPlace,
+  markers,
+}: Props) {
   return (
     <svg
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      className="absolute inset-0 touch-manipulation"
+      className={cn("absolute inset-0 touch-manipulation", placing && "cursor-crosshair")}
+      onPointerDownCapture={(e) => {
+        // Placement mode owns the canvas: no element gets the tap, so the
+        // draft isn't discarded. Screen → SVG via the CTM, which also undoes
+        // the iPad frame's CSS scale.
+        if (!placing) return;
+        e.stopPropagation();
+        const svg = e.currentTarget;
+        const ctm = svg.getScreenCTM();
+        if (!ctm) return;
+        const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+        const m = toMetres(pt);
+        // Only inside the room: the element has to be somewhere on this plan.
+        if (m.x < 0 || m.y < 0 || m.x > ROOM.widthM || m.y > ROOM.depthM) return;
+        onPlace?.({ x: +m.x.toFixed(2), y: +m.y.toFixed(2) });
+      }}
       onPointerDown={(e) => {
         // Tap on empty canvas clears the selection.
         if (e.target === e.currentTarget || (e.target as SVGElement).dataset.bg) onSelect(null);
@@ -133,6 +168,11 @@ export function FloorPlan({ width, height, selected, statusFor, photoCountFor, o
           </g>
         );
       })}
+
+      {markers?.map((m) => (
+        <GhostMarker key={m.id} at={toPx(m.point)} color={STATUS_STROKE[m.status]} />
+      ))}
+      {draftMarker && <GhostMarker at={toPx(draftMarker)} color={BLUE_STRONG} draft />}
     </svg>
   );
 }

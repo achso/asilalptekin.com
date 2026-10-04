@@ -18,10 +18,14 @@ import { cn } from "@/lib/utils";
  * While focused, the field keeps a text draft (so "4." isn't reformatted
  * mid-keystroke); valid numbers commit as you type, and the draft snaps back to
  * the formatted value on blur. Values are clamped to [min, max].
+ *
+ * `value` may be null (nothing measured yet): the field then shows the
+ * placeholder ("0.00"), and + starts from 0. `hint` replaces the plan-delta
+ * line when there's no reference (e.g. "Length of physical wall").
  */
 export type NumericStepperProps = {
   label: string;
-  value: number;
+  value: number | null;
   onChange: (v: number) => void;
   /** Value the plan expects; enables the "−20 cm vs plan" delta line. */
   reference?: number;
@@ -29,6 +33,10 @@ export type NumericStepperProps = {
   min?: number;
   max?: number;
   unit?: string;
+  /** Shown in the field while value is null. */
+  placeholder?: string;
+  /** Subtext under the field when there's no reference to compare against. */
+  hint?: string;
   className?: string;
 };
 
@@ -41,25 +49,29 @@ export function NumericStepper({
   min = 0,
   max = 99.99,
   unit = "m",
+  placeholder = "0.00",
+  hint,
   className,
 }: NumericStepperProps) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState(value.toFixed(2));
+  const fmt = (v: number | null) => (v === null ? "" : v.toFixed(2));
+  const [draft, setDraft] = useState(fmt(value));
 
   // Follow external changes (steppers, resets) unless the user is typing.
   useEffect(() => {
-    if (document.activeElement !== input.current) setDraft(value.toFixed(2));
+    if (document.activeElement !== input.current) setDraft(fmt(value));
   }, [value]);
 
   const clamp = (v: number) => Math.min(max, Math.max(min, +v.toFixed(2)));
   const nudge = (dir: 1 | -1) => {
-    const next = clamp(value + dir * step);
+    const next = clamp((value ?? 0) + dir * step);
     onChange(next);
     setDraft(next.toFixed(2));
   };
 
-  const delta = reference !== undefined ? value - reference : 0;
+  const delta = reference !== undefined && value !== null ? value - reference : 0;
+  const subId = `${id}-sub`;
 
   return (
     <div className={cn("rounded-xl bg-white p-3", className)}>
@@ -84,13 +96,14 @@ export function NumericStepper({
             min={min}
             max={max}
             value={draft}
+            placeholder={placeholder}
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => {
               setDraft(e.target.value);
               const n = e.target.valueAsNumber;
               if (Number.isFinite(n)) onChange(clamp(n));
             }}
-            onBlur={() => setDraft(value.toFixed(2))}
+            onBlur={() => setDraft(fmt(value))}
             onKeyDown={(e) => {
               // Inside a form: Enter/Done closes the keypad, never submits.
               if (e.key === "Enter") {
@@ -98,8 +111,8 @@ export function NumericStepper({
                 e.currentTarget.blur();
               }
             }}
-            aria-describedby={reference !== undefined ? `${id}-delta` : undefined}
-            className="min-w-0 flex-1 bg-transparent text-center text-[26px] font-semibold tabular-nums text-mp-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            aria-describedby={reference !== undefined || hint ? subId : undefined}
+            className="min-w-0 placeholder:text-gray-400 flex-1 bg-transparent text-center text-[26px] font-semibold tabular-nums text-mp-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <span className="shrink-0 text-[18px] font-medium text-mp-muted">{unit}</span>
         </div>
@@ -109,9 +122,14 @@ export function NumericStepper({
         </StepButton>
       </div>
 
+      {reference === undefined && hint && (
+        <div id={subId} className="mt-2 whitespace-nowrap text-center text-[12px] font-medium text-mp-muted">
+          {hint}
+        </div>
+      )}
       {reference !== undefined && (
         <div
-          id={`${id}-delta`}
+          id={subId}
           aria-live="polite"
           className={cn(
             "mt-2 whitespace-nowrap text-center text-[12px] font-medium tabular-nums",

@@ -1,10 +1,12 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import { Crosshair } from "lucide-react";
 import { memo } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-import type { EscalationStatus, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, Point, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FloorPlan } from "./FloorPlan";
 
@@ -27,6 +29,11 @@ export type CanvasAreaProps = {
   /** Standard Photos & Notes count per element (yellow paperclip). */
   photoCountFor: (el: SelectedElement) => number;
   onSelect: (el: SelectedElement | null) => void;
+  /** Ghost Marker placement (Undocumented Element), see FloorPlan. */
+  placing?: boolean;
+  draftMarker?: Point | null;
+  onPlace?: (p: Point) => void;
+  markers?: { id: string; point: Point; status: EscalationStatus }[];
   className?: string;
 };
 
@@ -35,6 +42,10 @@ export const CanvasArea = memo(function CanvasArea({
   statusFor,
   photoCountFor,
   onSelect,
+  placing,
+  draftMarker,
+  onPlace,
+  markers,
   className,
 }: CanvasAreaProps) {
   return (
@@ -55,7 +66,28 @@ export const CanvasArea = memo(function CanvasArea({
         statusFor={statusFor}
         photoCountFor={photoCountFor}
         onSelect={onSelect}
+        placing={placing}
+        draftMarker={draftMarker}
+        onPlace={onPlace}
+        markers={markers}
       />
+
+      {/* Placement prompt: the canvas is in a different mode, so say so on the canvas. */}
+      <AnimatePresence>
+        {placing && !draftMarker && (
+          <motion.div
+            key="place-hint"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ type: "tween", duration: 0.18 }}
+            role="status"
+            className="pointer-events-none absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-mp-blue px-4 py-2.5 text-[15px] font-semibold text-white shadow-lg"
+          >
+            <Crosshair size={18} /> Tap the plan where it is
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ElementBadges statusFor={statusFor} photoCountFor={photoCountFor} onPress={onSelect} />
 

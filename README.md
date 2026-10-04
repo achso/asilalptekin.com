@@ -84,13 +84,21 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    keyboard:
    - **Issue type:** four options, each a bold title with a one-line
      description: Dimension Mismatch, Undocumented Element, Element Not on
-     Site, Structural Obstacle. Follow-ups expand inline under the chosen row:
+     Site, Site Condition Hazard (unsafe environment, water damage, wrong
+     materials; deliberately non-geometric so it never overlaps a category). Follow-ups expand inline under the chosen row:
      - *Undocumented Element* reveals **Category**: one tap on a top-level
        category from magicplan's own "All Objects" menu (Annotations, Doors,
        Windows, Structural, Plumbing, Electrical, HVAC), with the same
        isometric glyphs. It's deliberately shallow (no sub-menus); the photo
-       carries the specifics. The category is required, and the report card
-       reads e.g. "North wall · Plumbing".
+       carries the specifics. Then **Location**: the canvas switches to
+       placement mode ("Tap the plan where it is") and a tap inside the room
+       drops a dashed blue **Ghost Marker** (tap again to move it; the form
+       shows its distance from the west and north walls). Once it's placed,
+       **Measured on site** expands with the subtext *Length of physical
+       wall* (empty, placeholder 0.00 m). Category, location and a length
+       above 0 are all required; the report card reads e.g.
+       "North wall · Structural · 1.20 m on site", and the marker stays on
+       the plan in the report's status colour.
      - *Dimension Mismatch* reveals **Measured on site**: tap the value to
        type a laser reading on the iPad numpad (e.g. 4.12), or nudge it with
        − / + in 5 cm steps.
@@ -100,9 +108,10 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
      a free-text note. On a laptop, use *"No camera? Use demo photo"*.
    - **Record Voice Memo (optional).** Tap to talk, tap to stop.
    - **Work is blocked here** toggle.
-   - **Send to review** stays disabled until the issue type (plus category)
-     and a photo are provided, and its label says what's missing
-     ("Add category + photo").
+   - **Send to review** stays disabled until the issue type (plus category,
+     location and length for Undocumented Element) and a photo are provided.
+     Its label names the next gap: "Add location + photo",
+     "Add length + photo".
 5. After sending, the form closes **right away**. The wall locks in a **red
    hatched pattern** with a compact **status pin** (red lock) on the wall
    (Sending → Delivered), and it appears in **Active Escalations**. The
@@ -171,7 +180,7 @@ state.
   `IssueTypePicker` (with inline category), `CategoryChips`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
 - **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the compact `EscalationPin`,
-  the yellow `AttachmentBadge` paperclip, `ElementBadges` precedence in context,
+  the yellow `AttachmentBadge` paperclip, the `GhostMarker`, `ElementBadges` precedence in context,
   and every `StatusToast` variant.
 
 Interactive specimens log their callbacks in an event log at the bottom.
@@ -192,7 +201,8 @@ src/
 │   └── deviationMachine.ts       lifecycle: transition table, revoke rule, labels
 ├── components/
 │   ├── atoms/                    CanvasWall, FloatingAnchor, LockedBadge, ToolButton,
-│   │                             IconButton, Switch, StepLabel, ObjectCategoryIcon
+│   │                             IconButton, Switch, StepLabel, ObjectCategoryIcon,
+│   │                             GhostMarker
 │   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationPin,
 │   │                             IssueTypePicker, CategoryChips, NumericStepper,
 │   │                             PhotoEvidenceCapture,

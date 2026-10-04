@@ -70,9 +70,11 @@ export const ISSUE_TYPES: { id: IssueType; label: string; description: string }[
     description: "An item drawn on the plan is physically missing.",
   },
   {
-    id: "structural-obstacle",
-    label: "Structural Obstacle",
-    description: "Pipes, columns, or hazards blocking execution.",
+    // Non-geometric on purpose: physical things (columns, pipes, walls) are
+    // Undocumented Element + a category, so the two never overlap.
+    id: "site-condition-hazard",
+    label: "Site Condition Hazard",
+    description: "Unsafe environment, water damage, or incorrect materials.",
   },
 ];
 
@@ -103,6 +105,12 @@ export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;
 export const PX_PER_M = 110;
 export const ORIGIN: Point = { x: 245, y: 175 };
 export const WALL_THICKNESS = 14;
+
+/** Inverse of toPx: canvas px → plan metres. */
+export const toMetres = (p: Point): Point => ({
+  x: (p.x - ORIGIN.x) / PX_PER_M,
+  y: (p.y - ORIGIN.y) / PX_PER_M,
+});
 
 export const toPx = (p: Point): Point => ({
   x: ORIGIN.x + p.x * PX_PER_M,

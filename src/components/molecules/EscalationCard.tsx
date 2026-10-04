@@ -86,6 +86,8 @@ export type EscalationCardProps = {
   /** When `status` last changed (ms epoch); adds "Opened by Munich 13:42". */
   statusChangedAt?: number;
   dimension?: { plannedM: number; measuredM: number };
+  /** Undocumented Element: length of the physical element measured on site. */
+  lengthM?: number;
   voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
@@ -106,6 +108,7 @@ export function EscalationCard({
   blocking = true,
   statusChangedAt,
   dimension,
+  lengthM,
   voiceMemoSeconds,
   onPress,
   className,
@@ -151,12 +154,17 @@ export function EscalationCard({
           {targetLabel && <div className="truncate text-[13px] text-mp-muted">{targetLabel}</div>}
           {note && <div className="line-clamp-2 text-[12px] italic text-mp-muted">“{note}”</div>}
 
-          {(dimension || voiceMemoSeconds !== undefined) && (
+          {(dimension || lengthM !== undefined || voiceMemoSeconds !== undefined) && (
             <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
               {dimension && (
                 <span className="flex items-center gap-1 font-medium text-mp-ink">
                   <Ruler size={12} /> {dimension.plannedM.toFixed(2)} →{" "}
                   {dimension.measuredM.toFixed(2)} m
+                </span>
+              )}
+              {!dimension && lengthM !== undefined && (
+                <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
+                  <Ruler size={12} /> {lengthM.toFixed(2)} m on site
                 </span>
               )}
               {voiceMemoSeconds !== undefined && (
@@ -276,6 +284,7 @@ export function toEscalationCardProps(
       e.plannedM !== undefined && e.measuredM !== undefined
         ? { plannedM: e.plannedM, measuredM: e.measuredM }
         : undefined,
+    lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
     voiceMemoSeconds: e.voiceMemo?.durationS,
   };
 }

@@ -9,6 +9,7 @@ import type {
   Escalation,
   EscalationDraft,
   EscalationStatus,
+  Point,
   SelectedElement,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,9 @@ type Props = {
   onReport: (anchor: SelectedElement) => void;
   onCancelReport: () => void;
   onSubmit: (draft: EscalationDraft) => void;
+  /** Ghost Marker for Undocumented Element (store-owned, placed on the canvas). */
+  draftMarker: Point | null;
+  onPlacingChange: (on: boolean) => void;
   onFocus: (t: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
@@ -82,6 +86,8 @@ export function RightSidebar(props: Props) {
               anchor={captureAnchor}
               onCancel={props.onCancelReport}
               onSubmit={props.onSubmit}
+              draftMarker={props.draftMarker}
+              onPlacingChange={props.onPlacingChange}
             />
           ) : mode === "inspector" && selected ? (
             <Inspector

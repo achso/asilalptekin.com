@@ -7,6 +7,7 @@ import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
 import { ToolButton } from "@/components/atoms/ToolButton";
 import { AttachmentBadge } from "@/components/atoms/AttachmentBadge";
+import { GhostMarker } from "@/components/atoms/GhostMarker";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { EscalationPin } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
@@ -261,6 +262,25 @@ export default function SandboxPage() {
             <div className="flex items-center gap-2 rounded-xl bg-mp-canvas px-3 py-1 w-fit">
               <AttachmentBadge count={2} label="North wall" onPress={() => record("AttachmentBadge pressed → select wall")} />
             </div>
+          </Specimen>
+
+          <Specimen
+            title="GhostMarker"
+            note="Where an Undocumented Element is. Draft (blue, pulsing) while placing; submitted ones take the report's status colour."
+          >
+            <svg width={300} height={70} className="rounded-xl bg-white">
+              {[
+                { x: 40, c: "#1a7cf5", draft: true, t: "draft" },
+                { x: 110, c: "#e5352b", t: "delivered" },
+                { x: 180, c: "#f59e0b", t: "in review" },
+                { x: 250, c: "#16a34a", t: "resolved" },
+              ].map((m) => (
+                <g key={m.t}>
+                  <GhostMarker at={{ x: m.x, y: 30 }} color={m.c} draft={m.draft} />
+                  <text x={m.x} y={64} fontSize={10} textAnchor="middle" fill="#6f6f73">{m.t}</text>
+                </g>
+              ))}
+            </svg>
           </Specimen>
 
           <Specimen

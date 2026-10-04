@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
 import { CanvasArea } from "@/components/organisms/CanvasArea";
 import { DeviceStatusBar } from "@/components/organisms/DeviceStatusBar";
@@ -51,6 +51,14 @@ export default function Page() {
     (el: SelectedElement) => escalationFor(el)?.status,
     [escalationFor],
   );
+  // Ghost Markers of submitted Undocumented Element reports stay on the plan.
+  const markers = useMemo(
+    () =>
+      store.escalations.flatMap((e) =>
+        e.marker ? [{ id: e.id, point: e.marker, status: e.status }] : [],
+      ),
+    [store.escalations],
+  );
   const onSelect = useCallback(
     (el: SelectedElement | null) => (el ? selectElement(el.id) : clearSelection()),
     [selectElement, clearSelection],
@@ -95,6 +103,10 @@ export default function Page() {
               statusFor={statusFor}
               photoCountFor={store.standardPhotoCount}
               onSelect={onSelect}
+              placing={store.placing}
+              draftMarker={store.draftMarker}
+              onPlace={store.placeDraftMarker}
+              markers={markers}
             />
 
             <LeftToolbar
@@ -152,6 +164,8 @@ export default function Page() {
             onReport={store.startReport}
             onCancelReport={store.cancelReport}
             onSubmit={store.submitEscalation}
+            draftMarker={store.draftMarker}
+            onPlacingChange={store.setPlacing}
             onFocus={(el) => store.selectElement(el.id)}
             onClear={store.clearSelection}
             onRevoke={(id) => store.revokeEscalation(id)}

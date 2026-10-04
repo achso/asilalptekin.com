@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Construction, PackagePlus, Ruler, SearchX } from "lucide-react";
+import { Check, PackagePlus, Ruler, SearchX, TriangleAlert } from "lucide-react";
 import { ISSUE_TYPES } from "@/lib/floorplan";
 import type { IssueType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; stroke
   "dimension-mismatch": Ruler,
   "undocumented-element": PackagePlus,
   "element-not-on-site": SearchX,
-  "structural-obstacle": Construction,
+  "site-condition-hazard": TriangleAlert,
 };
 
 /**
