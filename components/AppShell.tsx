@@ -3,18 +3,28 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, CheckCircle2, Lock, MousePointerClick } from "lucide-react";
 import { FloorPlanCanvas } from "./FloorPlanCanvas";
-import { EscalationBadges, ReportDeviationButton } from "./CanvasOverlay";
+import { EscalationBadges } from "./CanvasOverlay";
+import { ReportDeviationAction } from "./escalation/ReportDeviationAction";
 import { EscalationsPanel } from "./EscalationsPanel";
-import { FloorPicker, LOCKED_MESSAGE, StatusBar, ToolPalette, TopBar, UndoRedo } from "./Chrome";
+import {
+  FloorPicker,
+  LOCKED_MESSAGE,
+  LOCKED_MESSAGE_NO_SELECTION,
+  StatusBar,
+  ToolPalette,
+  TopBar,
+  UndoRedo,
+} from "./Chrome";
 import { DevToolsPanel, useDevToolsToggle } from "./DevTools";
-import { PROJECT, cornerById, wallById } from "@/lib/floorplan";
+import { deviationStateOf } from "@/lib/deviationMachine";
+import { PROJECT, elementInfo } from "@/lib/floorplan";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { sameTarget, useEscalationStore, type ToastTone } from "@/lib/useEscalationStore";
 
 export function AppShell() {
   const store = useEscalationStore();
   const { state, select, openCapture, closeCapture, submit, revoke, notify, dismissToast } = store;
-  const { selected, capturing } = state;
+  const { selected, captureAnchor } = state;
   const dev = useDevToolsToggle();
 
   const selectedEscalation = selected ? store.escalationFor(selected) : undefined;
@@ -34,20 +44,16 @@ export function AppShell() {
       ...state.escalations.map((e) => ({ escalation: e, settlesAt: undefined })),
     ].sort((a, b) => b.escalation.createdAt - a.escalation.createdAt)[0];
 
-  const title = selected
-    ? selected.kind === "wall"
-      ? wallById(selected.id).label
-      : cornerById(selected.id).label
-    : PROJECT.room;
+  const title = selected ? elementInfo(selected).label : PROJECT.room;
 
-  // The toolbar's Report Deviation is always visible; it needs a target first.
-  const reportFromToolbar = () => {
-    if (capturing) return;
-    if (!selected) return notify("Tap the wall or corner that doesn't match first.", "hint");
-    if (selectedActive) return notify(`${title} is already escalated to Munich.`, "hint");
-    if (selectedPending) return notify("Wait for the revoke to finish.", "hint");
-    openCapture();
-  };
+  /*
+   * Report Deviation is contextual: it is only offered for a selected element,
+   * and not while a form is already open for it or a revoke is in flight.
+   * `actionElement` is what ReportDeviationAction consumes; null = no button.
+   */
+  const actionElement = captureAnchor || selectedPending ? null : selected;
+  const actionState = deviationStateOf(selectedEscalation);
+  const actionKey = actionElement ? `${actionElement.type}:${actionElement.id}` : "none";
 
   return (
     <div className="flex h-full flex-col">
@@ -65,29 +71,48 @@ export function AppShell() {
             onSelect={select}
           />
           <EscalationBadges escalations={state.escalations} onPress={select} />
-          <ReportDeviationButton
-            target={capturing || selectedPending ? null : selected}
-            escalated={!!selectedActive}
-            onPress={openCapture}
-          />
+          <AnimatePresence>
+            {actionElement && (
+              <ReportDeviationAction
+                key={actionKey}
+                placement="canvas"
+                selectedElement={actionElement}
+                deviationState={actionState}
+                onReport={openCapture}
+              />
+            )}
+          </AnimatePresence>
           <ToolPalette
-            hasSelection={!!selected && !selectedActive && !selectedPending}
-            capturing={capturing}
-            onReport={reportFromToolbar}
-            onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
+            reportSlot={
+              <AnimatePresence>
+                {actionElement && (
+                  <ReportDeviationAction
+                    key={actionKey}
+                    placement="toolbar"
+                    selectedElement={actionElement}
+                    deviationState={actionState}
+                    onReport={openCapture}
+                  />
+                )}
+              </AnimatePresence>
+            }
+            onLockedTool={() =>
+              notify(selected ? LOCKED_MESSAGE : LOCKED_MESSAGE_NO_SELECTION, "locked")
+            }
           />
           <UndoRedo />
           <FloorPicker />
 
           <AnimatePresence>
-            {!selected && state.escalations.length === 0 && !state.toast && !dev.open && (
+            {/* Default state guidance: the only prompt while nothing is selected. */}
+            {!selected && !state.toast && !dev.open && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 className="pointer-events-none absolute bottom-[84px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/75 px-4 py-2 text-[14px] font-medium text-white"
               >
-                Something doesn&apos;t match? Tap the wall or corner.
+                Something doesn&apos;t match? Tap the wall, corner or floor.
               </motion.div>
             )}
           </AnimatePresence>
@@ -108,7 +133,7 @@ export function AppShell() {
           selected={selected}
           selectedEscalation={selectedEscalation}
           pendingRevoke={selectedPending?.escalation}
-          capturing={capturing}
+          captureAnchor={captureAnchor}
           escalations={state.escalations}
           onReport={openCapture}
           onCancelReport={closeCapture}

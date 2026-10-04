@@ -1,9 +1,11 @@
 export type Point = { x: number; y: number };
 
-/** A plan element the contractor can select and escalate. */
-export type Target =
-  | { kind: "wall"; id: string }
-  | { kind: "corner"; id: string };
+/** The plan element a deviation is anchored to: what the contractor tapped. */
+export type ElementType = "wall" | "corner" | "room";
+export type SelectedElement = { type: ElementType; id: string };
+
+/** @deprecated alias kept for readability in older call sites; prefer SelectedElement. */
+export type Target = SelectedElement;
 
 export type Wall = {
   id: string;

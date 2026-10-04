@@ -35,7 +35,8 @@ export type DemoSettings = {
 
 type State = {
   selected: Target | null;
-  capturing: boolean;
+  /** The element the open DeviationForm is anchored to (null = form closed). */
+  captureAnchor: Target | null;
   escalations: Escalation[];
   pendingRevokes: Record<string, PendingRevoke>;
   demo: DemoSettings;
@@ -44,7 +45,7 @@ type State = {
 
 type Action =
   | { type: "select"; target: Target | null }
-  | { type: "openCapture" }
+  | { type: "openCapture"; anchor: Target }
   | { type: "closeCapture" }
   | { type: "submit"; escalation: Escalation }
   /** Munich / server side. `force` = dev-tools override that ignores the transition table. */
@@ -58,7 +59,7 @@ type Action =
 
 const initial: State = {
   selected: null,
-  capturing: false,
+  captureAnchor: null,
   escalations: [],
   pendingRevokes: {},
   demo: { autoAdvance: false, slowNetwork: true },
@@ -75,26 +76,28 @@ const SERVER_TOASTS: Partial<Record<EscalationStatus, (label: string) => [string
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "select":
-      if (state.capturing) return state;
+      // Selection is frozen while a report is being written for an element.
+      if (state.captureAnchor) return state;
       return { ...state, selected: action.target };
 
     case "openCapture":
-      return state.selected ? { ...state, capturing: true } : state;
+      // Keep selection in sync with the anchor so the canvas highlights it.
+      return { ...state, captureAnchor: action.anchor, selected: action.anchor };
 
     case "closeCapture":
-      return { ...state, capturing: false };
+      return { ...state, captureAnchor: null };
 
     case "submit": {
       const e = action.escalation;
       return {
         ...state,
-        capturing: false,
+        captureAnchor: null,
         selected: null,
         // A resolved wall can be reported again; the new report replaces the old one.
         escalations: [
           e,
           ...state.escalations.filter(
-            (x) => !(x.target.kind === e.target.kind && x.target.id === e.target.id),
+            (x) => !(x.target.type === e.target.type && x.target.id === e.target.id),
           ),
         ],
         toast: toast(`${e.targetLabel} sent to Munich. You can move on.`, "success"),
@@ -194,7 +197,7 @@ function reducer(state: State, action: Action): State {
 }
 
 export const sameTarget = (a: Target | null, b: Target | null) =>
-  !!a && !!b && a.kind === b.kind && a.id === b.id;
+  !!a && !!b && a.type === b.type && a.id === b.id;
 
 export function useEscalationStore() {
   const [state, dispatch] = useReducer(reducer, initial);
@@ -204,7 +207,10 @@ export function useEscalationStore() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const select = useCallback((target: Target | null) => dispatch({ type: "select", target }), []);
-  const openCapture = useCallback(() => dispatch({ type: "openCapture" }), []);
+  const openCapture = useCallback(
+    (anchor: Target) => dispatch({ type: "openCapture", anchor }),
+    [],
+  );
   const closeCapture = useCallback(() => dispatch({ type: "closeCapture" }), []);
   const dismissToast = useCallback(() => dispatch({ type: "dismissToast" }), []);
   const notify = useCallback(

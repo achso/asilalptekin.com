@@ -1,4 +1,4 @@
-import type { Corner, IssueType, Point, Wall } from "./types";
+import type { Corner, IssueType, Point, SelectedElement, Wall } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.33 m room from the
@@ -85,4 +85,67 @@ export function wallGeometry(wall: Wall) {
   const ny = ux;
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   return { a, b, ux, uy, nx, ny, len, mid };
+}
+
+// ── Selectable elements ─────────────────────────────────────────────────────
+
+export const ROOM = {
+  id: "r-kitchen",
+  label: "Kitchen floor",
+  widthM: 4.55,
+  depthM: 3.33,
+};
+
+export type ElementInfo = {
+  label: string;
+  /** One-line geometry summary for headers ("Length 4.55 m"). */
+  summary: string;
+  /** Planned length, if the element has one (enables the dimension stepper). */
+  plannedM?: number;
+};
+
+/** Everything the UI needs to describe a selected element, whatever its type. */
+export function elementInfo(el: SelectedElement): ElementInfo {
+  switch (el.type) {
+    case "wall": {
+      const w = wallById(el.id);
+      return {
+        label: w.label,
+        summary: `Length ${w.lengthM.toFixed(2)} m · ${w.openings?.length ?? 0} openings`,
+        plannedM: w.lengthM,
+      };
+    }
+    case "corner":
+      return { label: cornerById(el.id).label, summary: "Corner · 90°" };
+    case "room": {
+      const area = ROOM.widthM * ROOM.depthM;
+      const perimeter = 2 * (ROOM.widthM + ROOM.depthM);
+      return {
+        label: ROOM.label,
+        summary: `${area.toFixed(2)} m² · perimeter ${perimeter.toFixed(2)} m`,
+      };
+    }
+  }
+}
+
+/**
+ * Where floating UI attaches to an element, in canvas px. `inward` is the
+ * direction into the room (positive offsets land inside, negative outside).
+ */
+export function elementAnchor(el: SelectedElement): { p: Point; inward: Point } {
+  const centre = toPx({ x: ROOM.widthM / 2, y: ROOM.depthM / 2 });
+  switch (el.type) {
+    case "wall": {
+      const g = wallGeometry(wallById(el.id));
+      return { p: g.mid, inward: { x: g.nx, y: g.ny } };
+    }
+    case "corner": {
+      const p = toPx(cornerById(el.id).p);
+      const d = Math.hypot(centre.x - p.x, centre.y - p.y);
+      return { p, inward: { x: (centre.x - p.x) / d, y: (centre.y - p.y) / d } };
+    }
+    case "room":
+      // Anchor near the top of the floor so the badge/button sit on open floor.
+      return { p: { x: centre.x, y: centre.y - 40 }, inward: { x: 0, y: 1 } };
+  }
 }

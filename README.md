@@ -61,11 +61,14 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
 1. **Try a drafting tool** (Insert, Add Corner, Add Wall, Split Room, Delete).
    They're greyed out. Tapping one shows a toast: *"Plan locked for execution.
    Use 'Report Deviation' to alert the Munich office."*
-2. **Tap a wall** (or a corner). It turns magicplan blue. The right sidebar
-   shows the familiar **Details / Photos & Notes / Forms** inspector, with
-   values read-only. **📍 Report Deviation** sits at the top of the left toolbar
-   and also floats next to the selected wall.
-3. Tap **Report Deviation**. The right sidebar becomes the **Escalation Form**,
+2. **Nothing is selected yet, so there's no Report Deviation button.** A
+   report has to be anchored to geometry. The hint at the bottom and the
+   sidebar's empty state guide the contractor instead.
+3. **Tap a wall, a corner, or the floor (the whole room).** It highlights, the
+   sidebar shows the read-only **Details / Photos & Notes / Forms** inspector,
+   and **📍 Report Deviation** animates in next to the element and at the top
+   of the toolbar. The button hands the anchor (`{ type, id }`) to the form.
+4. Tap **Report Deviation**. The right sidebar becomes the **Escalation Form**,
    and the canvas stays visible with the wall highlighted. Nothing needs a
    keyboard:
    - **Issue type:** a radio group (Wall Missing, Dimension Mismatch, Obstacle, …).
@@ -76,7 +79,7 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    - **Work is blocked here** toggle.
    - **Send to Munich** stays disabled until the issue type and photo are
      provided, and its label says what's missing.
-4. After sending, the form closes **right away**. The wall locks in a **red
+5. After sending, the form closes **right away**. The wall locks in a **red
    hatched pattern** with a persistent **"Escalated to Munich"** badge
    (Sending → Delivered), and it appears in **Active Escalations**. The
    contractor moves on.
@@ -142,7 +145,9 @@ components/
   FloorPlanCanvas.tsx      SVG plan: grid, corners, openings, dimensions; composes CanvasWall
   canvas/
     CanvasWall.tsx         Atom: one wall, styled by `deviationState` (cva variants)
+    FloatingAnchor.tsx     Positions HTML next to a wall / corner / room
   escalation/
+    ReportDeviationAction.tsx  Molecule: contextual primary action; null without a selection
     EscalationCard.tsx     Molecule: sidebar card, content + actions driven by `deviationState`
   CanvasOverlay.tsx        Floating "Report Deviation" CTA + "Escalated to Munich" badges
   EscalationsPanel.tsx     Right panel: Active Escalations ↔ inspector tabs ↔ Escalation Form

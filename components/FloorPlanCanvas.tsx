@@ -1,11 +1,14 @@
 "use client";
 
+import { cva } from "class-variance-authority";
 import { motion } from "framer-motion";
+import type { DeviationState } from "@/lib/deviationMachine";
 import {
   CORNERS,
   WALLS,
   WALL_THICKNESS,
   PX_PER_M,
+  ROOM,
   toPx,
   wallGeometry,
 } from "@/lib/floorplan";
@@ -34,6 +37,8 @@ type Props = {
   statusFor: (t: Target) => EscalationStatus | undefined;
   onSelect: (t: Target | null) => void;
 };
+
+const ROOM_ELEMENT: Target = { type: "room", id: ROOM.id };
 
 export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }: Props) {
   return (
@@ -72,7 +77,11 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       {/* Background: dotted grid outside the room, like magicplan's empty canvas */}
       <rect data-bg="1" width={width} height={height} fill="url(#grid-dots)" />
 
-      <RoomFloor />
+      <RoomFloor
+        selected={sameTarget(selected, ROOM_ELEMENT)}
+        deviationState={statusFor(ROOM_ELEMENT) ?? "idle"}
+        onSelect={() => onSelect(ROOM_ELEMENT)}
+      />
       <Furniture />
 
       {WALLS.map((w) => (
@@ -80,7 +89,7 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       ))}
 
       {WALLS.map((w) => {
-        const target: Target = { kind: "wall", id: w.id };
+        const target: Target = { type: "wall", id: w.id };
         return (
           <g key={w.id}>
             <CanvasWall
@@ -99,7 +108,7 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       })}
 
       {CORNERS.map((c) => {
-        const target: Target = { kind: "corner", id: c.id };
+        const target: Target = { type: "corner", id: c.id };
         const p = toPx(c.p);
         const isSel = sameTarget(selected, target);
         const status = statusFor(target);
@@ -123,13 +132,54 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
   );
 }
 
-function RoomFloor() {
+const roomTint = cva("pointer-events-none transition-[fill,opacity] duration-300", {
+  variants: {
+    state: {
+      idle: "fill-transparent",
+      sending: "fill-[url(#canvas-wall-hatch)] opacity-25",
+      delivered: "fill-[url(#canvas-wall-hatch)] opacity-25",
+      in_review: "fill-amber-400/20",
+      resolved: "fill-emerald-500/10",
+    },
+    selected: { true: "", false: "" },
+  },
+  compoundVariants: [{ state: "idle", selected: true, class: "fill-mp-blue-soft/15" }],
+});
+
+/** The floor itself is selectable: deviations can be anchored to the whole room. */
+function RoomFloor({
+  selected,
+  deviationState,
+  onSelect,
+}: {
+  selected: boolean;
+  deviationState: DeviationState;
+  onSelect: () => void;
+}) {
   const a = toPx(CORNERS[0].p);
   const c = toPx(CORNERS[2].p);
+  const box = { x: a.x, y: a.y, width: c.x - a.x, height: c.y - a.y };
   return (
-    <g pointerEvents="none">
-      <rect x={a.x} y={a.y} width={c.x - a.x} height={c.y - a.y} fill="#fff" />
-      <rect x={a.x} y={a.y} width={c.x - a.x} height={c.y - a.y} fill="url(#grid-room)" />
+    <g
+      role="button"
+      tabIndex={0}
+      aria-label={`${ROOM.label}, ${deviationState === "idle" ? "no deviation reported" : deviationState}`}
+      aria-pressed={selected}
+      onPointerDown={onSelect}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onSelect()}
+      className="cursor-pointer outline-none"
+    >
+      <rect {...box} fill="#fff" />
+      <rect {...box} fill="url(#grid-room)" pointerEvents="none" />
+      <rect {...box} className={roomTint({ state: deviationState, selected })} />
+      {selected && (
+        <rect
+          {...box}
+          className="pointer-events-none fill-none stroke-mp-blue"
+          strokeWidth={3}
+          strokeDasharray="10 8"
+        />
+      )}
     </g>
   );
 }

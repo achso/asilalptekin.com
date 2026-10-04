@@ -1,57 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, CheckCheck, CloudUpload, Eye, Lock, MapPin } from "lucide-react";
-import { cornerById, toPx, wallById, wallGeometry } from "@/lib/floorplan";
-import type { Escalation, EscalationStatus, Point, Target } from "@/lib/types";
+import { Check, CheckCheck, CloudUpload, Eye, Lock } from "lucide-react";
+import type { Escalation, EscalationStatus, Target } from "@/lib/types";
 import { STATUS_META } from "@/lib/deviationMachine";
-import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-
-/** Where to anchor UI for a target, in canvas px. `inward` points into the room. */
-function anchorFor(t: Target): { p: Point; inward: Point } {
-  if (t.kind === "wall") {
-    const g = wallGeometry(wallById(t.id));
-    return { p: g.mid, inward: { x: g.nx, y: g.ny } };
-  }
-  const p = toPx(cornerById(t.id).p);
-  // diagonal toward the room centre
-  const c = toPx({ x: 2.275, y: 1.665 });
-  const d = Math.hypot(c.x - p.x, c.y - p.y);
-  return { p, inward: { x: (c.x - p.x) / d, y: (c.y - p.y) / d } };
-}
-
-export function ReportDeviationButton({
-  target,
-  escalated,
-  onPress,
-}: {
-  target: Target | null;
-  escalated: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <AnimatePresence>
-      {target && !escalated && (
-        <FloatingAt key={`${target.kind}-${target.id}`} target={target} distance={78}>
-          <motion.button
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.6, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 28 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={onPress}
-            className="flex h-16 items-center gap-3 whitespace-nowrap rounded-2xl bg-mp-red pl-4 pr-6 text-[19px] font-semibold text-white shadow-[0_10px_30px_rgba(229,53,43,0.45)] ring-4 ring-white"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/20">
-              <MapPin size={24} strokeWidth={2.5} />
-            </span>
-            Report Deviation
-          </motion.button>
-        </FloatingAt>
-      )}
-    </AnimatePresence>
-  );
-}
+import { FloatingAnchor } from "./canvas/FloatingAnchor";
 
 const TONE_BG = { red: "bg-mp-red", amber: "bg-amber-500", green: "bg-emerald-600" } as const;
 const TONE_FG = { red: "text-mp-red", amber: "text-amber-600", green: "text-emerald-600" } as const;
@@ -75,7 +28,7 @@ export function EscalationBadges({
       {escalations.map((e) => {
         const meta = STATUS_META[e.status];
         return (
-          <FloatingAt key={e.id} target={e.target} distance={-84} fallbackDistance={44}>
+          <FloatingAnchor key={e.id} element={e.target} distance={-84} fallbackDistance={44}>
             <motion.button
               layout
               initial={{ scale: 0, opacity: 0, y: 10 }}
@@ -101,45 +54,9 @@ export function EscalationBadges({
                 {STATUS_ICON[e.status]} {meta.label}
               </span>
             </motion.button>
-          </FloatingAt>
+          </FloatingAnchor>
         );
       })}
     </AnimatePresence>
   );
 }
-
-/** Absolutely positions children centred on a point offset from the target. */
-function FloatingAt({
-  target,
-  distance,
-  fallbackDistance,
-  children,
-}: {
-  target: Target;
-  distance: number; // + = into the room, − = outside
-  /** used instead of `distance` when the preferred spot would leave the canvas */
-  fallbackDistance?: number;
-  children: React.ReactNode;
-}) {
-  const { p, inward } = anchorFor(target);
-  const at = (d: number) => ({ x: p.x + inward.x * d, y: p.y + inward.y * d });
-  let pos = at(distance);
-  if (fallbackDistance !== undefined && !inBounds(pos)) pos = at(fallbackDistance);
-  // Keep floating UI fully on-canvas (≈150px half-width for the widest chip).
-  const x = clamp(pos.x, MARGIN_X, CANVAS_W - MARGIN_X);
-  const y = clamp(pos.y, MARGIN_Y, CANVAS_H - MARGIN_Y);
-  return (
-    <div
-      className="pointer-events-none absolute z-20"
-      style={{ left: x, top: y, transform: "translate(-50%, -50%)" }}
-    >
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  );
-}
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
-const MARGIN_X = 150;
-const MARGIN_Y = 40;
-const inBounds = (p: Point) =>
-  p.x >= MARGIN_X && p.x <= CANVAS_W - MARGIN_X && p.y >= MARGIN_Y && p.y <= CANVAS_H - MARGIN_Y;

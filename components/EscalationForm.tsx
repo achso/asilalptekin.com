@@ -19,9 +19,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { ISSUE_TYPES, PROJECT, cornerById, wallById } from "@/lib/floorplan";
+import { ISSUE_TYPES, PROJECT, elementInfo } from "@/lib/floorplan";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
-import type { Escalation, IssueType, Target } from "@/lib/types";
+import type { Escalation, IssueType, SelectedElement } from "@/lib/types";
 import { useVoiceRecorder } from "@/lib/useVoiceRecorder";
 
 const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
@@ -40,17 +40,16 @@ const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; stroke
  * reporting. No keyboard needed anywhere.
  */
 export function EscalationForm({
-  target,
+  anchor,
   onCancel,
   onSubmit,
 }: {
-  target: Target;
+  /** The plan element (type + id) this ticket is anchored to. */
+  anchor: SelectedElement;
   onCancel: () => void;
   onSubmit: (e: Escalation) => void;
 }) {
-  const wall = target.kind === "wall" ? wallById(target.id) : null;
-  const label = wall ? wall.label : cornerById(target.id).label;
-  const plannedM = wall?.lengthM;
+  const { label, plannedM } = elementInfo(anchor);
 
   const [issue, setIssue] = useState<IssueType | null>(null);
   const [measured, setMeasured] = useState<number>(plannedM ?? 0);
@@ -69,7 +68,7 @@ export function EscalationForm({
     if (!issue || !photo) return;
     onSubmit({
       id: `esc-${Date.now()}`,
-      target,
+      target: anchor,
       targetLabel: label,
       issueType: issue,
       plannedM,

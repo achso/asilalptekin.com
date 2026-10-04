@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { FileText, Info, Loader2, Lock, X } from "lucide-react";
-import { PROJECT, cornerById, wallById } from "@/lib/floorplan";
+import { PROJECT, ROOM, elementInfo, wallById } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
 import type { Escalation, EscalationStatus, Target } from "@/lib/types";
 import { isActive } from "@/lib/deviationMachine";
@@ -13,9 +13,10 @@ import { EscalationCard, toEscalationCardProps } from "./escalation/EscalationCa
 type Props = {
   selected: Target | null;
   selectedEscalation?: Escalation;
-  capturing: boolean;
+  /** Element the DeviationForm is anchored to; non-null switches the panel to the form. */
+  captureAnchor: Target | null;
   escalations: Escalation[];
-  onReport: () => void;
+  onReport: (anchor: Target) => void;
   onCancelReport: () => void;
   onSubmit: (e: Escalation) => void;
   onFocus: (t: Target) => void;
@@ -35,8 +36,8 @@ type Mode = "summary" | "inspector" | "form";
  *  - form      (Report Deviation tapped) → the Escalation Form takes over the panel
  */
 export function EscalationsPanel(props: Props) {
-  const { selected, capturing } = props;
-  const mode: Mode = capturing && selected ? "form" : selected ? "inspector" : "summary";
+  const { selected, captureAnchor } = props;
+  const mode: Mode = captureAnchor ? "form" : selected ? "inspector" : "summary";
 
   return (
     <aside
@@ -52,9 +53,9 @@ export function EscalationsPanel(props: Props) {
           transition={{ type: "spring", stiffness: 420, damping: 38 }}
           className="absolute inset-0 flex flex-col"
         >
-          {mode === "form" && selected ? (
+          {mode === "form" && captureAnchor ? (
             <EscalationForm
-              target={selected}
+              anchor={captureAnchor}
               onCancel={props.onCancelReport}
               onSubmit={props.onSubmit}
             />
@@ -157,13 +158,12 @@ function Inspector({
   target: Target;
   escalation?: Escalation;
   pendingRevoke?: Escalation;
-  onReport: () => void;
+  onReport: (anchor: Target) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>("Details");
-  const wall = target.kind === "wall" ? wallById(target.id) : null;
-  const label = wall ? wall.label : cornerById(target.id).label;
+  const { label } = elementInfo(target);
 
   return (
     <>
@@ -215,10 +215,10 @@ function Inspector({
         ) : null}
 
         {tab === "Details" && <DetailsTab target={target} />}
-        {tab === "Photos & Notes" && <PhotosTab onReport={onReport} escalated={isActive(escalation)} />}
+        {tab === "Photos & Notes" && <PhotosTab onReport={() => onReport(target)} escalated={isActive(escalation)} />}
         {tab === "Forms" && (
           <div className="rounded-2xl bg-white p-4 text-[14px] text-mp-muted">
-            No forms attached to this {target.kind}.
+            No forms attached to this {target.type}.
           </div>
         )}
       </div>
@@ -227,20 +227,16 @@ function Inspector({
 }
 
 function DetailsTab({ target }: { target: Target }) {
-  const wall = target.kind === "wall" ? wallById(target.id) : null;
   return (
     <div className="flex flex-col gap-4">
       <Group title="Dimensions">
-        <Row label={wall ? "Length" : "Angle"}>
-          <LockedValue>{wall ? `${wall.lengthM.toFixed(2)} m` : "90°"}</LockedValue>
-        </Row>
-        {wall && (
-          <Row label="Openings">
-            <LockedValue>{wall.openings?.length ?? 0}</LockedValue>
+        {dimensionRows(target).map(([k, v]) => (
+          <Row key={k} label={k}>
+            <LockedValue>{v}</LockedValue>
           </Row>
-        )}
+        ))}
       </Group>
-      {wall && (
+      {target.type === "wall" && (
         <Group title="Settings">
           <Row label="Load-Bearing Wall">
             <span className="h-[31px] w-[51px] rounded-full bg-mp-line opacity-60" />
@@ -254,6 +250,25 @@ function DetailsTab({ target }: { target: Target }) {
       </p>
     </div>
   );
+}
+
+function dimensionRows(target: Target): [string, string][] {
+  switch (target.type) {
+    case "wall": {
+      const w = wallById(target.id);
+      return [
+        ["Length", `${w.lengthM.toFixed(2)} m`],
+        ["Openings", String(w.openings?.length ?? 0)],
+      ];
+    }
+    case "corner":
+      return [["Angle", "90°"]];
+    case "room":
+      return [
+        ["Floor area", `${(ROOM.widthM * ROOM.depthM).toFixed(2)} m²`],
+        ["Perimeter", `${(2 * (ROOM.widthM + ROOM.depthM)).toFixed(2)} m`],
+      ];
+  }
 }
 
 function PhotosTab({ onReport, escalated }: { onReport: () => void; escalated: boolean }) {
@@ -338,7 +353,7 @@ function EmptyState() {
       </span>
       <div className="text-[15px] font-semibold">Nothing escalated yet</div>
       <div className="text-[13px] leading-snug text-mp-muted">
-        Plan doesn&apos;t match the room? Tap the wall or corner on the plan, then{" "}
+        Plan doesn&apos;t match the room? Tap the wall, corner or floor on the plan, then{" "}
         <span className="font-semibold text-mp-red">Report Deviation</span>.
       </div>
     </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronsUpDown,
@@ -10,7 +9,6 @@ import {
   Layers,
   LayoutPanelLeft,
   Lock,
-  MapPin,
   Plus,
   Redo2,
   Share,
@@ -143,6 +141,9 @@ function IconBtn({ label, children }: { label: string; children: React.ReactNode
 
 export const LOCKED_MESSAGE =
   "Plan locked for execution. Use 'Report Deviation' to alert the Munich office.";
+/** Same lock, but nothing is selected yet, so the action isn't on screen. */
+export const LOCKED_MESSAGE_NO_SELECTION =
+  "Plan locked for execution. Tap the wall, corner or floor that's wrong to report a deviation.";
 
 /**
  * Left floating palette. The permit is approved, so the plan is in its
@@ -151,14 +152,11 @@ export const LOCKED_MESSAGE =
  * that is available — Report Deviation.
  */
 export function ToolPalette({
-  hasSelection,
-  capturing,
-  onReport,
+  reportSlot,
   onLockedTool,
 }: {
-  hasSelection: boolean;
-  capturing: boolean;
-  onReport: () => void;
+  /** Contextual primary action (ReportDeviationAction); empty when nothing is selected. */
+  reportSlot?: React.ReactNode;
   onLockedTool: () => void;
 }) {
   const tools = [
@@ -169,21 +167,8 @@ export function ToolPalette({
   ];
   return (
     <div className="absolute left-4 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2.5">
-      <motion.button
-        onClick={onReport}
-        whileTap={{ scale: 0.96 }}
-        animate={
-          hasSelection && !capturing
-            ? { boxShadow: ["0 0 0 0 rgba(229,53,43,0.45)", "0 0 0 10px rgba(229,53,43,0)"] }
-            : { boxShadow: "0 6px 16px rgba(229,53,43,0.3)" }
-        }
-        transition={hasSelection && !capturing ? { repeat: Infinity, duration: 1.4 } : undefined}
-        className={`mb-2 flex h-14 w-fit items-center gap-2.5 rounded-xl px-4 text-[17px] font-semibold text-white ${
-          capturing ? "bg-mp-red/70" : "bg-mp-red"
-        }`}
-      >
-        <MapPin size={22} strokeWidth={2.5} /> Report Deviation
-      </motion.button>
+      {/* Fixed-height slot: the action animates in/out without shifting the tools below. */}
+      <div className="mb-2 h-14">{reportSlot}</div>
 
       {tools.map(({ icon: Icon, label, chevron }) => (
         <LockedToolBtn key={label} onPress={onLockedTool}>
