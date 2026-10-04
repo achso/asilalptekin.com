@@ -43,7 +43,11 @@ export type ElementCategory =
   | "windows"
   | "structural"
   | "plumbing"
+  | "appliances"
+  | "cabinets"
+  | "furniture"
   | "electrical"
+  | "outdoors"
   | "hvac";
 
 export type Escalation = {
@@ -58,6 +62,8 @@ export type Escalation = {
    * dimension-mismatch, the physical element's length for undocumented-element.
    */
   measuredM?: number;
+  /** Only for undocumented-element, if its category has a height (see CATEGORY_MEASURES). */
+  heightM?: number;
   /** Only for undocumented-element: where it is, in plan metres (Ghost Marker). */
   marker?: Point;
   plannedM?: number;

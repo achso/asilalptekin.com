@@ -82,8 +82,10 @@ export const issueLabel = (id: IssueType) =>
   ISSUE_TYPES.find((t) => t.id === id)?.label ?? id;
 
 /**
- * Object categories for "Undocumented Element": same names and order as the
- * native "All Objects" insert menu, top level only (no sub-menus).
+ * Object categories for "Undocumented Element": the native "All Objects"
+ * insert menu's top level, same order, top level only (no sub-menus).
+ * "Kitchen Cabinets" is shortened to "Cabinets" to fit a glove-sized tile;
+ * Garage, Fire and Safety and Restoration are left out as non-spatial here.
  */
 export const ELEMENT_CATEGORIES: { id: ElementCategory; label: string }[] = [
   { id: "annotations", label: "Annotations" },
@@ -91,9 +93,40 @@ export const ELEMENT_CATEGORIES: { id: ElementCategory; label: string }[] = [
   { id: "windows", label: "Windows" },
   { id: "structural", label: "Structural" },
   { id: "plumbing", label: "Plumbing" },
+  { id: "appliances", label: "Appliances" },
+  { id: "cabinets", label: "Cabinets" },
+  { id: "furniture", label: "Furniture" },
   { id: "electrical", label: "Electrical" },
+  { id: "outdoors", label: "Outdoors" },
   { id: "hvac", label: "HVAC" },
 ];
+
+/**
+ * What to measure for each category, so every value means something:
+ * - A structural wall runs floor to ceiling, so its length is enough.
+ * - Doors, windows, appliances and cabinets are sized as width × height.
+ * - Boxed-in pipes, ducts and units stop below the ceiling, so their height
+ *   decides whether anything still fits above or around them.
+ * Heights are capped at the ceiling.
+ */
+export type CategoryMeasure = {
+  primary: { label: "Length" | "Width"; hint: string };
+  height?: { hint: string };
+};
+
+export const CATEGORY_MEASURES: Record<ElementCategory, CategoryMeasure> = {
+  annotations: { primary: { label: "Length", hint: "Length of element" } },
+  structural: { primary: { label: "Length", hint: "Length of physical wall" } },
+  doors: { primary: { label: "Width", hint: "Width of door" }, height: { hint: "Height of door" } },
+  windows: { primary: { label: "Width", hint: "Width of window" }, height: { hint: "Height of window" } },
+  plumbing: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
+  appliances: { primary: { label: "Width", hint: "Width of appliance" }, height: { hint: "Height of appliance" } },
+  cabinets: { primary: { label: "Width", hint: "Width of cabinet" }, height: { hint: "Height of cabinet" } },
+  furniture: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
+  outdoors: { primary: { label: "Length", hint: "Length of element" } },
+  electrical: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
+  hvac: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
+};
 
 export const categoryLabel = (id: ElementCategory) =>
   ELEMENT_CATEGORIES.find((c) => c.id === id)?.label ?? id;
@@ -139,6 +172,8 @@ export const ROOM = {
   label: "Music Room floor",
   widthM: 4.55,
   depthM: 3.3,
+  /** Ceiling height in metres: the upper bound for any element's height. */
+  ceilingM: 3.12,
   /**
    * Captured statistics as magicplan reports them (perimeter and wall area are
    * net of openings, so they aren't simply derived from width × depth).

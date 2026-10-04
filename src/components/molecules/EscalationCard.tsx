@@ -3,7 +3,7 @@
 import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, ChevronRight, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
-import { categoryLabel, issueLabel } from "@/lib/floorplan";
+import { CATEGORY_MEASURES, categoryLabel, issueLabel } from "@/lib/floorplan";
 import type { Escalation, EscalationStatus, IssueType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
@@ -86,8 +86,11 @@ export type EscalationCardProps = {
   /** When `status` last changed (ms epoch); adds "Opened by Munich 13:42". */
   statusChangedAt?: number;
   dimension?: { plannedM: number; measuredM: number };
-  /** Undocumented Element: length of the physical element measured on site. */
+  /** Undocumented Element: size measured on site (see CATEGORY_MEASURES). */
   lengthM?: number;
+  heightM?: number;
+  /** "Width" for doors and windows, else "Length". */
+  primaryLabel?: "Length" | "Width";
   voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
@@ -109,6 +112,8 @@ export function EscalationCard({
   statusChangedAt,
   dimension,
   lengthM,
+  heightM,
+  primaryLabel = "Length",
   voiceMemoSeconds,
   onPress,
   className,
@@ -164,7 +169,8 @@ export function EscalationCard({
               )}
               {!dimension && lengthM !== undefined && (
                 <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
-                  <Ruler size={12} /> {lengthM.toFixed(2)} m on site
+                  <Ruler size={12} /> {lengthM.toFixed(2)} m {primaryLabel === "Width" ? "wide" : "long"}
+                  {heightM !== undefined && ` · ${heightM.toFixed(2)} m high`}
                 </span>
               )}
               {voiceMemoSeconds !== undefined && (
@@ -285,6 +291,8 @@ export function toEscalationCardProps(
         ? { plannedM: e.plannedM, measuredM: e.measuredM }
         : undefined,
     lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
+    heightM: e.issueType === "undocumented-element" ? e.heightM : undefined,
+    primaryLabel: e.category ? CATEGORY_MEASURES[e.category].primary.label : undefined,
     voiceMemoSeconds: e.voiceMemo?.durationS,
   };
 }

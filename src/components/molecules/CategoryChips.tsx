@@ -6,13 +6,14 @@ import type { ElementCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * CategoryChips (molecule): what kind of object an "Undocumented Element" is.
+ * CategoryChips (molecule): quick-select Object Category grid for an
+ * "Undocumented Element".
  *
- * Shallow on purpose: one tap on a top-level category from magicplan's
- * "All Objects" menu (same names, same isometric glyphs). No dropdowns or
- * sub-menus; the photo carries the specifics. Compact pills in a wrapping
- * row, each at least 40px tall for gloved fingers; labels never wrap.
- * Active pill: blue border and blue fill.
+ * magicplan's native "All Objects" top-level categories (same names, same
+ * isometric glyphs), flattened into a single-select 3-column grid of rounded
+ * squares: 64px tall, so they work with gloves. One tap selects; there are no
+ * sub-menus, since the photo carries the specifics. Selected: blue tint and
+ * border.
  */
 export function CategoryChips({
   value,
@@ -24,7 +25,7 @@ export function CategoryChips({
   className?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label="Category" className={cn("flex flex-wrap gap-2", className)}>
+    <div role="radiogroup" aria-label="Object Category" className={cn("grid grid-cols-3 gap-1.5", className)}>
       {ELEMENT_CATEGORIES.map((c) => {
         const active = value === c.id;
         return (
@@ -35,18 +36,18 @@ export function CategoryChips({
             aria-checked={active}
             onClick={() => onChange(c.id)}
             className={cn(
-              "flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+              "flex h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border text-sm font-medium transition-colors",
               active
-                ? "border-mp-blue bg-mp-blue text-white"
-                : "border-mp-line bg-white text-mp-ink active:bg-gray-50",
+                ? "border-blue-500 bg-blue-50 text-blue-700"
+                : "border-gray-200 bg-gray-50 text-mp-ink active:bg-gray-100",
             )}
           >
             <ObjectCategoryIcon
               category={c.id}
-              size={20}
-              className={active ? "text-white" : "text-gray-700"}
+              size={26}
+              className={active ? "text-blue-700" : "text-gray-700"}
             />
-            {c.label}
+            <span className="max-w-full truncate whitespace-nowrap leading-tight tracking-tight">{c.label}</span>
           </button>
         );
       })}

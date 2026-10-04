@@ -11,7 +11,7 @@ import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
-import { PROJECT, elementInfo } from "@/lib/floorplan";
+import { CATEGORY_MEASURES, PROJECT, ROOM, elementInfo } from "@/lib/floorplan";
 import type { ElementCategory, EscalationDraft, IssueType, Point, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,9 @@ import { cn } from "@/lib/utils";
  *     Undocumented Element, step by step:
  *       CategoryChips  → which object (one shallow level); unlocks Evidence
  *       Location       → tap the plan to drop the Ghost Marker (store-owned)
- *       NumericStepper → "Length of physical wall", revealed once it's placed
+ *       NumericStepper(s) → revealed once it's placed; what's measured depends
+ *                      on the category (CATEGORY_MEASURES): a wall's length,
+ *                      a door's width × height, an element's length × height
  *     Dimension Mismatch:
  *       NumericStepper → measured wall length vs plan
  *   PhotoEvidenceCapture → photos (≥ 1 required) + note, magicplan's Photos & Notes layout
@@ -59,6 +61,7 @@ export function DeviationForm({
   const [issue, setIssue] = useState<IssueType | null>(null);
   const [category, setCategory] = useState<ElementCategory | null>(null);
   const [elementLength, setElementLength] = useState<number | null>(null);
+  const [elementHeight, setElementHeight] = useState<number | null>(null);
   const lengthRef = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState(plannedM ?? 0);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -70,7 +73,10 @@ export function DeviationForm({
   const hasPhoto = photos.length > 0;
   const undocumented = issue === "undocumented-element";
   const placed = undocumented && !!draftMarker;
+  const measure = category ? CATEGORY_MEASURES[category] : null;
   const hasLength = elementLength !== null && elementLength > 0;
+  const needsHeight = !!measure?.height;
+  const hasHeight = elementHeight !== null && elementHeight > 0;
 
   // Placement mode follows the flow: on once Undocumented Element has a
   // category, off when the issue type changes or the form closes.
@@ -89,8 +95,10 @@ export function DeviationForm({
       : undocumented && !placed
         ? "location"
         : undocumented && !hasLength
-          ? "length"
-          : null;
+          ? (measure?.primary.label.toLowerCase() ?? "length")
+          : undocumented && needsHeight && !hasHeight
+            ? "height"
+            : null;
   const issueDone = issueMissing === null;
   // Evidence (the camera) unlocks as soon as the category is chosen.
   const evidenceUnlocked = !!issue && (!undocumented || !!category);
@@ -107,6 +115,7 @@ export function DeviationForm({
       marker: undocumented ? (draftMarker ?? undefined) : undefined,
       plannedM: showStepper ? plannedM : undefined,
       measuredM: showStepper ? measured : undocumented ? (elementLength ?? undefined) : undefined,
+      heightM: undocumented && needsHeight ? (elementHeight ?? undefined) : undefined,
       photoUrls: photos,
       note: note.trim() || undefined,
       voiceMemo,
@@ -147,7 +156,7 @@ export function DeviationForm({
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <p className="text-[13px] font-semibold text-mp-ink">
-                      Category <span className="text-mp-red">*</span>
+                      Object Category <span className="text-mp-red">*</span>
                     </p>
                     <CategoryChips value={category} onChange={setCategory} />
                   </div>
@@ -157,7 +166,7 @@ export function DeviationForm({
 
                   {/* Length: revealed once the Ghost Marker is on the plan. */}
                   <AnimatePresence initial={false}>
-                    {placed && (
+                    {placed && measure && (
                       <motion.div
                         key="length"
                         ref={lengthRef}
@@ -171,13 +180,28 @@ export function DeviationForm({
                         }
                         className="overflow-hidden"
                       >
-                        <NumericStepper
-                          label="Measured on site"
-                          hint="Length of physical wall"
-                          placeholder="0.00"
-                          value={elementLength}
-                          onChange={setElementLength}
-                        />
+                        <div className="flex flex-col gap-2">
+                          <p className="text-[13px] font-semibold text-mp-ink">
+                            Measured on site <span className="text-mp-red">*</span>
+                          </p>
+                          <NumericStepper
+                            label={measure.primary.label}
+                            hint={measure.primary.hint}
+                            placeholder="0.00"
+                            value={elementLength}
+                            onChange={setElementLength}
+                          />
+                          {measure.height && (
+                            <NumericStepper
+                              label="Height"
+                              hint={`${measure.height.hint} · ceiling ${ROOM.ceilingM.toFixed(2)} m`}
+                              placeholder="0.00"
+                              max={ROOM.ceilingM}
+                              value={elementHeight}
+                              onChange={setElementHeight}
+                            />
+                          )}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>

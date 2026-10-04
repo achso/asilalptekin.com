@@ -169,7 +169,7 @@ export default function SandboxPage() {
           <Specimen title="IssueTypePicker" note="Grouped list: bold title + description per type; selected row blue with a check. Undocumented Element expands its category chips inline.">
             <IssueTypePickerDemo onChange={(v) => record(`IssueTypePicker → ${v}`)} />
           </Specimen>
-          <Specimen title="CategoryChips" note="Object categories from the native All Objects menu, isometric glyphs; active chip has a blue border.">
+          <Specimen title="CategoryChips" note="Object Category quick-select: native All Objects top level, 3-column glove-sized tiles, single-select (blue-50 + blue-500 border).">
             <CategoryChipsDemo onChange={(v) => record(`CategoryChips → ${v}`)} />
           </Specimen>
 

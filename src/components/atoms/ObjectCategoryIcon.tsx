@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 /**
  * ObjectCategoryIcon (atom): small isometric line drawings in the style of
  * magicplan's "All Objects" insert menu (sheet + pencil, door, window,
- * stairs, sink, socket + plug, fan unit). Strokes and dark fills
+ * stairs, sink, washer, cabinet, armchair, socket + plug, trees, fan unit). Strokes and dark fills
  * use currentColor, so the icon follows the chip's text colour.
  */
 
-// Isometric box for HVAC: top, left and right faces.
+// Isometric box shared by Appliances, Cabinets and HVAC: top, left and right faces.
 const BOX = (
   <>
     <path d="M14 3 5 8l9 5 9-5-9-5Z" />
@@ -65,6 +65,42 @@ const DRAWINGS: Record<ElementCategory, React.ReactNode> = {
       {/* faucet */}
       <path d="M13 14.5V6.8c0-1.6 1-2.6 2.6-2.6h2.2v2.4" />
       <path d="M11.5 14.8h3" />
+    </>
+  ),
+  appliances: (
+    <>
+      {BOX}
+      {/* round door on the front face, vents on the side */}
+      <ellipse cx={18.5} cy={17.6} rx={2.9} ry={3.6} transform="rotate(-28 18.5 17.6)" />
+      <ellipse cx={18.5} cy={17.6} rx={1.6} ry={2.1} transform="rotate(-28 18.5 17.6)" strokeWidth={0.9} />
+      <path d="M7.5 14v6.2M9.5 15.1v6.2M11.5 16.2v6.2" strokeWidth={0.9} />
+      <path d="M15.5 13.3 21.5 10" strokeWidth={0.9} />
+    </>
+  ),
+  cabinets: (
+    <>
+      {BOX}
+      {/* drawer line, two doors, handles */}
+      <path d="M14 16.2 23 11.2M18.5 13.7v9.8" strokeWidth={0.9} />
+      <path d="M17.3 17.4v1.8M19.7 16.1v1.8M17.6 14.4l1.8-1" />
+    </>
+  ),
+  furniture: (
+    <>
+      {/* armchair: seat, backrest, two arms */}
+      <path d="M7 17.5 14 21l8-4-7-3.5-8 4Z" />
+      <path d="M7 17.5V21l7 3.5 8-4V17" />
+      <path d="M15 13.5V7l7 3.5V17" />
+      <path d="M5 16.5v-4l7-3.5v4M5 12.5l2 1 7-3.5" strokeWidth={0.9} />
+      <path d="M5 16.5v3.8l2 1M20 18v4l2.5-1.2" strokeWidth={0.9} />
+    </>
+  ),
+  outdoors: (
+    <>
+      {/* trees on a slab of ground */}
+      <path d="M3 19 14 13.5 25 19l-11 5.5L3 19Z" />
+      <path d="M3 19v2l11 5.5L25 21v-2" />
+      <path d="M10 19.5v-3M7.2 16.5 10 7.5l2.8 9H7.2ZM18 17.5v-3M15.5 14.5 18 6.5l2.5 8h-5Z" />
     </>
   ),
   electrical: (

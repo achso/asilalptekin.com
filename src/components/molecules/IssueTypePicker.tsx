@@ -89,7 +89,7 @@ export function IssueTypePicker({
                 transition={{ type: "tween", duration: 0.22, ease: "easeOut" }}
                 className="overflow-hidden bg-blue-50"
               >
-                <div className="px-4 pb-4 pt-1">{detail}</div>
+                <div className="px-3 pb-4 pt-1">{detail}</div>
               </motion.div>
             )}
           </AnimatePresence>
