@@ -27,7 +27,7 @@ import {
  *   selectElement(id)    select a wall / corner / room by id
  *   clearSelection()
  *   startReport(anchor)  open the DeviationForm anchored to { id, type }
- *   cancelReport()
+ *   cancelReport()       discard the form, keep the selection
  *   submitEscalation(d)  fire-and-forget: closes the form, uploads in background
  *   revokeEscalation()   optimistic; FAILS while in_review (race guard, see below)
  *   mockExpertReview()   Munich opens the selected (or newest) report → in_review

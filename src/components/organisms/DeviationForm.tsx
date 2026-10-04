@@ -1,11 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
+import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 export type DeviationFormProps = {
   /** The plan element (type + id) this ticket is anchored to. */
   anchor: SelectedElement;
+  /** Close (✕): discard the form, keep the element selected. */
   onCancel: () => void;
   onSubmit: (draft: EscalationDraft) => void;
 };
@@ -74,23 +76,15 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
         send();
       }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-mp-line px-4 py-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex h-11 items-center gap-0.5 rounded-full pl-1 pr-3 text-[16px] font-medium text-mp-blue active:bg-black/5"
-        >
-          <ChevronLeft size={24} /> Cancel
-        </button>
-        <div className="flex-1 text-right leading-tight">
-          <div className="text-[18px] font-semibold">Report Deviation</div>
-          <div className="text-[13px] text-mp-muted">
-            {label}
-            {plannedM !== undefined && ` · plan ${plannedM.toFixed(2)} m`}
-          </div>
-        </div>
-      </div>
+      {/* Header: native modal pattern. ⓘ badge, centred title, ✕ cancels (selection kept). */}
+      <ModalHeader
+        leading="info"
+        title="Report Deviation"
+        subtitle={`${label}${plannedM !== undefined ? ` · plan ${plannedM.toFixed(2)} m` : ""}`}
+        onClose={onCancel}
+        closeLabel="Cancel report"
+        className="border-b border-mp-line"
+      />
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
