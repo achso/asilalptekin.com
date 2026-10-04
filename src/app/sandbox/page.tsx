@@ -14,6 +14,7 @@ import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoCapture, type PhotoValue } from "@/components/molecules/PhotoCapture";
 import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
 import { VoiceMemoToggle } from "@/components/molecules/VoiceMemoToggle";
+import { RoomDefaultSidebar } from "@/components/organisms/RoomDefaultSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { WALL_THICKNESS, wallById, wallGeometry } from "@/lib/floorplan";
@@ -58,6 +59,7 @@ export default function SandboxPage() {
               ["#atoms", "Atoms"],
               ["#molecules", "Molecules"],
               ["#ui-elements", "UI Elements"],
+              ["#organisms", "Organisms"],
               ["#log", "Event log"],
             ].map(([href, label]) => (
               <a
@@ -266,6 +268,18 @@ export default function SandboxPage() {
                   }}
                 />
               </Labeled>
+            </div>
+          </Specimen>
+        </Section>
+
+        {/* ═══════════════════════════ ORGANISMS ═══════════════════════════ */}
+        <Section id="organisms" title="Organisms" description="Full panels composed from molecules.">
+          <Specimen
+            title="RoomDefaultSidebar"
+            note="Idle state of the right sidebar (nothing selected): room-level details. Header and tabs stay fixed; content scrolls inside a 700px frame."
+          >
+            <div className="h-[700px] w-fit overflow-hidden rounded-2xl border border-gray-200">
+              <RoomDefaultSidebar onClose={() => record("RoomDefaultSidebar onClose()")} />
             </div>
           </Specimen>
         </Section>

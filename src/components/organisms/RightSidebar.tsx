@@ -2,13 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { FileText, Info, Loader2, Lock, X } from "lucide-react";
-import { PROJECT, ROOM, elementInfo, wallById } from "@/lib/floorplan";
+import { Info, Loader2, Lock, X } from "lucide-react";
+import { ROOM, elementInfo, wallById } from "@/lib/floorplan";
 import type { Escalation, EscalationDraft, EscalationStatus, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { isActive } from "@/store/deviationMachine";
 import { EscalationCard, toEscalationCardProps } from "@/components/molecules/EscalationCard";
 import { DeviationForm } from "./DeviationForm";
+import { RoomDefaultSidebar } from "./RoomDefaultSidebar";
 
 type Props = {
   selected: SelectedElement | null;
@@ -32,7 +33,8 @@ type Mode = "summary" | "inspector" | "form";
 /**
  * RightSidebar (organism): the contextual panel, three states:
  *
- *  - summary   (nothing selected)          → empty state or Active Escalations list
+ *  - summary   (nothing selected)          → RoomDefaultSidebar (room details),
+ *                                            with Active Escalations on top once any exist
  *  - inspector (wall/corner/room selected) → Details / Photos & Notes / Forms, plus
  *                                            the element's EscalationCard if reported
  *  - form      (Report Deviation tapped)   → DeviationForm takes over the panel
@@ -71,10 +73,17 @@ export function RightSidebar(props: Props) {
               onRevoke={props.onRevoke}
             />
           ) : (
-            <Summary
-              escalations={props.escalations}
-              onFocus={props.onFocus}
-              onRevoke={props.onRevoke}
+            <RoomDefaultSidebar
+              className="w-full"
+              topSlot={
+                props.escalations.length > 0 ? (
+                  <ActiveEscalations
+                    escalations={props.escalations}
+                    onFocus={props.onFocus}
+                    onRevoke={props.onRevoke}
+                  />
+                ) : undefined
+              }
             />
           )}
         </motion.div>
@@ -83,7 +92,8 @@ export function RightSidebar(props: Props) {
   );
 }
 
-function Summary({
+/** Active Escalations list, shown above the room details once anything is reported. */
+function ActiveEscalations({
   escalations,
   onFocus,
   onRevoke,
@@ -96,52 +106,43 @@ function Summary({
   // Open items first, resolved ones sink to the bottom.
   const sorted = [...escalations].sort((a, b) => Number(!isActive(a)) - Number(!isActive(b)));
   return (
-    <>
-      <div className="px-5 pb-3 pt-5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[20px] font-semibold">Active Escalations</span>
+    <section aria-label="Active escalations" className="mt-4">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <h3 className="flex items-center gap-2 text-[15px] font-semibold text-mp-muted">
+          Active Escalations
           <motion.span
             key={activeCount}
             initial={{ scale: 1.4 }}
             animate={{ scale: 1 }}
-            className={`grid h-7 min-w-7 place-items-center rounded-full px-2 text-[14px] font-bold ${
+            className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[12px] font-bold ${
               activeCount ? "bg-mp-red text-white" : "bg-mp-line text-mp-muted"
             }`}
           >
             {activeCount}
           </motion.span>
-        </div>
-        <div className="text-[13px] text-mp-muted">Sent one-way to the remote expert · no need to wait for a reply</div>
+        </h3>
+        <span className="text-[12px] text-mp-muted">One-way · no reply needed</span>
       </div>
-
-      <div className="flex-1 overflow-y-auto px-5 pb-5">
-        {escalations.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <ul className="flex flex-col gap-3">
-            <AnimatePresence initial={false}>
-              {sorted.map((e) => (
-                <motion.li
-                  key={e.id}
-                  layout
-                  initial={{ opacity: 0, y: -12, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
-                >
-                  <EscalationCard
-                    {...toEscalationCardProps(e)}
-                    onPress={() => onFocus(e.target)}
-                    onRevoke={() => onRevoke(e.id)}
-                  />
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ul>
-        )}
-      </div>
-
-      <JobContext />
-    </>
+      <ul className="flex flex-col gap-3">
+        <AnimatePresence initial={false}>
+          {sorted.map((e) => (
+            <motion.li
+              key={e.id}
+              layout
+              initial={{ opacity: 0, y: -12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
+            >
+              <EscalationCard
+                {...toEscalationCardProps(e)}
+                onPress={() => onFocus(e.target)}
+                onRevoke={() => onRevoke(e.id)}
+              />
+            </motion.li>
+          ))}
+        </AnimatePresence>
+      </ul>
+    </section>
   );
 }
 
@@ -347,41 +348,3 @@ function RevokeInFlight({ e }: { e: Escalation }) {
   );
 }
 
-function EmptyState() {
-  return (
-    <div className="mt-3 flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-mp-line px-6 py-8 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-mp-muted">
-        <FileText size={22} />
-      </span>
-      <div className="text-[15px] font-semibold">Nothing escalated yet</div>
-      <div className="text-[13px] leading-snug text-mp-muted">
-        Plan doesn&apos;t match the room? Tap the wall, corner or floor on the plan, then{" "}
-        <span className="font-semibold text-mp-red">Report Deviation</span>.
-      </div>
-    </div>
-  );
-}
-
-/** Context the expert gets automatically, so the contractor never has to type it. */
-function JobContext() {
-  const rows = [
-    ["Budget", `≈ €${PROJECT.budgetEur.toLocaleString("de-DE")}`],
-    ["Permit", PROJECT.permit],
-    ["Last visit", PROJECT.previousVisit],
-  ];
-  return (
-    <div className="border-t border-mp-line bg-white/60 px-5 py-4">
-      <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mp-muted">
-        Attached to every escalation
-      </div>
-      <dl className="grid grid-cols-[88px_1fr] gap-y-1 text-[13px]">
-        {rows.map(([k, v]) => (
-          <div key={k} className="contents">
-            <dt className="text-mp-muted">{k}</dt>
-            <dd className="font-medium">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
