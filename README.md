@@ -55,24 +55,31 @@ iPad Air / Pro 11" landscape) and scales to fit the window.
 
 ## Demo script (≈ 60 seconds)
 
-1. **Tap a wall** (or a corner) on the plan. It turns magicplan blue and a large
-   red **Report Deviation** button appears next to it. The right panel shows
-   the selected wall.
-2. Tap **Report Deviation**. A focused capture sheet opens, and nothing in it
-   needs a keyboard:
-   - **What's wrong?** Big quick-select tiles (Wall Missing, Dimension Mismatch,
-     Obstacle, …). *Dimension Mismatch* shows a ± stepper for the measured
-     length, with the difference from the plan.
-   - **Photo evidence (required).** Opens the iPad's rear camera. On a laptop,
+The permit is approved, so the plan is in its **execution state**: the header
+shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
+
+1. **Try a drafting tool** (Insert, Add Corner, Add Wall, Split Room, Delete).
+   They're greyed out. Tapping one shows a toast: *"Plan locked for execution.
+   Use 'Report Deviation' to alert the Munich office."*
+2. **Tap a wall** (or a corner). It turns magicplan blue. The right sidebar
+   shows the familiar **Details / Photos & Notes / Forms** inspector, with
+   values read-only. **📍 Report Deviation** sits at the top of the left toolbar
+   and also floats next to the selected wall.
+3. Tap **Report Deviation**. The right sidebar becomes the **Escalation Form**,
+   and the canvas stays visible with the wall highlighted. Nothing needs a
+   keyboard:
+   - **Issue type:** a radio group (Wall Missing, Dimension Mismatch, Obstacle, …).
+     *Dimension Mismatch* shows a ± stepper for the measured length.
+   - **Take Photo (required).** Opens the iPad's rear camera. On a laptop,
      use *"No camera? Use demo photo"*.
-   - **Voice memo (optional).** Tap to talk, tap to stop.
+   - **Record Voice Memo (optional).** Tap to talk, tap to stop.
    - **Work is blocked here** toggle.
    - **Send to Munich** stays disabled until the issue type and photo are
      provided, and its label says what's missing.
-3. After sending, the sheet closes **right away**. The wall locks in a **red
+4. After sending, the form closes **right away**. The wall locks in a **red
    hatched pattern** with a persistent **"Escalated to Munich"** badge
-   (Sending → Delivered), and the escalation appears in **Active
-   Escalations**. The contractor moves on.
+   (Sending → Delivered), and it appears in **Active Escalations**. The
+   contractor moves on.
 
 The top bar shows how long the Munich expert is still available (live
 countdown to 15:00 Europe/Berlin).
@@ -88,18 +95,18 @@ app/
   globals.css              Tailwind v4 theme tokens (magicplan palette)
 components/
   IPadFrame.tsx            Fixed 1180×820 landscape stage, scaled to fit
-  AppShell.tsx             Layout: status bar, top bar, canvas, right panel, sheet, toast
-  Chrome.tsx               Status bar, top nav (+ Munich availability), tool palette,
-                           undo/redo, floor picker
+  AppShell.tsx             Layout: status bar, top bar, canvas, right panel, toasts
+  Chrome.tsx               Status bar, top nav (Locked badge, Munich availability),
+                           locked tool palette + Report Deviation, undo/redo, floor picker
   FloorPlanCanvas.tsx      SVG plan: grid, walls, corners, openings, dimensions,
                            selection + hatched "locked" state
   CanvasOverlay.tsx        Floating "Report Deviation" CTA + "Escalated to Munich" badges
-  EscalationSheet.tsx      Structured evidence capture (issue type, photo, voice, blocking)
-  EscalationsPanel.tsx     Right panel: selection card + Active Escalations + job context
+  EscalationsPanel.tsx     Right panel: Active Escalations ↔ inspector tabs ↔ Escalation Form
+  EscalationForm.tsx       Structured evidence capture (issue type, photo, voice, blocking)
 lib/
   floorplan.ts             Room geometry (metres), project context, issue types
   types.ts                 Target / Wall / Escalation types
-  useEscalationStore.ts    Reducer for the select → capture → submit → delivered flow
+  useEscalationStore.ts    Reducer for select → capture → submit → delivered, plus toasts
   useVoiceRecorder.ts      MediaRecorder with a simulated fallback
   useMunichCutoff.ts       Time left until 15:00 CET
   demoPhoto.ts             Placeholder site photo for desktop demos

@@ -9,6 +9,8 @@ import {
   Info,
   Layers,
   LayoutPanelLeft,
+  Lock,
+  MapPin,
   Plus,
   Redo2,
   Share,
@@ -57,7 +59,7 @@ export function StatusBar() {
   );
 }
 
-export function TopBar() {
+export function TopBar({ title }: { title: string }) {
   const munich = useMunichCutoff(PROJECT.expert.cutoffHourCET);
   return (
     <header
@@ -69,8 +71,14 @@ export function TopBar() {
         <LayoutPanelLeft size={24} />
       </button>
       <div className="leading-tight">
-        <div className="text-[20px] font-semibold">{PROJECT.room}</div>
+        <div className="text-[20px] font-semibold">{title}</div>
         <div className="text-[14px] text-mp-muted">{PROJECT.floor}</div>
+      </div>
+
+      {/* Permit approved → plan is in execution state, geometry is read-only */}
+      <div className="flex h-8 items-center gap-1.5 rounded-full border border-mp-line bg-white px-3 text-[13px] font-semibold text-mp-ink">
+        <Lock size={14} strokeWidth={2.5} />
+        Locked <span className="font-medium text-mp-muted">(Permit Approved)</span>
       </div>
 
       <div className="flex-1" />
@@ -121,37 +129,81 @@ function IconBtn({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-/** Left floating palette — magicplan's edit tools, kept for visual fidelity. */
-export function ToolPalette({ visible }: { visible: boolean }) {
+export const LOCKED_MESSAGE =
+  "Plan locked for execution. Use 'Report Deviation' to alert the Munich office.";
+
+/**
+ * Left floating palette. The permit is approved, so the plan is in its
+ * execution state: magicplan's drafting tools stay visible (familiar layout)
+ * but are disabled. Tapping one explains why and points to the one action
+ * that is available — Report Deviation.
+ */
+export function ToolPalette({
+  hasSelection,
+  capturing,
+  onReport,
+  onLockedTool,
+}: {
+  hasSelection: boolean;
+  capturing: boolean;
+  onReport: () => void;
+  onLockedTool: () => void;
+}) {
   const tools = [
-    { icon: Plus, label: "Insert" },
+    { icon: Plus, label: "Insert", chevron: true },
     { icon: Spline, label: "Add Corner" },
     { icon: SquarePlus, label: "Add Wall" },
     { icon: Columns2, label: "Split Room" },
   ];
   return (
-    <motion.div
-      initial={false}
-      animate={{ x: visible ? 0 : -24, opacity: visible ? 1 : 0 }}
-      style={{ pointerEvents: visible ? "auto" : "none" }}
-      className="absolute left-4 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2.5"
-    >
-      {tools.map(({ icon: Icon, label }) => (
-        <PaletteBtn key={label}>
+    <div className="absolute left-4 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2.5">
+      <motion.button
+        onClick={onReport}
+        whileTap={{ scale: 0.96 }}
+        animate={
+          hasSelection && !capturing
+            ? { boxShadow: ["0 0 0 0 rgba(229,53,43,0.45)", "0 0 0 10px rgba(229,53,43,0)"] }
+            : { boxShadow: "0 6px 16px rgba(229,53,43,0.3)" }
+        }
+        transition={hasSelection && !capturing ? { repeat: Infinity, duration: 1.4 } : undefined}
+        className={`mb-2 flex h-14 w-fit items-center gap-2.5 rounded-xl px-4 text-[17px] font-semibold text-white ${
+          capturing ? "bg-mp-red/70" : "bg-mp-red"
+        }`}
+      >
+        <MapPin size={22} strokeWidth={2.5} /> Report Deviation
+      </motion.button>
+
+      {tools.map(({ icon: Icon, label, chevron }) => (
+        <LockedToolBtn key={label} onPress={onLockedTool}>
           <Icon size={20} /> {label}
-        </PaletteBtn>
+          {chevron && <ChevronsUpDown size={16} className="text-mp-muted" />}
+        </LockedToolBtn>
       ))}
-      <PaletteBtn danger>
+      <LockedToolBtn danger onPress={onLockedTool}>
         <Trash2 size={20} /> Delete…
-      </PaletteBtn>
-    </motion.div>
+      </LockedToolBtn>
+    </div>
   );
 }
 
-function PaletteBtn({ children, danger }: { children: React.ReactNode; danger?: boolean }) {
+/**
+ * Looks disabled (opacity-50, not-allowed cursor) but stays tappable so we
+ * can explain the lock instead of silently ignoring the tap.
+ */
+function LockedToolBtn({
+  children,
+  danger,
+  onPress,
+}: {
+  children: React.ReactNode;
+  danger?: boolean;
+  onPress: () => void;
+}) {
   return (
     <button
-      className={`flex h-12 w-fit items-center gap-2.5 rounded-xl border border-mp-line bg-white px-4 text-[16px] font-semibold shadow-sm active:bg-mp-panel ${
+      aria-disabled="true"
+      onClick={onPress}
+      className={`flex h-12 w-fit cursor-not-allowed items-center gap-2.5 rounded-xl border border-mp-line bg-white px-4 text-[16px] font-semibold opacity-50 shadow-sm ${
         danger ? "text-mp-red" : "text-mp-ink"
       }`}
     >

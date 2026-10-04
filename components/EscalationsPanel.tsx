@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
 import {
-  AlertTriangle,
   CheckCheck,
   ChevronRight,
   CloudUpload,
@@ -16,54 +16,78 @@ import {
 import { PROJECT, cornerById, issueLabel, wallById } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
 import type { Escalation, Target } from "@/lib/types";
+import { EscalationForm } from "./EscalationForm";
 
 type Props = {
   selected: Target | null;
   selectedEscalation?: Escalation;
+  capturing: boolean;
   escalations: Escalation[];
   onReport: () => void;
+  onCancelReport: () => void;
+  onSubmit: (e: Escalation) => void;
   onFocus: (t: Target) => void;
   onClear: () => void;
 };
 
+type Mode = "summary" | "inspector" | "form";
+
 /**
- * Right contextual panel. magicplan's generic "Photos & Notes" is replaced by
- * an "Active Escalations" summary so the contractor sees at a glance what has
- * already gone to Munich — no inbox, no thread, no waiting for replies.
+ * Right contextual panel, three states:
+ *
+ *  - summary   (nothing selected) → "Active Escalations" + auto-attached job context
+ *  - inspector (wall/corner selected) → magicplan's familiar Details / Photos & Notes / Forms
+ *  - form      (Report Deviation tapped) → the Escalation Form takes over the panel
  */
-export function EscalationsPanel({
-  selected,
-  selectedEscalation,
-  escalations,
-  onReport,
-  onFocus,
-  onClear,
-}: Props) {
+export function EscalationsPanel(props: Props) {
+  const { selected, capturing } = props;
+  const mode: Mode = capturing && selected ? "form" : selected ? "inspector" : "summary";
+
   return (
     <aside
       style={{ width: PANEL_W }}
-      className="flex h-full shrink-0 flex-col border-l border-mp-line bg-mp-panel"
+      className="relative h-full shrink-0 overflow-hidden border-l border-mp-line bg-mp-panel"
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {selected ? (
-          <motion.div
-            key={`sel-${selected.id}`}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 16 }}
-            transition={{ duration: 0.18 }}
-            className="border-b border-mp-line p-5"
-          >
-            <SelectionCard
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={mode === "summary" ? "summary" : `${mode}-${selected?.id}`}
+          initial={{ opacity: 0, x: mode === "form" ? 40 : 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: mode === "form" ? 40 : -16 }}
+          transition={{ type: "spring", stiffness: 420, damping: 38 }}
+          className="absolute inset-0 flex flex-col"
+        >
+          {mode === "form" && selected ? (
+            <EscalationForm
               target={selected}
-              escalation={selectedEscalation}
-              onReport={onReport}
-              onClear={onClear}
+              onCancel={props.onCancelReport}
+              onSubmit={props.onSubmit}
             />
-          </motion.div>
-        ) : null}
+          ) : mode === "inspector" && selected ? (
+            <Inspector
+              target={selected}
+              escalation={props.selectedEscalation}
+              onReport={props.onReport}
+              onClear={props.onClear}
+            />
+          ) : (
+            <Summary escalations={props.escalations} onFocus={props.onFocus} />
+          )}
+        </motion.div>
       </AnimatePresence>
+    </aside>
+  );
+}
 
+function Summary({
+  escalations,
+  onFocus,
+}: {
+  escalations: Escalation[];
+  onFocus: (t: Target) => void;
+}) {
+  return (
+    <>
       <div className="px-5 pb-3 pt-5">
         <div className="flex items-center gap-2.5">
           <span className="text-[20px] font-semibold">Active Escalations</span>
@@ -94,11 +118,7 @@ export function EscalationsPanel({
                   initial={{ opacity: 0, y: -12, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                 >
-                  <EscalationCard
-                    e={e}
-                    active={selected?.id === e.target.id}
-                    onPress={() => onFocus(e.target)}
-                  />
+                  <EscalationCard e={e} active={false} onPress={() => onFocus(e.target)} />
                 </motion.li>
               ))}
             </AnimatePresence>
@@ -107,11 +127,15 @@ export function EscalationsPanel({
       </div>
 
       <JobContext />
-    </aside>
+    </>
   );
 }
 
-function SelectionCard({
+const TABS = ["Details", "Photos & Notes", "Forms"] as const;
+type Tab = (typeof TABS)[number];
+
+/** magicplan's element inspector, kept familiar — but read-only while the plan is locked. */
+function Inspector({
   target,
   escalation,
   onReport,
@@ -122,43 +146,150 @@ function SelectionCard({
   onReport: () => void;
   onClear: () => void;
 }) {
+  const [tab, setTab] = useState<Tab>("Details");
   const wall = target.kind === "wall" ? wallById(target.id) : null;
   const label = wall ? wall.label : cornerById(target.id).label;
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
+    <>
+      <div className="flex items-center gap-3 px-5 pb-3 pt-4">
         <span className="grid h-10 w-10 place-items-center rounded-xl bg-white">
           <Info size={20} />
         </span>
-        <div className="flex-1">
-          <div className="text-[18px] font-semibold leading-tight">{label}</div>
-          <div className="text-[13px] text-mp-muted">
-            {wall ? `Length ${wall.lengthM.toFixed(2)} m · ${wall.openings?.length ?? 0} openings` : "Corner · 90°"}
-          </div>
-        </div>
+        <div className="flex-1 text-[19px] font-semibold">{label}</div>
         <button
           onClick={onClear}
-          aria-label="Deselect"
+          aria-label="Close"
           className="grid h-10 w-10 place-items-center rounded-full bg-white text-mp-muted"
         >
           <X size={20} />
         </button>
       </div>
 
-      {escalation ? (
-        <div className="flex items-center gap-2 rounded-xl bg-mp-red/10 px-3 py-2.5 text-[14px] font-medium text-mp-red">
-          <Lock size={16} /> Locked · escalated {timeAgo(escalation.createdAt)}. Keep working elsewhere.
+      {/* Segmented control */}
+      <div className="mx-5 flex rounded-xl bg-mp-line/70 p-1">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className="relative h-10 flex-1 rounded-lg text-[14px] font-medium"
+          >
+            {tab === t && (
+              <motion.span
+                layoutId="inspector-tab"
+                className="absolute inset-0 rounded-lg bg-white shadow-sm"
+                transition={{ type: "spring", stiffness: 500, damping: 38 }}
+              />
+            )}
+            <span className="relative">{t}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {escalation ? (
+          <div className="mb-4 rounded-2xl bg-white p-3 shadow-sm">
+            <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-mp-red">
+              <Lock size={14} /> Escalated to Munich {timeAgo(escalation.createdAt)}
+            </div>
+            <EscalationCard e={escalation} active={false} onPress={() => {}} />
+            <p className="mt-2 text-[12px] text-mp-muted">
+              No reply needed. The expert will update the plan. Carry on with other work.
+            </p>
+          </div>
+        ) : null}
+
+        {tab === "Details" && <DetailsTab target={target} />}
+        {tab === "Photos & Notes" && <PhotosTab onReport={onReport} escalated={!!escalation} />}
+        {tab === "Forms" && (
+          <div className="rounded-2xl bg-white p-4 text-[14px] text-mp-muted">
+            No forms attached to this {target.kind}.
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function DetailsTab({ target }: { target: Target }) {
+  const wall = target.kind === "wall" ? wallById(target.id) : null;
+  return (
+    <div className="flex flex-col gap-4">
+      <Group title="Dimensions">
+        <Row label={wall ? "Length" : "Angle"}>
+          <LockedValue>{wall ? `${wall.lengthM.toFixed(2)} m` : "90°"}</LockedValue>
+        </Row>
+        {wall && (
+          <Row label="Openings">
+            <LockedValue>{wall.openings?.length ?? 0}</LockedValue>
+          </Row>
+        )}
+      </Group>
+      {wall && (
+        <Group title="Settings">
+          <Row label="Load-Bearing Wall">
+            <span className="h-[31px] w-[51px] rounded-full bg-mp-line opacity-60" />
+          </Row>
+        </Group>
+      )}
+      <p className="flex gap-2 text-[12px] leading-snug text-mp-muted">
+        <Lock size={14} className="mt-0.5 shrink-0" />
+        Geometry is read-only because the permit is approved. If what you see on site is different,
+        report a deviation and the office will revise the plan.
+      </p>
+    </div>
+  );
+}
+
+function PhotosTab({ onReport, escalated }: { onReport: () => void; escalated: boolean }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <Group title="Photos">
+        <div className="grid grid-cols-4 gap-2 p-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span key={i} className="aspect-square rounded-lg border-2 border-dashed border-mp-line" />
+          ))}
         </div>
-      ) : (
-        <motion.button
-          whileTap={{ scale: 0.98 }}
+      </Group>
+      {!escalated && (
+        <button
           onClick={onReport}
-          className="flex h-14 items-center justify-center gap-2.5 rounded-2xl bg-mp-red text-[17px] font-semibold text-white"
+          className="rounded-2xl border-2 border-dashed border-mp-red/40 bg-white p-4 text-left"
         >
-          <AlertTriangle size={20} /> Report Deviation
-        </motion.button>
+          <div className="text-[15px] font-semibold text-mp-red">Notes replaced by Report Deviation</div>
+          <div className="text-[12px] text-mp-muted">
+            Structured issue type, photo and voice memo go straight to the Munich expert.
+          </div>
+        </button>
       )}
     </div>
+  );
+}
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 text-[14px] font-semibold text-mp-muted">{title}</div>
+      <div className="divide-y divide-mp-line overflow-hidden rounded-2xl bg-white">{children}</div>
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex h-14 items-center justify-between px-4 text-[16px]">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function LockedValue({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="flex items-center gap-1.5 rounded-lg bg-mp-panel px-3 py-1.5 text-[15px] tabular-nums text-mp-muted">
+      {children}
+      <Lock size={12} />
+    </span>
   );
 }
 

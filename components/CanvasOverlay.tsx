@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, CheckCheck, CloudUpload, Lock } from "lucide-react";
+import { CheckCheck, CloudUpload, Lock, MapPin } from "lucide-react";
 import { cornerById, toPx, wallById, wallGeometry } from "@/lib/floorplan";
 import type { Escalation, Point, Target } from "@/lib/types";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
@@ -42,7 +42,7 @@ export function ReportDeviationButton({
             className="flex h-16 items-center gap-3 whitespace-nowrap rounded-2xl bg-mp-red pl-4 pr-6 text-[19px] font-semibold text-white shadow-[0_10px_30px_rgba(229,53,43,0.45)] ring-4 ring-white"
           >
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/20">
-              <AlertTriangle size={24} strokeWidth={2.5} />
+              <MapPin size={24} strokeWidth={2.5} />
             </span>
             Report Deviation
           </motion.button>
