@@ -1,20 +1,38 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Lock, MousePointerClick } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, MousePointerClick } from "lucide-react";
 import { FloorPlanCanvas } from "./FloorPlanCanvas";
 import { EscalationBadges, ReportDeviationButton } from "./CanvasOverlay";
 import { EscalationsPanel } from "./EscalationsPanel";
 import { FloorPicker, LOCKED_MESSAGE, StatusBar, ToolPalette, TopBar, UndoRedo } from "./Chrome";
+import { DevToolsPanel, useDevToolsToggle } from "./DevTools";
 import { PROJECT, cornerById, wallById } from "@/lib/floorplan";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-import { useEscalationStore, type ToastTone } from "@/lib/useEscalationStore";
+import { sameTarget, useEscalationStore, type ToastTone } from "@/lib/useEscalationStore";
 
 export function AppShell() {
-  const { state, select, openCapture, closeCapture, submit, notify, dismissToast, escalationFor } =
-    useEscalationStore();
+  const store = useEscalationStore();
+  const { state, select, openCapture, closeCapture, submit, revoke, notify, dismissToast } = store;
   const { selected, capturing } = state;
-  const selectedEscalation = selected ? escalationFor(selected) : undefined;
+  const dev = useDevToolsToggle();
+
+  const selectedEscalation = selected ? store.escalationFor(selected) : undefined;
+  // Locks the wall: anything not yet resolved by Munich.
+  const selectedActive = selected ? store.activeEscalationFor(selected) : undefined;
+  const pendingRevokes = Object.values(state.pendingRevokes);
+  const selectedPending = selected
+    ? pendingRevokes.find((p) => sameTarget(p.escalation.target, selected))
+    : undefined;
+
+  // Dev tools act on the selected wall's report, else the newest (including in-flight revokes).
+  const devTarget =
+    selectedPending ??
+    (selectedEscalation ? { escalation: selectedEscalation, settlesAt: undefined } : undefined) ??
+    [
+      ...pendingRevokes,
+      ...state.escalations.map((e) => ({ escalation: e, settlesAt: undefined })),
+    ].sort((a, b) => b.escalation.createdAt - a.escalation.createdAt)[0];
 
   const title = selected
     ? selected.kind === "wall"
@@ -26,13 +44,14 @@ export function AppShell() {
   const reportFromToolbar = () => {
     if (capturing) return;
     if (!selected) return notify("Tap the wall or corner that doesn't match first.", "hint");
-    if (selectedEscalation) return notify(`${title} is already escalated to Munich.`, "hint");
+    if (selectedActive) return notify(`${title} is already escalated to Munich.`, "hint");
+    if (selectedPending) return notify("Wait for the revoke to finish.", "hint");
     openCapture();
   };
 
   return (
     <div className="flex h-full flex-col">
-      <StatusBar />
+      <StatusBar onSecretTap={dev.toggle} />
       <TopBar title={title} />
 
       <div className="flex min-h-0 flex-1">
@@ -42,17 +61,17 @@ export function AppShell() {
             width={CANVAS_W}
             height={CANVAS_H}
             selected={selected}
-            escalationFor={escalationFor}
+            statusFor={(t) => store.escalationFor(t)?.status}
             onSelect={select}
           />
           <EscalationBadges escalations={state.escalations} onPress={select} />
           <ReportDeviationButton
-            target={capturing ? null : selected}
-            escalated={!!selectedEscalation}
+            target={capturing || selectedPending ? null : selected}
+            escalated={!!selectedActive}
             onPress={openCapture}
           />
           <ToolPalette
-            hasSelection={!!selected && !selectedEscalation}
+            hasSelection={!!selected && !selectedActive && !selectedPending}
             capturing={capturing}
             onReport={reportFromToolbar}
             onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
@@ -61,7 +80,7 @@ export function AppShell() {
           <FloorPicker />
 
           <AnimatePresence>
-            {!selected && state.escalations.length === 0 && !state.toast && (
+            {!selected && state.escalations.length === 0 && !state.toast && !dev.open && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -72,11 +91,23 @@ export function AppShell() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <DevToolsPanel
+            open={dev.open}
+            onClose={() => dev.setOpen(false)}
+            target={devTarget?.escalation}
+            revokeSettlesAt={devTarget?.settlesAt}
+            demo={state.demo}
+            setDemo={store.setDemo}
+            setStatus={store.devSetStatus}
+            reset={store.reset}
+          />
         </div>
 
         <EscalationsPanel
           selected={selected}
           selectedEscalation={selectedEscalation}
+          pendingRevoke={selectedPending?.escalation}
           capturing={capturing}
           escalations={state.escalations}
           onReport={openCapture}
@@ -84,6 +115,7 @@ export function AppShell() {
           onSubmit={submit}
           onFocus={select}
           onClear={() => select(null)}
+          onRevoke={revoke}
         />
       </div>
 
@@ -93,6 +125,7 @@ export function AppShell() {
             key={state.toast.id}
             text={state.toast.text}
             tone={state.toast.tone}
+            raised={dev.open}
             onDismiss={dismissToast}
           />
         )}
@@ -105,10 +138,21 @@ const TOAST_ICON: Record<ToastTone, React.ReactNode> = {
   success: <CheckCircle2 size={22} className="shrink-0 text-emerald-400" />,
   locked: <Lock size={20} className="shrink-0 text-amber-300" />,
   hint: <MousePointerClick size={20} className="shrink-0 text-sky-300" />,
+  warning: <AlertTriangle size={20} className="shrink-0 text-amber-400" />,
 };
 
 /** Lightweight toast, centred over the canvas. */
-function Toast({ text, tone, onDismiss }: { text: string; tone: ToastTone; onDismiss: () => void }) {
+function Toast({
+  text,
+  tone,
+  raised,
+  onDismiss,
+}: {
+  text: string;
+  tone: ToastTone;
+  raised: boolean;
+  onDismiss: () => void;
+}) {
   return (
     <motion.button
       onClick={onDismiss}
@@ -116,8 +160,8 @@ function Toast({ text, tone, onDismiss }: { text: string; tone: ToastTone; onDis
       animate={{ y: 0, opacity: 1, x: "-50%" }}
       exit={{ y: 80, opacity: 0, x: "-50%" }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      style={{ left: CANVAS_W / 2 }}
-      className="absolute bottom-[84px] z-[60] flex max-w-[640px] items-center gap-3 rounded-2xl bg-mp-ink px-5 py-4 text-left text-[15px] font-medium text-white shadow-2xl"
+      style={{ left: CANVAS_W / 2, bottom: raised ? 150 : 84 }}
+      className="absolute z-[60] flex max-w-[680px] items-center gap-3 rounded-2xl bg-mp-ink px-5 py-4 text-left text-[15px] font-medium text-white shadow-2xl"
     >
       {TOAST_ICON[tone]}
       {text}

@@ -86,6 +86,47 @@ countdown to 15:00 Europe/Berlin).
 
 ---
 
+## Presenter controls: deviation lifecycle and the revoke race
+
+Each report moves through an explicit state machine (`lib/deviationMachine.ts`):
+
+```
+idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
+ ▲                 │           │             ✕
+ └──── revoke ─────┴───────────┘      revoke rejected
+   (optimistic; confirmed by the server after network latency)
+```
+
+| State | Canvas | Escalation card |
+|---|---|---|
+| Idle (locked plan) | Black wall, drafting tools disabled | — |
+| Delivered | Red hatched wall, "Escalated to Munich" badge | **Revoke Escalation** available |
+| In Review | Hatched wall framed in amber with a pulse, "Munich is reviewing" | Revoke disabled, tooltip: *"Munich is actively reviewing. Revocation disabled."* |
+| Resolved | Green wall, "Resolved · plan updated" | Contractor unblocked; the wall can be reported again |
+
+**Open the hidden Dev Tools:** press **Shift + D**, **triple-tap the clock** in
+the status bar (works on the iPad), or load **`/?dev=1`**. The panel flips the
+Munich-side status between **Delivered / In Review / Resolved**, and has:
+
+- **Auto-advance:** Munich opens the report after ~7s and resolves it after ~14s.
+- **Slow revoke (3s):** on by default, so there's time to show the race.
+- **Reset** clears the demo.
+
+**Demonstrating the race condition:**
+
+1. Report a wall and wait for **Delivered**.
+2. Tap **Revoke Escalation**. The wall unlocks right away (optimistic update),
+   and the panel counts down while the revoke is "in flight".
+3. Before the countdown ends, tap **In Review** in Dev Tools.
+4. The server wins. The revoke is rejected, the escalation comes back as
+   **In Review**, and the Revoke button stays disabled.
+
+The rule is enforced in the reducer, not only in the UI. A stale tap or
+double-tap on Revoke after the report reaches In Review is rejected with the
+same message.
+
+---
+
 ## Project structure
 
 ```
@@ -103,10 +144,12 @@ components/
   CanvasOverlay.tsx        Floating "Report Deviation" CTA + "Escalated to Munich" badges
   EscalationsPanel.tsx     Right panel: Active Escalations ↔ inspector tabs ↔ Escalation Form
   EscalationForm.tsx       Structured evidence capture (issue type, photo, voice, blocking)
+  DevTools.tsx             Hidden presenter panel (Munich-side status flips, race demo)
 lib/
   floorplan.ts             Room geometry (metres), project context, issue types
   types.ts                 Target / Wall / Escalation types
-  useEscalationStore.ts    Reducer for select → capture → submit → delivered, plus toasts
+  deviationMachine.ts      Lifecycle: transition table, revoke guard, status labels
+  useEscalationStore.ts    Reducer: selection, capture, server status, optimistic revoke + rollback, toasts
   useVoiceRecorder.ts      MediaRecorder with a simulated fallback
   useMunichCutoff.ts       Time left until 15:00 CET
   demoPhoto.ts             Placeholder site photo for desktop demos

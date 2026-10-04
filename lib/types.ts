@@ -45,5 +45,9 @@ export type Escalation = {
   voiceMemo?: { url: string; durationS: number };
   blocking: boolean; // "work is stopped until resolved"
   createdAt: number;
-  status: "queued" | "delivered";
+  status: EscalationStatus;
+  statusChangedAt: number;
 };
+
+/** See lib/deviationMachine.ts for the full lifecycle. */
+export type EscalationStatus = "sending" | "delivered" | "in_review" | "resolved";

@@ -9,22 +9,32 @@ import {
   toPx,
   wallGeometry,
 } from "@/lib/floorplan";
-import type { Escalation, Target, Wall } from "@/lib/types";
+import type { EscalationStatus, Target, Wall } from "@/lib/types";
 import { sameTarget } from "@/lib/useEscalationStore";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
 const RED = "#e5352b";
+const AMBER = "#f59e0b";
+const GREEN = "#16a34a";
+
+/** Outer stroke colour per deviation state. In review keeps the red hatch, framed amber. */
+const STATUS_STROKE: Record<EscalationStatus, string> = {
+  sending: RED,
+  delivered: RED,
+  in_review: AMBER,
+  resolved: GREEN,
+};
 
 type Props = {
   width: number;
   height: number;
   selected: Target | null;
-  escalationFor: (t: Target) => Escalation | undefined;
+  statusFor: (t: Target) => EscalationStatus | undefined;
   onSelect: (t: Target | null) => void;
 };
 
-export function FloorPlanCanvas({ width, height, selected, escalationFor, onSelect }: Props) {
+export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }: Props) {
   return (
     <svg
       width={width}
@@ -84,7 +94,7 @@ export function FloorPlanCanvas({ width, height, selected, escalationFor, onSele
             key={w.id}
             wall={w}
             selected={sameTarget(selected, target)}
-            escalated={!!escalationFor(target)}
+            status={statusFor(target)}
             onSelect={() => onSelect(target)}
           />
         );
@@ -94,7 +104,7 @@ export function FloorPlanCanvas({ width, height, selected, escalationFor, onSele
         const target: Target = { kind: "corner", id: c.id };
         const p = toPx(c.p);
         const isSel = sameTarget(selected, target);
-        const esc = !!escalationFor(target);
+        const status = statusFor(target);
         return (
           <g key={c.id} onPointerDown={() => onSelect(target)} className="cursor-pointer">
             {/* fat-finger hit area */}
@@ -104,8 +114,8 @@ export function FloorPlanCanvas({ width, height, selected, escalationFor, onSele
               cy={p.y}
               initial={false}
               animate={{ r: isSel ? 13 : 10 }}
-              fill={esc ? RED : isSel ? BLUE_STRONG : "#fff"}
-              stroke={esc ? RED : isSel ? "#fff" : "#111"}
+              fill={status ? STATUS_STROKE[status] : isSel ? BLUE_STRONG : "#fff"}
+              stroke={status ? STATUS_STROKE[status] : isSel ? "#fff" : "#111"}
               strokeWidth={isSel ? 4 : 2}
             />
           </g>
@@ -154,14 +164,16 @@ function Furniture() {
 function WallShape({
   wall,
   selected,
-  escalated,
+  status,
   onSelect,
 }: {
   wall: Wall;
   selected: boolean;
-  escalated: boolean;
+  status?: EscalationStatus;
   onSelect: () => void;
 }) {
+  // Locked = escalated and not yet resolved by Munich → red hatch.
+  const locked = !!status && status !== "resolved";
   const g = wallGeometry(wall);
   // Extend each wall by half thickness so corners overlap cleanly.
   const ext = WALL_THICKNESS / 2;
@@ -183,13 +195,13 @@ function WallShape({
         y1={y1 + oy}
         x2={x2 + ox}
         y2={y2 + oy}
-        strokeWidth={WALL_THICKNESS + (selected || escalated ? 6 : 0)}
+        strokeWidth={WALL_THICKNESS + (selected || status ? 6 : 0)}
         initial={false}
-        animate={{ stroke: escalated ? RED : selected ? BLUE : "#111" }}
-        transition={{ duration: 0.2 }}
+        animate={{ stroke: status ? STATUS_STROKE[status] : selected ? BLUE : "#111" }}
+        transition={{ duration: 0.3 }}
         style={{ pointerEvents: "none" }}
       />
-      {escalated && (
+      {locked && (
         <line
           x1={x1 + ox}
           y1={y1 + oy}
@@ -201,11 +213,27 @@ function WallShape({
         />
       )}
 
+      {/* "Munich is looking at this" pulse */}
+      {status === "in_review" && (
+        <motion.line
+          x1={x1 + ox}
+          y1={y1 + oy}
+          x2={x2 + ox}
+          y2={y2 + oy}
+          stroke={AMBER}
+          strokeLinecap="round"
+          initial={{ opacity: 0.5, strokeWidth: WALL_THICKNESS + 6 }}
+          animate={{ opacity: 0, strokeWidth: WALL_THICKNESS + 30 }}
+          transition={{ repeat: Infinity, duration: 1.6, ease: "easeOut" }}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
+
       {wall.openings?.map((o, i) => (
         <OpeningShape key={i} wall={wall} opening={o} />
       ))}
 
-      {selected && !escalated && (
+      {selected && !locked && (
         <>
           <circle cx={g.a.x} cy={g.a.y} r={11} fill="#fff" stroke="#111" strokeWidth={2} pointerEvents="none" />
           <circle cx={g.b.x} cy={g.b.y} r={11} fill="#fff" stroke="#111" strokeWidth={2} pointerEvents="none" />

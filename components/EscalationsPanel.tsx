@@ -4,18 +4,28 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import {
   CheckCheck,
+  CheckCircle2,
   ChevronRight,
   CloudUpload,
   FileText,
+  Eye,
   Info,
+  Loader2,
   Lock,
   Mic,
   Ruler,
+  Undo2,
   X,
 } from "lucide-react";
 import { PROJECT, cornerById, issueLabel, wallById } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
-import type { Escalation, Target } from "@/lib/types";
+import type { Escalation, EscalationStatus, Target } from "@/lib/types";
+import {
+  REVOKE_DISABLED_MESSAGE,
+  STATUS_META,
+  canRevoke,
+  isActive,
+} from "@/lib/deviationMachine";
 import { EscalationForm } from "./EscalationForm";
 
 type Props = {
@@ -28,6 +38,9 @@ type Props = {
   onSubmit: (e: Escalation) => void;
   onFocus: (t: Target) => void;
   onClear: () => void;
+  onRevoke: (id: string) => void;
+  /** Optimistically revoked report for the selected target, awaiting server confirmation. */
+  pendingRevoke?: Escalation;
 };
 
 type Mode = "summary" | "inspector" | "form";
@@ -67,11 +80,17 @@ export function EscalationsPanel(props: Props) {
             <Inspector
               target={selected}
               escalation={props.selectedEscalation}
+              pendingRevoke={props.pendingRevoke}
               onReport={props.onReport}
               onClear={props.onClear}
+              onRevoke={props.onRevoke}
             />
           ) : (
-            <Summary escalations={props.escalations} onFocus={props.onFocus} />
+            <Summary
+              escalations={props.escalations}
+              onFocus={props.onFocus}
+              onRevoke={props.onRevoke}
+            />
           )}
         </motion.div>
       </AnimatePresence>
@@ -82,24 +101,29 @@ export function EscalationsPanel(props: Props) {
 function Summary({
   escalations,
   onFocus,
+  onRevoke,
 }: {
   escalations: Escalation[];
   onFocus: (t: Target) => void;
+  onRevoke: (id: string) => void;
 }) {
+  const activeCount = escalations.filter(isActive).length;
+  // Open items first, resolved ones sink to the bottom.
+  const sorted = [...escalations].sort((a, b) => Number(!isActive(a)) - Number(!isActive(b)));
   return (
     <>
       <div className="px-5 pb-3 pt-5">
         <div className="flex items-center gap-2.5">
           <span className="text-[20px] font-semibold">Active Escalations</span>
           <motion.span
-            key={escalations.length}
+            key={activeCount}
             initial={{ scale: 1.4 }}
             animate={{ scale: 1 }}
             className={`grid h-7 min-w-7 place-items-center rounded-full px-2 text-[14px] font-bold ${
-              escalations.length ? "bg-mp-red text-white" : "bg-mp-line text-mp-muted"
+              activeCount ? "bg-mp-red text-white" : "bg-mp-line text-mp-muted"
             }`}
           >
-            {escalations.length}
+            {activeCount}
           </motion.span>
         </div>
         <div className="text-[13px] text-mp-muted">Sent one-way to Munich · no need to wait for a reply</div>
@@ -111,14 +135,19 @@ function Summary({
         ) : (
           <ul className="flex flex-col gap-3">
             <AnimatePresence initial={false}>
-              {escalations.map((e) => (
+              {sorted.map((e) => (
                 <motion.li
                   key={e.id}
                   layout
                   initial={{ opacity: 0, y: -12, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
                 >
-                  <EscalationCard e={e} active={false} onPress={() => onFocus(e.target)} />
+                  <EscalationCard
+                    e={e}
+                    onPress={() => onFocus(e.target)}
+                    onRevoke={() => onRevoke(e.id)}
+                  />
                 </motion.li>
               ))}
             </AnimatePresence>
@@ -138,13 +167,17 @@ type Tab = (typeof TABS)[number];
 function Inspector({
   target,
   escalation,
+  pendingRevoke,
   onReport,
   onClear,
+  onRevoke,
 }: {
   target: Target;
   escalation?: Escalation;
+  pendingRevoke?: Escalation;
   onReport: () => void;
   onClear: () => void;
+  onRevoke: (id: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>("Details");
   const wall = target.kind === "wall" ? wallById(target.id) : null;
@@ -187,20 +220,17 @@ function Inspector({
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {escalation ? (
-          <div className="mb-4 rounded-2xl bg-white p-3 shadow-sm">
-            <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-mp-red">
-              <Lock size={14} /> Escalated to Munich {timeAgo(escalation.createdAt)}
-            </div>
-            <EscalationCard e={escalation} active={false} onPress={() => {}} />
-            <p className="mt-2 text-[12px] text-mp-muted">
-              No reply needed. The expert will update the plan. Carry on with other work.
-            </p>
+        {pendingRevoke ? (
+          <RevokeInFlight e={pendingRevoke} />
+        ) : escalation ? (
+          <div className="mb-4">
+            <EscalationCard e={escalation} onRevoke={() => onRevoke(escalation.id)} />
+            <p className="mt-2 px-1 text-[12px] text-mp-muted">{INSPECTOR_HINT[escalation.status]}</p>
           </div>
         ) : null}
 
         {tab === "Details" && <DetailsTab target={target} />}
-        {tab === "Photos & Notes" && <PhotosTab onReport={onReport} escalated={!!escalation} />}
+        {tab === "Photos & Notes" && <PhotosTab onReport={onReport} escalated={isActive(escalation)} />}
         {tab === "Forms" && (
           <div className="rounded-2xl bg-white p-4 text-[14px] text-mp-muted">
             No forms attached to this {target.kind}.
@@ -293,56 +323,159 @@ function LockedValue({ children }: { children: React.ReactNode }) {
   );
 }
 
-function EscalationCard({ e, active, onPress }: { e: Escalation; active: boolean; onPress: () => void }) {
+const INSPECTOR_HINT: Record<EscalationStatus, string> = {
+  sending: "Uploading in the background. You can keep working.",
+  delivered: "No reply needed. The expert will update the plan. Carry on with other work.",
+  in_review: "The Munich expert has this open. Leave this wall as it is for now.",
+  resolved: "Plan updated by Munich. This wall is unblocked. Report again if it still doesn't match.",
+};
+
+const STATUS_PILL: Record<EscalationStatus, { cls: string; icon: React.ReactNode }> = {
+  sending: { cls: "text-mp-blue", icon: <CloudUpload size={13} className="animate-pulse" /> },
+  delivered: { cls: "text-mp-red", icon: <CheckCheck size={13} /> },
+  in_review: { cls: "text-amber-600", icon: <Eye size={13} className="animate-pulse" /> },
+  resolved: { cls: "text-emerald-600", icon: <CheckCircle2 size={13} /> },
+};
+
+/**
+ * Active Escalation card. Revoke is offered only while Munich hasn't opened
+ * the report; once it's In Review, the button is disabled and an always-visible
+ * tooltip explains why (iPad has no hover, so it doesn't rely on one).
+ */
+function EscalationCard({
+  e,
+  onPress,
+  onRevoke,
+}: {
+  e: Escalation;
+  onPress?: () => void;
+  onRevoke: () => void;
+}) {
+  const pill = STATUS_PILL[e.status];
+  const resolved = e.status === "resolved";
+  const ring =
+    e.status === "in_review" ? "ring-amber-400" : resolved ? "ring-emerald-500/60" : "ring-transparent";
+
   return (
-    <button
-      onClick={onPress}
-      className={`flex w-full gap-3 rounded-2xl bg-white p-3 text-left shadow-sm ring-2 transition ${
-        active ? "ring-mp-red" : "ring-transparent"
+    <motion.div
+      layout
+      className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-2 transition-shadow ${ring} ${
+        resolved ? "opacity-90" : ""
       }`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={e.photoUrl} alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          {e.blocking && (
-            <span className="rounded-md bg-mp-red px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-              Blocking
-            </span>
-          )}
-          <span className="truncate text-[15px] font-semibold">{issueLabel(e.issueType)}</span>
-        </div>
-        <div className="truncate text-[13px] text-mp-muted">{e.targetLabel}</div>
-        <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
-          {e.measuredM !== undefined && e.plannedM !== undefined && (
-            <span className="flex items-center gap-1 font-medium text-mp-ink">
-              <Ruler size={12} /> {e.plannedM.toFixed(2)} → {e.measuredM.toFixed(2)} m
-            </span>
-          )}
-          {e.voiceMemo && (
-            <span className="flex items-center gap-1">
-              <Mic size={12} /> {e.voiceMemo.durationS}s
-            </span>
-          )}
-          <span
-            className={`ml-auto flex items-center gap-1 font-medium ${
-              e.status === "delivered" ? "text-emerald-600" : "text-mp-blue"
-            }`}
-          >
-            {e.status === "delivered" ? (
-              <>
-                <CheckCheck size={13} /> Delivered
-              </>
-            ) : (
-              <>
-                <CloudUpload size={13} className="animate-pulse" /> Sending
-              </>
+      <button
+        onClick={onPress}
+        disabled={!onPress}
+        className="flex w-full gap-3 p-3 text-left disabled:cursor-default"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={e.photoUrl} alt="" className="h-[64px] w-[64px] shrink-0 rounded-xl object-cover" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            {e.blocking && !resolved && (
+              <span className="rounded-md bg-mp-red px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                Blocking
+              </span>
             )}
-          </span>
+            <span className="truncate text-[15px] font-semibold">{issueLabel(e.issueType)}</span>
+          </div>
+          <div className="truncate text-[13px] text-mp-muted">
+            {e.targetLabel} · {timeAgo(e.createdAt)}
+          </div>
+          <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
+            {e.measuredM !== undefined && e.plannedM !== undefined && (
+              <span className="flex items-center gap-1 font-medium text-mp-ink">
+                <Ruler size={12} /> {e.plannedM.toFixed(2)} → {e.measuredM.toFixed(2)} m
+              </span>
+            )}
+            {e.voiceMemo && (
+              <span className="flex items-center gap-1">
+                <Mic size={12} /> {e.voiceMemo.durationS}s
+              </span>
+            )}
+          </div>
         </div>
+        {onPress && <ChevronRight size={18} className="mt-1 shrink-0 text-mp-muted" />}
+      </button>
+
+      {/* Footer: status + revoke affordance */}
+      <div className="flex items-center gap-2 border-t border-mp-line px-3 py-2">
+        <motion.span
+          key={e.status}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className={`flex items-center gap-1 text-[13px] font-semibold ${pill.cls}`}
+        >
+          {pill.icon} {STATUS_META[e.status].label}
+        </motion.span>
+        <span className="flex-1" />
+        <RevokeControl status={e.status} onRevoke={onRevoke} />
       </div>
-      <ChevronRight size={18} className="mt-1 shrink-0 text-mp-muted" />
+      {e.status === "in_review" && <RevokeLockedTip />}
+    </motion.div>
+  );
+}
+
+function RevokeControl({ status, onRevoke }: { status: EscalationStatus; onRevoke: () => void }) {
+  if (status === "resolved") return null;
+
+  if (canRevoke(status)) {
+    return (
+      <motion.button
+        key="revoke"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={onRevoke}
+        className="flex h-10 items-center gap-1.5 rounded-lg border border-mp-line px-3 text-[13px] font-semibold text-mp-ink active:bg-mp-panel"
+      >
+        <Undo2 size={15} /> Revoke Escalation
+      </motion.button>
+    );
+  }
+
+  // In review: revoke is locked (tooltip rendered below the footer, see RevokeLockedTip).
+  return (
+    <button
+      disabled
+      aria-disabled="true"
+      aria-describedby="revoke-locked-tip"
+      className="flex h-10 cursor-not-allowed items-center gap-1.5 rounded-lg border border-mp-line px-3 text-[13px] font-semibold text-mp-muted opacity-50"
+    >
+      <Lock size={14} /> Revoke Escalation
     </button>
+  );
+}
+
+/** Always visible, because touch has no hover. Caret points at the disabled Revoke button. */
+function RevokeLockedTip() {
+  return (
+    <motion.div
+      id="revoke-locked-tip"
+      role="tooltip"
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative mx-3 mb-3 flex items-center gap-2 rounded-lg bg-mp-ink px-3 py-2 text-[12px] font-medium leading-snug text-white"
+    >
+      <span className="absolute -top-1 right-[72px] h-2 w-2 rotate-45 bg-mp-ink" />
+      <Eye size={14} className="shrink-0 text-amber-300" />
+      {REVOKE_DISABLED_MESSAGE}
+    </motion.div>
+  );
+}
+
+/** Shown while an optimistic revoke waits for the server to confirm. */
+function RevokeInFlight({ e }: { e: Escalation }) {
+  return (
+    <div className="mb-4 rounded-2xl border-2 border-dashed border-mp-line bg-white p-4">
+      <div className="flex items-center gap-2 text-[14px] font-semibold">
+        <Loader2 size={16} className="animate-spin text-mp-blue" /> Revoking {e.targetLabel} report…
+      </div>
+      <p className="mt-1 text-[12px] text-mp-muted">
+        Wall unlocked on this iPad. Waiting for Munich to confirm. If the expert opened it in the
+        meantime, it will come back.
+      </p>
+    </div>
   );
 }
 

@@ -19,14 +19,24 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PROJECT } from "@/lib/floorplan";
 import { STATUS_H, TOPBAR_H } from "@/lib/layout";
 import { useMunichCutoff } from "@/lib/useMunichCutoff";
 
 /** Fake iPadOS status bar — sells the "native app" feel in the browser. */
-export function StatusBar() {
+export function StatusBar({ onSecretTap }: { onSecretTap?: () => void }) {
   const [time, setTime] = useState("");
+  // Triple-tap the clock → presenter dev tools (no keyboard on an iPad).
+  const taps = useRef<number[]>([]);
+  const onClockTap = () => {
+    const now = Date.now();
+    taps.current = [...taps.current.filter((t) => now - t < 600), now];
+    if (taps.current.length >= 3) {
+      taps.current = [];
+      onSecretTap?.();
+    }
+  };
   useEffect(() => {
     const fmt = () =>
       setTime(
@@ -47,7 +57,9 @@ export function StatusBar() {
       style={{ height: STATUS_H }}
       className="flex items-center justify-between px-6 text-[13px] font-semibold"
     >
-      <span suppressHydrationWarning>{time}</span>
+      <span suppressHydrationWarning onClick={onClockTap} className="-mx-2 px-2 py-1">
+        {time}
+      </span>
       <span className="flex items-center gap-2">
         <span className="text-[12px]">4G</span>
         <span>62%</span>

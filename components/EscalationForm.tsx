@@ -78,7 +78,8 @@ export function EscalationForm({
       voiceMemo: voice.memo ? { url: voice.memo.url, durationS: voice.memo.durationS } : undefined,
       blocking,
       createdAt: Date.now(),
-      status: "queued",
+      status: "sending",
+      statusChangedAt: Date.now(),
     });
   };
 
