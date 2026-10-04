@@ -35,6 +35,7 @@ type Props = {
   height: number;
   selected: SelectedElement | null;
   statusFor: (t: SelectedElement) => EscalationStatus | undefined;
+  photoCountFor?: (t: SelectedElement) => number;
   onSelect: (t: SelectedElement | null) => void;
 };
 
@@ -46,7 +47,7 @@ const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
  * tapping empty canvas (outside the room) clears the selection. The dot grid
  * behind it is CanvasArea's CSS background, so the SVG background is transparent.
  */
-export function FloorPlan({ width, height, selected, statusFor, onSelect }: Props) {
+export function FloorPlan({ width, height, selected, statusFor, photoCountFor, onSelect }: Props) {
   return (
     <svg
       width={width}
@@ -100,6 +101,7 @@ export function FloorPlan({ width, height, selected, statusFor, onSelect }: Prop
               thickness={WALL_THICKNESS}
               label={w.label}
               deviationState={statusFor(target) ?? "idle"}
+              photoCount={photoCountFor?.(target)}
               selected={sameElement(selected, target)}
               onSelect={() => onSelect(target)}
             />

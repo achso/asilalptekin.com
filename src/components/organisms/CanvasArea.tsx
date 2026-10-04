@@ -2,15 +2,16 @@
 
 import { memo } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
-import { EscalationPins } from "@/components/molecules/EscalationPin";
+import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-import type { Escalation, EscalationStatus, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FloorPlan } from "./FloorPlan";
 
 /**
  * CanvasArea (organism): the main work surface. A dot-grid background (CSS),
- * the SVG FloorPlan, and compact status pins on escalated geometry.
+ * the SVG FloorPlan, and one badge per element (escalation pin or yellow
+ * paperclip, see ElementBadges).
  * magicplan's canvas chrome (undo/redo, floor picker) sits on top.
  *
  * Memoised: with stable props from page.tsx it re-renders only when the
@@ -22,16 +23,17 @@ import { FloorPlan } from "./FloorPlan";
  */
 export type CanvasAreaProps = {
   selectedElement: SelectedElement | null;
-  escalations: Escalation[];
   statusFor: (el: SelectedElement) => EscalationStatus | undefined;
+  /** Standard Photos & Notes count per element (yellow paperclip). */
+  photoCountFor: (el: SelectedElement) => number;
   onSelect: (el: SelectedElement | null) => void;
   className?: string;
 };
 
 export const CanvasArea = memo(function CanvasArea({
   selectedElement,
-  escalations,
   statusFor,
+  photoCountFor,
   onSelect,
   className,
 }: CanvasAreaProps) {
@@ -51,10 +53,11 @@ export const CanvasArea = memo(function CanvasArea({
         height={CANVAS_H}
         selected={selectedElement}
         statusFor={statusFor}
+        photoCountFor={photoCountFor}
         onSelect={onSelect}
       />
 
-      <EscalationPins escalations={escalations} onPress={onSelect} />
+      <ElementBadges statusFor={statusFor} photoCountFor={photoCountFor} onPress={onSelect} />
 
       <UndoRedo />
       <FloorPicker />

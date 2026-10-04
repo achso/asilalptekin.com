@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { elementById, elementInfo } from "@/lib/floorplan";
 import type {
+  ElementMedia,
   Escalation,
   EscalationDraft,
   EscalationStatus,
@@ -31,7 +32,10 @@ import {
  *   cancelReport()       discard the form, keep the selection
  *   submitEscalation(d)  fire-and-forget: closes the form, uploads in background
  *   revokeEscalation()   optimistic; FAILS while in_review (race guard, see below)
- *   mockExpertReview()   Munich opens the selected (or newest) report → in_review
+ *   mockExpertReview()   the expert opens the selected (or newest) report → in_review
+ *   mediaFor(el) / setMediaFor(el, m) / standardPhotoCount(el)
+ *                        standard "Photos & Notes" attachments per element, tracked
+ *                        independently of escalations (drives the yellow paperclip)
  *
  * Lifecycle and transition rules live in ./deviationMachine.ts. Each element
  * has its own report, so `escalations` is a list, and `escalationStatus` is
@@ -63,6 +67,8 @@ type State = {
   /** Element the open DeviationForm is anchored to (null = form closed). */
   captureAnchor: SelectedElement | null;
   escalations: Escalation[];
+  /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
+  media: Record<string, ElementMedia>;
   pendingRevokes: Record<string, PendingRevoke>;
   demo: DemoSettings;
   toast: { id: number; text: string; tone: ToastTone } | null;
@@ -77,6 +83,7 @@ type Action =
   | { type: "serverStatus"; id: string; status: EscalationStatus; force?: boolean }
   | { type: "revokeRequested"; id: string; settlesAt: number }
   | { type: "revokeSettled"; id: string }
+  | { type: "setMedia"; key: string; media: ElementMedia }
   | { type: "setDemo"; patch: Partial<DemoSettings> }
   | { type: "reset" }
   | { type: "notify"; text: string; tone: ToastTone }
@@ -86,12 +93,17 @@ const initialState: State = {
   selectedElement: null,
   captureAnchor: null,
   escalations: [],
+  media: {},
   pendingRevokes: {},
   demo: { autoAdvance: false, slowNetwork: true },
   toast: null,
 };
 
 const toast = (text: string, tone: ToastTone) => ({ id: Date.now() + Math.random(), text, tone });
+
+/** Key for per-element maps. The room panel and the floor share the room's key. */
+export const elementKey = (el: SelectedElement) => `${el.type}:${el.id}`;
+const EMPTY_MEDIA: ElementMedia = { photos: [], note: "" };
 
 export const sameElement = (a: SelectedElement | null, b: SelectedElement | null) =>
   !!a && !!b && a.type === b.type && a.id === b.id;
@@ -222,6 +234,9 @@ function reducer(state: State, action: Action): State {
         ),
       };
     }
+
+    case "setMedia":
+      return { ...state, media: { ...state.media, [action.key]: action.media } };
 
     case "setDemo":
       return { ...state, demo: { ...state.demo, ...action.patch } };
@@ -382,6 +397,23 @@ export function useDeviationState() {
   );
   const dismissToast = useCallback(() => dispatch({ type: "dismissToast" }), []);
 
+  // ── Standard attachments (Photos & Notes) ───────────────────────────────
+
+  const mediaFor = useCallback(
+    (el: SelectedElement) => state.media[elementKey(el)] ?? EMPTY_MEDIA,
+    [state.media],
+  );
+  const setMediaFor = useCallback(
+    (el: SelectedElement, media: ElementMedia) =>
+      dispatch({ type: "setMedia", key: elementKey(el), media }),
+    [],
+  );
+  /** Drives the yellow paperclip badge; independent of escalation state. */
+  const standardPhotoCount = useCallback(
+    (el: SelectedElement) => state.media[elementKey(el)]?.photos.length ?? 0,
+    [state.media],
+  );
+
   const activeCount = useMemo(() => state.escalations.filter(isActive).length, [state.escalations]);
 
   return {
@@ -398,6 +430,8 @@ export function useDeviationState() {
     activeCount,
     escalationFor,
     pendingRevokeFor,
+    mediaFor,
+    standardPhotoCount,
     // actions
     selectElement,
     clearSelection,
@@ -406,6 +440,7 @@ export function useDeviationState() {
     submitEscalation,
     revokeEscalation,
     mockExpertReview,
+    setMediaFor,
     devSetStatus,
     setDemo,
     reset,

@@ -92,8 +92,8 @@ export default function Page() {
             <CanvasArea
               className="[grid-area:stack]"
               selectedElement={selectedElement}
-              escalations={store.escalations}
               statusFor={statusFor}
+              photoCountFor={store.standardPhotoCount}
               onSelect={onSelect}
             />
 
@@ -155,6 +155,8 @@ export default function Page() {
             onFocus={(el) => store.selectElement(el.id)}
             onClear={store.clearSelection}
             onRevoke={(id) => store.revokeEscalation(id)}
+            mediaFor={store.mediaFor}
+            onMediaChange={store.setMediaFor}
           />
         </div>
       </div>

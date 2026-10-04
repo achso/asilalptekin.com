@@ -6,7 +6,9 @@ import { LockedBadge } from "@/components/atoms/LockedBadge";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
 import { ToolButton } from "@/components/atoms/ToolButton";
-import { EscalationPin, EscalationPins } from "@/components/molecules/EscalationPin";
+import { AttachmentBadge } from "@/components/atoms/AttachmentBadge";
+import { ElementBadges } from "@/components/molecules/ElementBadges";
+import { EscalationPin } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
@@ -19,7 +21,7 @@ import { StatusToast } from "@/components/organisms/StatusToast";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { WALL_THICKNESS, wallById, wallGeometry } from "@/lib/floorplan";
 import { CANVAS_W, PANEL_W } from "@/lib/layout";
-import type { Escalation, IssueType, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, IssueType, SelectedElement } from "@/lib/types";
 import type { DeviationState } from "@/store/deviationMachine";
 
 /**
@@ -36,6 +38,14 @@ const OPENED = new Date("2026-10-01T13:12:00").getTime();
 const CARD_W = PANEL_W - 40;
 
 const NORTH_WALL: SelectedElement = { type: "wall", id: "w-north" };
+
+/** Every lifecycle state an escalated element's card can be in. */
+const CARD_STATES: { status: EscalationStatus; caption: string; changedAt: number }[] = [
+  { status: "sending", caption: "uploading, revocable", changedAt: REPORTED },
+  { status: "delivered", caption: "revocable", changedAt: REPORTED + 2_000 },
+  { status: "in_review", caption: "revoke locked", changedAt: OPENED },
+  { status: "resolved", caption: "unblocked", changedAt: OPENED + 25 * 60_000 },
+];
 
 export default function SandboxPage() {
   const [log, setLog] = useState<string[]>([]);
@@ -130,38 +140,31 @@ export default function SandboxPage() {
         {/* ═══════════════════════════ MOLECULES ═══════════════════════════ */}
         <Section id="molecules" title="Molecules" description="Atoms composed into a single unit of meaning.">
           <Specimen
-            title="EscalationCard"
-            note="Delivered shows the BLOCKING tag and Revoke. In review hides Revoke and shows the yellow “Expert is reviewing” badge."
+            title="EscalationCard · all states"
+            note="Same report in each lifecycle state, so only what the state drives changes: BLOCKING tag, badge, timestamps, Revoke, and the in-review note."
           >
-            <div className="flex flex-wrap gap-6">
-              <SidebarBackdrop label='status="delivered"'>
-                <EscalationCard
-                  status="delivered"
-                  issueType="dimension-mismatch"
-                  timestamp={REPORTED}
-                  statusChangedAt={REPORTED + 2_000}
-                  targetLabel="North wall"
-                  photoUrl={DEMO_PHOTO}
-                  dimension={{ plannedM: 4.55, measuredM: 4.35 }}
-                  onRevoke={() => record("EscalationCard onRevoke() — delivered")}
-                />
-              </SidebarBackdrop>
-              <SidebarBackdrop label='status="in_review"'>
-                <EscalationCard
-                  status="in_review"
-                  issueType="dimension-mismatch"
-                  timestamp={REPORTED}
-                  statusChangedAt={OPENED}
-                  targetLabel="North wall"
-                  photoUrl={DEMO_PHOTO}
-                  dimension={{ plannedM: 4.55, measuredM: 4.35 }}
-                  onRevoke={() => record("onRevoke() fired in review — should never happen")}
-                />
-              </SidebarBackdrop>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {CARD_STATES.map(({ status, caption, changedAt }) => (
+                <SidebarBackdrop key={status} label={`status="${status}" · ${caption}`}>
+                  <EscalationCard
+                    status={status}
+                    issueType="dimension-mismatch"
+                    timestamp={REPORTED}
+                    statusChangedAt={changedAt}
+                    targetLabel="North wall"
+                    photoUrl={DEMO_PHOTO}
+                    photoCount={3}
+                    note="Laser reads 4.35 m; drywall is 20 cm short of the plan."
+                    dimension={{ plannedM: 4.55, measuredM: 4.35 }}
+                    onPress={() => record(`EscalationCard onPress() — ${status} → select wall`)}
+                    onRevoke={() => record(`EscalationCard onRevoke() — ${status}`)}
+                  />
+                </SidebarBackdrop>
+              ))}
             </div>
           </Specimen>
 
-          <Specimen title="IssueTypePicker" note="Radio group of large tiles: structured input instead of free text.">
+          <Specimen title="IssueTypePicker" note="Grouped list: bold title + description per type; selected row blue with a check.">
             <IssueTypePickerDemo onChange={(v) => record(`IssueTypePicker → ${v}`)} />
           </Specimen>
 
@@ -248,14 +251,31 @@ export default function SandboxPage() {
           </Specimen>
 
           <Specimen
-            title="In context: pin on an escalated wall"
-            note="EscalationPins at real canvas coordinates: centred on the wall, over its red hatch."
+            title="AttachmentBadge"
+            note="Native yellow paperclip: the element has standard Photos & Notes attachments."
+          >
+            <div className="flex items-center gap-2 rounded-xl bg-mp-canvas px-3 py-1 w-fit">
+              <AttachmentBadge count={2} label="North wall" onPress={() => record("AttachmentBadge pressed → select wall")} />
+            </div>
+          </Specimen>
+
+          <Specimen
+            title="In context: one badge per element"
+            note="ElementBadges at real canvas coordinates. Photos only → yellow paperclip. Photos + an escalation → only the escalation pin (critical blocker wins)."
           >
             <div className="flex flex-col gap-6">
-              <MiniCanvas label="delivered · EscalationPin" wallState="delivered">
-                <EscalationPins
-                  escalations={[MOCK_ESCALATION]}
-                  onPress={() => record("EscalationPin pressed → select wall")}
+              <MiniCanvas label="idle + 2 photos → paperclip" wallState="idle">
+                <ElementBadges
+                  statusFor={() => undefined}
+                  photoCountFor={(el) => (el.id === NORTH_WALL.id ? 2 : 0)}
+                  onPress={() => record("ElementBadges: paperclip pressed → select wall")}
+                />
+              </MiniCanvas>
+              <MiniCanvas label="delivered + 2 photos → pin only" wallState="delivered">
+                <ElementBadges
+                  statusFor={(el) => (el.id === NORTH_WALL.id ? "delivered" : undefined)}
+                  photoCountFor={(el) => (el.id === NORTH_WALL.id ? 2 : 0)}
+                  onPress={() => record("ElementBadges: pin pressed → select wall")}
                 />
               </MiniCanvas>
             </div>
@@ -408,17 +428,6 @@ function CanvasWallStates() {
 
 /** Real canvas coordinates, cropped to the top band around the north wall. */
 const MINI_H = 300;
-const MOCK_ESCALATION: Escalation = {
-  id: "esc-sandbox",
-  target: NORTH_WALL,
-  targetLabel: "North wall",
-  issueType: "structural-obstacle",
-  photoUrls: [DEMO_PHOTO],
-  blocking: true,
-  createdAt: REPORTED,
-  status: "delivered",
-  statusChangedAt: REPORTED + 2_000,
-};
 
 function MiniCanvas({
   label,

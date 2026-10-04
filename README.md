@@ -99,6 +99,10 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    (Sending → Delivered), and it appears in **Active Escalations**. The
    contractor moves on.
 
+**Canvas badges:** an element with standard Photos & Notes shows magicplan's
+yellow paperclip. If it's also escalated, only the escalation pin shows (red,
+amber or green): the blocker always wins.
+
 The top bar shows how long the remote expert is still available (live
 countdown to 15:00 Europe/Berlin).
 
@@ -153,10 +157,12 @@ state.
 
 - **Atoms:** `CanvasWall` in idle / selected / delivered / in review /
   resolved, plus `ToolButton`, `Switch` and `StepLabel`.
-- **Molecules:** `EscalationCard` (delivered next to in review),
+- **Molecules:** `EscalationCard` in all four states (sending, delivered, in
+  review, resolved),
   `IssueTypePicker`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
 - **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the compact `EscalationPin`,
+  the yellow `AttachmentBadge` paperclip, `ElementBadges` precedence in context,
   and every `StatusToast` variant.
 
 Interactive specimens log their callbacks in an event log at the bottom.

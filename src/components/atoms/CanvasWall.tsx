@@ -64,6 +64,13 @@ export type CanvasWallProps = {
   selected?: boolean;
   /** Accessible name, e.g. "North wall". */
   label: string;
+  /**
+   * Standard Photos & Notes attached. Announced in the accessible name; the
+   * visible yellow paperclip is drawn by ElementBadges in the HTML layer above
+   * the SVG, so door/window gaps painted later can't cover it, and so it
+   * defers to an escalation pin (see canvasBadgeFor).
+   */
+  photoCount?: number;
   onSelect?: () => void;
   className?: string;
 };
@@ -77,6 +84,7 @@ export function CanvasWall({
   deviationState,
   selected = false,
   label,
+  photoCount = 0,
   onSelect,
   className,
 }: CanvasWallProps) {
@@ -95,7 +103,9 @@ export function CanvasWall({
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${label}, ${STATE_LABEL[deviationState]}`}
+      aria-label={`${label}, ${STATE_LABEL[deviationState]}${
+        photoCount > 0 ? `, ${photoCount} photo${photoCount === 1 ? "" : "s"} attached` : ""
+      }`}
       aria-pressed={selected}
       data-state={deviationState}
       onPointerDown={onSelect}

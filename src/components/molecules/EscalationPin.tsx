@@ -1,11 +1,9 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Check, Eye, Lock } from "lucide-react";
-import { FloatingAnchor } from "@/components/atoms/FloatingAnchor";
-import { WALL_THICKNESS, elementInfo } from "@/lib/floorplan";
-import type { Escalation, EscalationStatus, SelectedElement } from "@/lib/types";
+import type { EscalationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/store/deviationMachine";
 
@@ -54,7 +52,7 @@ export type EscalationPinProps = {
   className?: string;
 };
 
-/** The pin itself (no positioning). Usable anywhere, e.g. in the sandbox. */
+/** The pin itself (no positioning). Placed on the canvas by ElementBadges. */
 export function EscalationPin({ status, label, onPress, className }: EscalationPinProps) {
   const meta = STATUS_META[status];
   return (
@@ -79,43 +77,5 @@ export function EscalationPin({ status, label, onPress, className }: EscalationP
         <span className="relative">{ICON[status]}</span>
       </span>
     </motion.button>
-  );
-}
-
-/**
- * Where the pin sits: centred on the wall's body (it's drawn half a thickness
- * outside the room line), on the corner node, or on the room's anchor point.
- */
-const PIN_OFFSET: Record<SelectedElement["type"], number> = {
-  wall: -WALL_THICKNESS / 2,
-  corner: 0,
-  room: 0,
-};
-
-/** All pins for the canvas, anchored to their elements. */
-export function EscalationPins({
-  escalations,
-  onPress,
-}: {
-  escalations: Escalation[];
-  onPress: (el: SelectedElement) => void;
-}) {
-  return (
-    <AnimatePresence>
-      {escalations.map((e) => (
-        <FloatingAnchor
-          key={e.id}
-          element={e.target}
-          distance={PIN_OFFSET[e.target.type]}
-          margin={{ x: 22, y: 22 }}
-        >
-          <EscalationPin
-            status={e.status}
-            label={elementInfo(e.target).label}
-            onPress={() => onPress(e.target)}
-          />
-        </FloatingAnchor>
-      ))}
-    </AnimatePresence>
   );
 }

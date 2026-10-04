@@ -60,3 +60,23 @@ export const STATUS_META: Record<
   in_review: { label: "In Review", badge: "Expert is reviewing", tone: "amber" },
   resolved: { label: "Resolved", badge: "Resolved · plan updated", tone: "green" },
 };
+
+/**
+ * Which single badge an element shows on the canvas. Escalations are critical
+ * blockers and take absolute precedence: any escalation status (including
+ * resolved, shown green) hides the yellow paperclip for standard photos.
+ *
+ *   escalation status set        → "escalation" (red / amber / green pin)
+ *   idle + standard photos ≥ 1   → "attachment" (yellow paperclip)
+ *   idle, no photos              → null
+ */
+export type CanvasBadge = "escalation" | "attachment" | null;
+
+export function canvasBadgeFor(
+  status: EscalationStatus | undefined,
+  standardPhotoCount: number,
+): CanvasBadge {
+  if (status) return "escalation";
+  if (standardPhotoCount > 0) return "attachment";
+  return null;
+}

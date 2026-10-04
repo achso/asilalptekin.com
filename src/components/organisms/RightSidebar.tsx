@@ -31,6 +31,9 @@ type Props = {
   onFocus: (t: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
+  /** Standard Photos & Notes per element (store-owned, drives the canvas paperclip). */
+  mediaFor: (el: SelectedElement) => ElementMedia;
+  onMediaChange: (el: SelectedElement, m: ElementMedia) => void;
   /** Optimistically revoked report for the selected target, awaiting server confirmation. */
   pendingRevoke?: Escalation;
   className?: string;
@@ -51,13 +54,10 @@ export function RightSidebar(props: Props) {
   const { selected, captureAnchor } = props;
   const mode: Mode = captureAnchor ? "form" : selected ? "inspector" : "summary";
 
-  // Photos & Notes per element, kept here (always mounted) so switching
-  // between elements doesn't lose them. The room panel and the floor share
-  // the room's entry.
-  const [media, setMedia] = useState<Record<string, ElementMedia>>({});
-  const mediaFor = (el: SelectedElement) => media[mediaKey(el)] ?? EMPTY_MEDIA;
-  const setMediaFor = (el: SelectedElement) => (m: ElementMedia) =>
-    setMedia((all) => ({ ...all, [mediaKey(el)]: m }));
+  // Photos & Notes live in the store (the canvas shows a paperclip for them).
+  // The room panel and the floor share the room's entry.
+  const { mediaFor } = props;
+  const setMediaFor = (el: SelectedElement) => (m: ElementMedia) => props.onMediaChange(el, m);
   const roomEl: SelectedElement = { type: "room", id: ROOM.id };
   const activeEscalations = props.escalations.filter(isActive); // newest first
 
@@ -291,6 +291,3 @@ function RevokeInFlight({ e }: { e: Escalation }) {
   );
 }
 
-
-const EMPTY_MEDIA: ElementMedia = { photos: [], note: "" };
-const mediaKey = (el: SelectedElement) => `${el.type}:${el.id}`;
