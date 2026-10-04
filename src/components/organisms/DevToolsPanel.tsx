@@ -74,7 +74,7 @@ export function DevToolsPanel({
         >
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 rounded-md bg-white/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-white/70">
-              <Zap size={12} /> Dev · Munich side
+              <Zap size={12} /> Dev · Expert side
             </span>
 
             <div className="min-w-0 flex-1 truncate text-[13px]">
@@ -152,7 +152,7 @@ export function DevToolsPanel({
               >
                 <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-amber-500/15 px-3 py-2 text-[12px] text-amber-200">
                   <span className="font-mono font-bold tabular-nums">{remaining.toFixed(1)}s</span>
-                  Revoke in flight. Tap <b>In Review</b> now to make Munich win the race.
+                  Revoke in flight. Tap <b>In Review</b> now to make the expert win the race.
                 </div>
               </motion.div>
             )}

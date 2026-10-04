@@ -158,7 +158,7 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
           )}
         >
           <Send size={20} />
-          {canSend ? "Send to Munich" : recording ? "Stop recording first" : `Add ${missing.join(" + ")}`}
+          {canSend ? "Send to review" : recording ? "Stop recording first" : `Add ${missing.join(" + ")}`}
         </motion.button>
         <p className="mt-2 text-[11px] leading-snug text-mp-muted">
           Auto-attached: plan snapshot, dimensions, budget ≈ €

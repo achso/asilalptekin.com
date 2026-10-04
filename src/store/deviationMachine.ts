@@ -49,14 +49,14 @@ export const canRevoke = (s: EscalationStatus) => s === "sending" || s === "deli
 /** Active = the wall is still locked/blocked on site. */
 export const isActive = (e: Escalation | undefined) => !!e && e.status !== "resolved";
 
-export const REVOKE_DISABLED_MESSAGE = "Munich is actively reviewing. Revocation disabled.";
+export const REVOKE_DISABLED_MESSAGE = "The expert is actively reviewing. Revocation disabled.";
 
 export const STATUS_META: Record<
   EscalationStatus,
   { label: string; badge: string; tone: "red" | "amber" | "green" }
 > = {
-  sending: { label: "Sending", badge: "Escalated to Munich", tone: "red" },
-  delivered: { label: "Delivered", badge: "Escalated to Munich", tone: "red" },
-  in_review: { label: "In Review", badge: "Munich is reviewing", tone: "amber" },
+  sending: { label: "Sending", badge: "Escalated to expert", tone: "red" },
+  delivered: { label: "Delivered", badge: "Escalated to expert", tone: "red" },
+  in_review: { label: "In Review", badge: "Expert is reviewing", tone: "amber" },
   resolved: { label: "Resolved", badge: "Resolved · plan updated", tone: "green" },
 };

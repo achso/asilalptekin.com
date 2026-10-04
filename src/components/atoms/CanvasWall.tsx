@@ -139,9 +139,9 @@ export function CanvasWall({
 
 const STATE_LABEL: Record<DeviationState, string> = {
   idle: "no deviation reported",
-  sending: "sending to Munich",
-  delivered: "escalated to Munich",
-  in_review: "in review by Munich",
+  sending: "sending to expert",
+  delivered: "escalated to expert",
+  in_review: "in review by expert",
   resolved: "resolved",
 };
 

@@ -3,7 +3,7 @@ import { ToolButton } from "@/components/atoms/ToolButton";
 import { cn } from "@/lib/utils";
 
 export const LOCKED_MESSAGE =
-  "Plan locked for execution. Use 'Report Deviation' to alert the Munich office.";
+  "Plan locked for execution. Use 'Report Deviation' to alert the remote expert.";
 /** Same lock, but nothing is selected yet, so the action isn't on screen. */
 export const LOCKED_MESSAGE_NO_SELECTION =
   "Plan locked for execution. Tap the wall, corner or floor that's wrong to report a deviation.";

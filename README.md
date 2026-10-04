@@ -60,7 +60,7 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
 
 1. **Try a drafting tool** (Insert, Add Corner, Add Wall, Split Room, Delete).
    They're greyed out. Tapping one shows a toast: *"Plan locked for execution.
-   Use 'Report Deviation' to alert the Munich office."*
+   Use 'Report Deviation' to alert the remote expert."*
 2. **Nothing is selected yet, so there's no Report Deviation button.** A
    report has to be anchored to geometry. The hint at the bottom and the
    sidebar's empty state guide the contractor instead.
@@ -77,14 +77,14 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
      use *"No camera? Use demo photo"*.
    - **Record Voice Memo (optional).** Tap to talk, tap to stop.
    - **Work is blocked here** toggle.
-   - **Send to Munich** stays disabled until the issue type and photo are
+   - **Send to review** stays disabled until the issue type and photo are
      provided, and its label says what's missing.
 5. After sending, the form closes **right away**. The wall locks in a **red
-   hatched pattern** with a persistent **"Escalated to Munich"** badge
+   hatched pattern** with a persistent **"Escalated to expert"** badge
    (Sending → Delivered), and it appears in **Active Escalations**. The
    contractor moves on.
 
-The top bar shows how long the Munich expert is still available (live
+The top bar shows how long the remote expert is still available (live
 countdown to 15:00 Europe/Berlin).
 
 ---
@@ -103,15 +103,15 @@ idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
 | State | Canvas | Escalation card |
 |---|---|---|
 | Idle (locked plan) | Black wall, drafting tools disabled | — |
-| Delivered | Red hatched wall, "Escalated to Munich" badge | **Revoke Escalation** available |
-| In Review | Hatched wall framed in amber with a pulse, "Munich is reviewing" | Revoke hidden; yellow "Munich is reviewing" badge and the note *"Munich is actively reviewing. Revocation disabled."* |
+| Delivered | Red hatched wall, "Escalated to expert" badge | **Revoke Escalation** available |
+| In Review | Hatched wall framed in amber with a pulse, "Expert is reviewing" | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |
 | Resolved | Green wall, "Resolved · plan updated" | Contractor unblocked; the wall can be reported again |
 
 **Open the hidden Dev Tools:** press **Shift + D**, **triple-tap the clock** in
 the status bar (works on the iPad), or load **`/?dev=1`**. The panel flips the
-Munich-side status between **Delivered / In Review / Resolved**, and has:
+expert-side status between **Delivered / In Review / Resolved**, and has:
 
-- **Auto-advance:** Munich opens the report after ~7s and resolves it after ~14s.
+- **Auto-advance:** the expert opens the report after ~7s and resolves it after ~14s.
 - **Slow revoke (3s):** on by default, so there's time to show the race.
 - **Reset** clears the demo.
 

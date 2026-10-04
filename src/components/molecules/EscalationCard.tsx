@@ -59,7 +59,7 @@ const statusBadge = cva(
 const BADGE: Record<EscalationStatus, { icon: React.ReactNode; text: string }> = {
   sending: { icon: <Loader2 size={13} className="animate-spin" />, text: "Sending…" },
   delivered: { icon: <CheckCheck size={13} />, text: "Delivered" },
-  in_review: { icon: <Eye size={13} className="animate-pulse" />, text: "Munich is reviewing" },
+  in_review: { icon: <Eye size={13} className="animate-pulse" />, text: "Expert is reviewing" },
   resolved: { icon: <CheckCircle2 size={13} />, text: "Resolved" },
 };
 
@@ -214,7 +214,7 @@ export function EscalationCard({
 
 const SINCE: Partial<Record<EscalationStatus, string>> = {
   delivered: "Delivered",
-  in_review: "Opened by Munich",
+  in_review: "Opened by expert",
   resolved: "Resolved",
 };
 

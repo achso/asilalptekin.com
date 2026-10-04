@@ -129,7 +129,7 @@ export default function SandboxPage() {
         <Section id="molecules" title="Molecules" description="Atoms composed into a single unit of meaning.">
           <Specimen
             title="EscalationCard"
-            note="Delivered shows the BLOCKING tag and Revoke. In review hides Revoke and shows the yellow “Munich is reviewing” badge."
+            note="Delivered shows the BLOCKING tag and Revoke. In review hides Revoke and shows the yellow “Expert is reviewing” badge."
           >
             <div className="flex flex-wrap gap-6">
               <SidebarBackdrop label='status="delivered"'>
@@ -260,14 +260,14 @@ export default function SandboxPage() {
                 <InFlowToast showHint />
               </Labeled>
               <Labeled label='tone="success"'>
-                <InFlowToast toast={{ id: 1, tone: "success", text: "North wall sent to Munich. You can move on." }} />
+                <InFlowToast toast={{ id: 1, tone: "success", text: "North wall sent for review. You can move on." }} />
               </Labeled>
               <Labeled label='tone="locked"'>
                 <InFlowToast
                   toast={{
                     id: 2,
                     tone: "locked",
-                    text: "Plan locked for execution. Use 'Report Deviation' to alert the Munich office.",
+                    text: "Plan locked for execution. Use 'Report Deviation' to alert the remote expert.",
                   }}
                 />
               </Labeled>
@@ -276,7 +276,7 @@ export default function SandboxPage() {
                   toast={{
                     id: 3,
                     tone: "warning",
-                    text: "Revoke rejected. Munich opened the North wall report first. It stays escalated.",
+                    text: "Revoke rejected. The expert opened the North wall report first. It stays escalated.",
                   }}
                 />
               </Labeled>

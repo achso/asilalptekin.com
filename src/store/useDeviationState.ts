@@ -96,8 +96,8 @@ export const sameElement = (a: SelectedElement | null, b: SelectedElement | null
   !!a && !!b && a.type === b.type && a.id === b.id;
 
 const SERVER_TOASTS: Partial<Record<EscalationStatus, (label: string) => [string, ToastTone]>> = {
-  in_review: (l) => [`Munich opened your ${l} report.`, "hint"],
-  resolved: (l) => [`Munich updated the plan. ${l} resolved. You're unblocked.`, "success"],
+  in_review: (l) => [`The expert opened your ${l} report.`, "hint"],
+  resolved: (l) => [`The expert updated the plan. ${l} resolved. You're unblocked.`, "success"],
 };
 
 function reducer(state: State, action: Action): State {
@@ -122,7 +122,7 @@ function reducer(state: State, action: Action): State {
         selectedElement: null,
         // A resolved element can be reported again; the new report replaces the old one.
         escalations: [e, ...state.escalations.filter((x) => !sameElement(x.target, e.target))],
-        toast: toast(`${e.targetLabel} sent to Munich. You can move on.`, "success"),
+        toast: toast(`${e.targetLabel} sent for review. You can move on.`, "success"),
       };
     }
 
@@ -203,7 +203,7 @@ function reducer(state: State, action: Action): State {
         pendingRevokes: rest,
         escalations: [e, ...state.escalations],
         toast: toast(
-          `Revoke rejected. Munich opened the ${e.targetLabel} report first. It stays escalated.`,
+          `Revoke rejected. The expert opened the ${e.targetLabel} report first. It stays escalated.`,
           "warning",
         ),
       };

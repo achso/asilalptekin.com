@@ -111,7 +111,7 @@ function Summary({
             {activeCount}
           </motion.span>
         </div>
-        <div className="text-[13px] text-mp-muted">Sent one-way to Munich · no need to wait for a reply</div>
+        <div className="text-[13px] text-mp-muted">Sent one-way to the remote expert · no need to wait for a reply</div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-5">
@@ -290,7 +290,7 @@ function PhotosTab({ onReport, escalated }: { onReport: () => void; escalated: b
         >
           <div className="text-[15px] font-semibold text-mp-red">Notes replaced by Report Deviation</div>
           <div className="text-[12px] text-mp-muted">
-            Structured issue type, photo and voice memo go straight to the Munich expert.
+            Structured issue type, photo and voice memo go straight to the remote expert.
           </div>
         </button>
       )}
@@ -328,8 +328,8 @@ function LockedValue({ children }: { children: React.ReactNode }) {
 const INSPECTOR_HINT: Record<EscalationStatus, string> = {
   sending: "Uploading in the background. You can keep working.",
   delivered: "No reply needed. The expert will update the plan. Carry on with other work.",
-  in_review: "The Munich expert has this open. Leave this wall as it is for now.",
-  resolved: "Plan updated by Munich. This wall is unblocked. Report again if it still doesn't match.",
+  in_review: "The remote expert has this open. Leave this wall as it is for now.",
+  resolved: "Plan updated by the expert. This wall is unblocked. Report again if it still doesn't match.",
 };
 
 /** Shown while an optimistic revoke waits for the server to confirm. */
@@ -340,7 +340,7 @@ function RevokeInFlight({ e }: { e: Escalation }) {
         <Loader2 size={16} className="animate-spin text-mp-blue" /> Revoking {e.targetLabel} report…
       </div>
       <p className="mt-1 text-[12px] text-mp-muted">
-        Wall unlocked on this iPad. Waiting for Munich to confirm. If the expert opened it in the
+        Wall unlocked on this iPad. Waiting for the expert to confirm. If the expert opened it in the
         meantime, it will come back.
       </p>
     </div>

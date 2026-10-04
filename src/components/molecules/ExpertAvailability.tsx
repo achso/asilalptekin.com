@@ -26,7 +26,7 @@ export function ExpertAvailability() {
         )}
         <span className="relative inline-flex size-2.5 rounded-full bg-current" />
       </span>
-      Munich expert · {munich.online ? "online" : "offline"}
+      Remote expert · {munich.online ? "online" : "offline"}
       <span className="opacity-60">·</span>
       <span className="tabular-nums">{munich.remainingLabel}</span>
     </div>
