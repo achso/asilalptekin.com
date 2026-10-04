@@ -25,15 +25,18 @@ export type StatusToastProps = {
   /** Lift above the dev-tools panel when it's open. */
   raised?: boolean;
   onDismiss: () => void;
+  /** Override positioning, e.g. "relative inset-auto bottom-auto" to place it in normal flow. */
+  className?: string;
 };
 
-export function StatusToast({ toast, showHint, raised, onDismiss }: StatusToastProps) {
+export function StatusToast({ toast, showHint, raised, onDismiss, className }: StatusToastProps) {
   return (
     <div
       aria-live="polite"
       className={cn(
         "pointer-events-none absolute inset-x-0 z-[60] flex justify-center transition-[bottom] duration-300",
         raised ? "bottom-[150px]" : "bottom-[84px]",
+        className,
       )}
     >
       <AnimatePresence mode="wait">

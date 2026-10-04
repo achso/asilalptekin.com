@@ -132,10 +132,20 @@ same message.
 
 ## Component sandbox
 
-Open **http://localhost:3000/sandbox** (or `:3001` if you run on that port).
-It renders components in isolation on a neutral background, Storybook-style.
-Right now it shows `EscalationCard` in the `delivered` and `in_review` states
-side by side, with an event log that shows when `onRevoke` fires.
+Open **http://localhost:3000/sandbox** (or `:3001` if you run on that port):
+a long-scrolling "kitchen sink" of every component, in isolation and in each
+state.
+
+- **Atoms:** `CanvasWall` in idle / selected / delivered / in review /
+  resolved, plus `ToolButton`, `Switch` and `StepLabel`.
+- **Molecules:** `EscalationCard` (delivered next to in review),
+  `IssueTypePicker`, `NumericStepper`, `PhotoCapture`, `VoiceMemoToggle` and
+  `ExpertAvailability`.
+- **UI Elements:** `ReportDeviationAction` (toolbar, plus the floating version
+  at real canvas coordinates), `LockedBadge`, the spatial `EscalationBadge`,
+  and every `StatusToast` variant.
+
+Interactive specimens log their callbacks in an event log at the bottom.
 
 ---
 
