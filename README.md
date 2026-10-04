@@ -75,7 +75,11 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    and **📍 Report Deviation** animates in at the top of the left toolbar, the
    only entry point. Nothing floats over the plan. The button hands the anchor
    (`{ type, id }`) to the form.
-4. Tap **Report Deviation**. The right sidebar becomes the **Escalation Form**,
+4. Tap **Report Deviation**. The button stays in place as the pressed,
+   current mode (the toolbar never shifts). The canvas keeps driving
+   selection: tapping another wall, corner, the floor or empty canvas discards
+   the draft (a toast says so) and shows that element instead. The right
+   sidebar becomes the **Escalation Form**,
    and the canvas stays visible with the wall highlighted. Nothing needs a
    keyboard:
    - **Issue type:** four options, each a bold title with a one-line

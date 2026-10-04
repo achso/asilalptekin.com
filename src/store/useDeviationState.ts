@@ -24,7 +24,8 @@ import {
  *
  *   selectedElement      null | { id, type }       what the contractor tapped
  *   escalationStatus     DeviationState            status for the selected element
- *   selectElement(id)    select a wall / corner / room by id
+ *   selectElement(id)    select a wall / corner / room by id; while a report is
+ *                        open for another element, also cancels that draft
  *   clearSelection()
  *   startReport(anchor)  open the DeviationForm anchored to { id, type }
  *   cancelReport()       discard the form, keep the selection
@@ -102,10 +103,23 @@ const SERVER_TOASTS: Partial<Record<EscalationStatus, (label: string) => [string
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case "select":
-      // Selection is frozen while a report is being written for an element.
-      if (state.captureAnchor) return state;
+    case "select": {
+      // The canvas drives selection at all times (non-modal inspector, as in
+      // magicplan). Tapping something else while a report is being drafted
+      // discards the draft and selects the new target in one update, so the
+      // sidebar swaps straight to that element (or the room panel).
+      const anchor = state.captureAnchor;
+      if (anchor) {
+        if (sameElement(anchor, action.element)) return state; // same element: keep drafting
+        return {
+          ...state,
+          captureAnchor: null,
+          selectedElement: action.element,
+          toast: toast(`Report draft for ${elementInfo(anchor).label} discarded.`, "hint"),
+        };
+      }
       return { ...state, selectedElement: action.element };
+    }
 
     case "startReport":
       // Keep selection in sync with the anchor so the canvas highlights it.

@@ -57,9 +57,10 @@ export default function Page() {
   );
 
   // Report Deviation (top of the LeftToolbar, the only entry point) must be
-  // anchored to geometry: only offered for a selected element, never while its
-  // form is open or a revoke is still in flight.
-  const actionElement = captureAnchor || selectedPending ? null : selectedElement;
+  // anchored to geometry: only offered for a selected element, never while a
+  // revoke is in flight. While its form is open it stays mounted as the
+  // pressed "current mode", so the toolbar doesn't shift.
+  const actionElement = selectedPending ? null : (captureAnchor ?? selectedElement);
 
   const breadcrumbs = [
     PROJECT.floor,
@@ -114,6 +115,7 @@ export default function Page() {
                       selectedElement={actionElement}
                       deviationState={store.escalationStatus}
                       onReport={store.startReport}
+                      active={!!captureAnchor}
                     />
                   )}
                 </AnimatePresence>

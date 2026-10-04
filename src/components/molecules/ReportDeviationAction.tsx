@@ -19,6 +19,8 @@ import type { DeviationState } from "@/store/deviationMachine";
  *   element idle or resolved          → button; pressing it calls
  *                                       onReport({ type, id }) so the
  *                                       DeviationForm knows its anchor.
+ *   form open for it (`active`)        → same button, pressed and disabled,
+ *                                       so the toolbar never shifts.
  *
  * For an exit animation, the parent renders it inside <AnimatePresence>,
  * conditionally on `selectedElement`, with a stable key (not per element) so
@@ -39,6 +41,11 @@ export type ReportDeviationActionProps = {
   deviationState: DeviationState;
   /** Receives the anchor (element type + id) for the DeviationForm. */
   onReport: (anchor: SelectedElement) => void;
+  /**
+   * The DeviationForm is open for this element: stay mounted (so the toolbar
+   * doesn't shift) but render as the pressed, current mode.
+   */
+  active?: boolean;
   className?: string;
 };
 
@@ -46,6 +53,7 @@ export function ReportDeviationAction({
   selectedElement,
   deviationState,
   onReport,
+  active = false,
   className,
 }: ReportDeviationActionProps) {
   if (!selectedElement) return null;
@@ -58,14 +66,20 @@ export function ReportDeviationAction({
       type="button"
       data-anchor-type={selectedElement.type}
       data-anchor-id={selectedElement.id}
-      aria-label={`Report deviation on ${label}`}
+      aria-label={active ? `Reporting deviation on ${label}` : `Report deviation on ${label}`}
+      aria-pressed={active}
+      disabled={active}
       initial={{ x: -12, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, transition: ENTER }}
+      animate={{ x: 0, opacity: active ? 0.6 : 1, transition: ENTER }}
       exit={{ x: -12, opacity: 0, transition: EXIT }}
-      whileTap={{ scale: 0.96, transition: { duration: 0.08 } }}
-      onClick={() => onReport(selectedElement)}
+      whileTap={active ? undefined : { scale: 0.96, transition: { duration: 0.08 } }}
+      onClick={active ? undefined : () => onReport(selectedElement)}
       className={cn(
-        "flex h-14 items-center gap-2.5 whitespace-nowrap rounded-xl bg-mp-red px-4 will-change-transform text-[17px] font-semibold text-white shadow-[0_6px_16px_rgba(229,53,43,0.3)] active:brightness-95",
+        "flex h-14 items-center gap-2.5 whitespace-nowrap rounded-xl bg-mp-red px-4 text-[17px] font-semibold text-white will-change-transform",
+        active
+          ? // Pressed / current mode: sunk in, no lift shadow, not tappable
+            "cursor-default shadow-[inset_0_2px_6px_rgba(0,0,0,0.35)]"
+          : "shadow-[0_6px_16px_rgba(229,53,43,0.3)] active:brightness-95",
         className,
       )}
     >
