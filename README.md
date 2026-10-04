@@ -66,8 +66,9 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    sidebar's empty state guide the contractor instead.
 3. **Tap a wall, a corner, or the floor (the whole room).** It highlights, the
    sidebar shows the read-only **Details / Photos & Notes / Forms** inspector,
-   and **📍 Report Deviation** animates in next to the element and at the top
-   of the toolbar. The button hands the anchor (`{ type, id }`) to the form.
+   and **📍 Report Deviation** animates in at the top of the left toolbar, the
+   only entry point. Nothing floats over the plan. The button hands the anchor
+   (`{ type, id }`) to the form.
 4. Tap **Report Deviation**. The right sidebar becomes the **Escalation Form**,
    and the canvas stays visible with the wall highlighted. Nothing needs a
    keyboard:
@@ -141,8 +142,7 @@ state.
 - **Molecules:** `EscalationCard` (delivered next to in review),
   `IssueTypePicker`, `NumericStepper`, `PhotoCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
-- **UI Elements:** `ReportDeviationAction` (toolbar, plus the floating version
-  at real canvas coordinates), `LockedBadge`, the spatial `EscalationBadge`,
+- **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the spatial `EscalationBadge`,
   and every `StatusToast` variant.
 
 Interactive specimens log their callbacks in an event log at the bottom.

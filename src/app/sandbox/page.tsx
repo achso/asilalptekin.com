@@ -194,13 +194,12 @@ export default function SandboxPage() {
         >
           <div className="grid gap-6 md:grid-cols-2">
             <Specimen
-              title="ReportDeviationAction · toolbar"
-              note="Only rendered when an element is selected and it is idle (or resolved)."
+              title="ReportDeviationAction"
+              note="Sole entry point, top of the LeftToolbar. Only rendered when an element is selected and it is idle (or resolved)."
             >
               <div className="flex flex-wrap items-end gap-6">
                 <Labeled label="selectedElement = wall">
                   <ReportDeviationAction
-                    placement="toolbar"
                     selectedElement={NORTH_WALL}
                     deviationState="idle"
                     onReport={(a) => record(`onReport(${JSON.stringify(a)})`)}
@@ -210,8 +209,7 @@ export default function SandboxPage() {
                   <div className="flex h-14 items-center rounded-xl border border-dashed border-gray-300 px-4 text-xs text-gray-400">
                     renders nothing
                     <ReportDeviationAction
-                      placement="toolbar"
-                      selectedElement={null}
+                        selectedElement={null}
                       deviationState="idle"
                       onReport={() => undefined}
                     />
@@ -226,22 +224,10 @@ export default function SandboxPage() {
           </div>
 
           <Specimen
-            title="In context: floating action & spatial badge"
-            note="Same components at real canvas coordinates: the action floats next to the selected wall; the badge pins to an escalated one."
+            title="In context: spatial badge"
+            note="EscalationBadge at real canvas coordinates, pinned to an escalated wall."
           >
             <div className="flex flex-col gap-6">
-              <MiniCanvas
-                label="selected · ReportDeviationAction (canvas)"
-                wallState="idle"
-                selected
-              >
-                <ReportDeviationAction
-                  placement="canvas"
-                  selectedElement={NORTH_WALL}
-                  deviationState="idle"
-                  onReport={(a) => record(`onReport(${JSON.stringify(a)}) — floating`)}
-                />
-              </MiniCanvas>
               <MiniCanvas label="delivered · EscalationBadge" wallState="delivered">
                 <EscalationBadges
                   escalations={[MOCK_ESCALATION]}

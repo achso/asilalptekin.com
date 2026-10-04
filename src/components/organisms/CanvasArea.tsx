@@ -1,30 +1,26 @@
 "use client";
 
-import { AnimatePresence } from "framer-motion";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { EscalationBadges } from "@/components/molecules/EscalationBadge";
-import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import type { Escalation, EscalationStatus, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { DeviationState } from "@/store/deviationMachine";
 import { FloorPlan } from "./FloorPlan";
 
 /**
  * CanvasArea (organism): the main work surface. A dot-grid background (CSS),
- * the SVG FloorPlan, and everything pinned to plan geometry: status badges
- * and the floating Report Deviation action. magicplan's canvas chrome
- * (undo/redo, floor picker) sits on top.
+ * the SVG FloorPlan, and the status badges pinned to escalated geometry.
+ * magicplan's canvas chrome (undo/redo, floor picker) sits on top.
+ *
+ * The canvas only handles selection and status. It never starts a report: the
+ * single entry point is ReportDeviationAction at the top of the LeftToolbar,
+ * so nothing floats over the element the contractor is looking at.
  */
 export type CanvasAreaProps = {
   selectedElement: SelectedElement | null;
   escalations: Escalation[];
   statusFor: (el: SelectedElement) => EscalationStatus | undefined;
-  /** Element the floating action is offered for (null hides it). */
-  actionElement: SelectedElement | null;
-  actionState: DeviationState;
   onSelect: (el: SelectedElement | null) => void;
-  onReport: (anchor: SelectedElement) => void;
   className?: string;
 };
 
@@ -32,10 +28,7 @@ export function CanvasArea({
   selectedElement,
   escalations,
   statusFor,
-  actionElement,
-  actionState,
   onSelect,
-  onReport,
   className,
 }: CanvasAreaProps) {
   return (
@@ -58,18 +51,6 @@ export function CanvasArea({
       />
 
       <EscalationBadges escalations={escalations} onPress={onSelect} />
-
-      <AnimatePresence>
-        {actionElement && (
-          <ReportDeviationAction
-            key={`${actionElement.type}:${actionElement.id}`}
-            placement="canvas"
-            selectedElement={actionElement}
-            deviationState={actionState}
-            onReport={onReport}
-          />
-        )}
-      </AnimatePresence>
 
       <UndoRedo />
       <FloorPicker />

@@ -25,8 +25,8 @@ import { useDeviationState } from "@/store/useDeviationState";
  *   │ DeviceStatusBar                                              │
  *   │ TopBar: breadcrumbs · 🔒 Locked (Permit Approved) · expert   │
  *   ├───────────────────────────────────────────┬──────────────────┤
- *   │ LeftToolbar ┐                             │                  │
- *   │ (overlay)   │      CanvasArea             │   RightSidebar   │
+ *   │ LeftToolbar ┐  ← Report Deviation (sole   │                  │
+ *   │ (overlay)   │    entry point) CanvasArea  │   RightSidebar   │
  *   │             ┘      (dot grid + plan)      │   (350px)        │
  *   │              StatusToast                  │                  │
  *   └───────────────────────────────────────────┴──────────────────┘
@@ -42,8 +42,9 @@ export default function Page() {
 
   const selectedPending = selectedElement ? store.pendingRevokeFor(selectedElement) : undefined;
 
-  // Report Deviation must be anchored to geometry: only offered for a selected
-  // element, never while its form is open or a revoke is still in flight.
+  // Report Deviation (top of the LeftToolbar, the only entry point) must be
+  // anchored to geometry: only offered for a selected element, never while its
+  // form is open or a revoke is still in flight.
   const actionElement = captureAnchor || selectedPending ? null : selectedElement;
   const actionKey = actionElement ? `${actionElement.type}:${actionElement.id}` : "none";
 
@@ -79,10 +80,7 @@ export default function Page() {
               selectedElement={selectedElement}
               escalations={store.escalations}
               statusFor={(el) => store.escalationFor(el)?.status}
-              actionElement={actionElement}
-              actionState={store.escalationStatus}
               onSelect={(el) => (el ? store.selectElement(el.id) : store.clearSelection())}
-              onReport={store.startReport}
             />
 
             <LeftToolbar
@@ -95,7 +93,6 @@ export default function Page() {
                   {actionElement && (
                     <ReportDeviationAction
                       key={actionKey}
-                      placement="toolbar"
                       selectedElement={actionElement}
                       deviationState={store.escalationStatus}
                       onReport={store.startReport}
