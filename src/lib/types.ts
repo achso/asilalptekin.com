@@ -4,8 +4,6 @@ export type Point = { x: number; y: number };
 export type ElementType = "wall" | "corner" | "room";
 export type SelectedElement = { type: ElementType; id: string };
 
-/** @deprecated alias kept for readability in older call sites; prefer SelectedElement. */
-export type Target = SelectedElement;
 
 export type Wall = {
   id: string;
@@ -37,13 +35,15 @@ export type IssueType =
 
 export type Escalation = {
   id: string;
-  target: Target;
+  target: SelectedElement;
   targetLabel: string;
   issueType: IssueType;
   /** Only for dimension-mismatch: what the contractor measured on site. */
   measuredM?: number;
   plannedM?: number;
   photoUrl: string; // object URL / data URL
+  /** Optional one-line caption typed under the photo. */
+  photoCaption?: string;
   voiceMemo?: { url: string; durationS: number };
   blocking: boolean; // "work is stopped until resolved"
   createdAt: number;
@@ -51,5 +51,14 @@ export type Escalation = {
   statusChangedAt: number;
 };
 
-/** See lib/deviationMachine.ts for the full lifecycle. */
+/**
+ * What the DeviationForm submits. The store adds the anchor, id, timestamps
+ * and lifecycle status, so the form can't get those wrong.
+ */
+export type EscalationDraft = Omit<
+  Escalation,
+  "id" | "target" | "targetLabel" | "createdAt" | "status" | "statusChangedAt"
+>;
+
+/** See store/deviationMachine.ts for the full lifecycle. */
 export type EscalationStatus = "sending" | "delivered" | "in_review" | "resolved";

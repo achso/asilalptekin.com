@@ -13,7 +13,7 @@ import {
   Ruler,
   Undo2,
 } from "lucide-react";
-import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/lib/deviationMachine";
+import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
 import { issueLabel } from "@/lib/floorplan";
 import type { Escalation, EscalationStatus, IssueType } from "@/lib/types";
 import { cn } from "@/lib/utils";

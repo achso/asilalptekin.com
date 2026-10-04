@@ -1,4 +1,4 @@
-import type { Escalation, EscalationStatus } from "./types";
+import type { Escalation, EscalationStatus } from "@/lib/types";
 
 /**
  * Lifecycle of a single deviation, seen from the contractor's iPad.

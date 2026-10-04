@@ -4,45 +4,47 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { FileText, Info, Loader2, Lock, X } from "lucide-react";
 import { PROJECT, ROOM, elementInfo, wallById } from "@/lib/floorplan";
-import { PANEL_W } from "@/lib/layout";
-import type { Escalation, EscalationStatus, Target } from "@/lib/types";
-import { isActive } from "@/lib/deviationMachine";
-import { EscalationForm } from "./EscalationForm";
-import { EscalationCard, toEscalationCardProps } from "./escalation/EscalationCard";
+import type { Escalation, EscalationDraft, EscalationStatus, SelectedElement } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { isActive } from "@/store/deviationMachine";
+import { EscalationCard, toEscalationCardProps } from "@/components/molecules/EscalationCard";
+import { DeviationForm } from "./DeviationForm";
 
 type Props = {
-  selected: Target | null;
+  selected: SelectedElement | null;
   selectedEscalation?: Escalation;
   /** Element the DeviationForm is anchored to; non-null switches the panel to the form. */
-  captureAnchor: Target | null;
+  captureAnchor: SelectedElement | null;
   escalations: Escalation[];
-  onReport: (anchor: Target) => void;
+  onReport: (anchor: SelectedElement) => void;
   onCancelReport: () => void;
-  onSubmit: (e: Escalation) => void;
-  onFocus: (t: Target) => void;
+  onSubmit: (draft: EscalationDraft) => void;
+  onFocus: (t: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
   /** Optimistically revoked report for the selected target, awaiting server confirmation. */
   pendingRevoke?: Escalation;
+  className?: string;
 };
 
 type Mode = "summary" | "inspector" | "form";
 
 /**
- * Right contextual panel, three states:
+ * RightSidebar (organism): the contextual panel, three states:
  *
- *  - summary   (nothing selected) → "Active Escalations" + auto-attached job context
- *  - inspector (wall/corner selected) → magicplan's familiar Details / Photos & Notes / Forms
- *  - form      (Report Deviation tapped) → the Escalation Form takes over the panel
+ *  - summary   (nothing selected)          → empty state or Active Escalations list
+ *  - inspector (wall/corner/room selected) → Details / Photos & Notes / Forms, plus
+ *                                            the element's EscalationCard if reported
+ *  - form      (Report Deviation tapped)   → DeviationForm takes over the panel
  */
-export function EscalationsPanel(props: Props) {
+export function RightSidebar(props: Props) {
   const { selected, captureAnchor } = props;
   const mode: Mode = captureAnchor ? "form" : selected ? "inspector" : "summary";
 
   return (
     <aside
-      style={{ width: PANEL_W }}
-      className="relative h-full shrink-0 overflow-hidden border-l border-mp-line bg-mp-panel"
+      aria-label="Escalations"
+      className={cn("relative h-full overflow-hidden border-l border-mp-line bg-mp-panel", props.className)}
     >
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
@@ -54,7 +56,7 @@ export function EscalationsPanel(props: Props) {
           className="absolute inset-0 flex flex-col"
         >
           {mode === "form" && captureAnchor ? (
-            <EscalationForm
+            <DeviationForm
               anchor={captureAnchor}
               onCancel={props.onCancelReport}
               onSubmit={props.onSubmit}
@@ -87,7 +89,7 @@ function Summary({
   onRevoke,
 }: {
   escalations: Escalation[];
-  onFocus: (t: Target) => void;
+  onFocus: (t: SelectedElement) => void;
   onRevoke: (id: string) => void;
 }) {
   const activeCount = escalations.filter(isActive).length;
@@ -155,10 +157,10 @@ function Inspector({
   onClear,
   onRevoke,
 }: {
-  target: Target;
+  target: SelectedElement;
   escalation?: Escalation;
   pendingRevoke?: Escalation;
-  onReport: (anchor: Target) => void;
+  onReport: (anchor: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
 }) {
@@ -226,7 +228,7 @@ function Inspector({
   );
 }
 
-function DetailsTab({ target }: { target: Target }) {
+function DetailsTab({ target }: { target: SelectedElement }) {
   return (
     <div className="flex flex-col gap-4">
       <Group title="Dimensions">
@@ -252,7 +254,7 @@ function DetailsTab({ target }: { target: Target }) {
   );
 }
 
-function dimensionRows(target: Target): [string, string][] {
+function dimensionRows(target: SelectedElement): [string, string][] {
   switch (target.type) {
     case "wall": {
       const w = wallById(target.id);

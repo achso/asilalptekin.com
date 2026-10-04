@@ -2,9 +2,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, CheckCheck, CloudUpload, Eye, Lock } from "lucide-react";
-import type { Escalation, EscalationStatus, Target } from "@/lib/types";
-import { STATUS_META } from "@/lib/deviationMachine";
-import { FloatingAnchor } from "./canvas/FloatingAnchor";
+import type { Escalation, EscalationStatus, SelectedElement } from "@/lib/types";
+import { STATUS_META } from "@/store/deviationMachine";
+import { FloatingAnchor } from "@/components/atoms/FloatingAnchor";
 
 const TONE_BG = { red: "bg-mp-red", amber: "bg-amber-500", green: "bg-emerald-600" } as const;
 const TONE_FG = { red: "text-mp-red", amber: "text-amber-600", green: "text-emerald-600" } as const;
@@ -21,7 +21,7 @@ export function EscalationBadges({
   onPress,
 }: {
   escalations: Escalation[];
-  onPress: (t: Target) => void;
+  onPress: (t: SelectedElement) => void;
 }) {
   return (
     <AnimatePresence>

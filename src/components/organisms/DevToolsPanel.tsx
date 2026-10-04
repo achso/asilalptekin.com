@@ -3,9 +3,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { RotateCcw, Timer, Wifi, X, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { STATUS_META } from "@/lib/deviationMachine";
+import { STATUS_META } from "@/store/deviationMachine";
 import type { Escalation, EscalationStatus } from "@/lib/types";
-import type { DemoSettings } from "@/lib/useEscalationStore";
+import type { DemoSettings } from "@/store/useDeviationState";
 
 const FLIP: EscalationStatus[] = ["delivered", "in_review", "resolved"];
 
@@ -42,7 +42,10 @@ type Props = {
   revokeSettlesAt?: number;
   demo: DemoSettings;
   setDemo: (p: Partial<DemoSettings>) => void;
+  /** Dev override: any status, may move backwards (presenter convenience). */
   setStatus: (id: string, s: EscalationStatus) => void;
+  /** Realistic path: Munich opens the report via the store's mockExpertReview(). */
+  onMockReview: (id: string) => void;
   reset: () => void;
 };
 
@@ -54,6 +57,7 @@ export function DevToolsPanel({
   demo,
   setDemo,
   setStatus,
+  onMockReview,
   reset,
 }: Props) {
   const remaining = useCountdown(revokeSettlesAt);
@@ -120,7 +124,14 @@ export function DevToolsPanel({
                 <button
                   key={s}
                   disabled={!target}
-                  onClick={() => target && setStatus(target.id, s)}
+                  onClick={() => {
+                    if (!target) return;
+                    // Forward into review goes through the state machine (this is
+                    // what wins the revoke race); anything else is a dev override.
+                    const forward = s === "in_review" && (target.status === "sending" || target.status === "delivered");
+                    if (forward) onMockReview(target.id);
+                    else setStatus(target.id, s);
+                  }}
                   className={`relative h-11 flex-1 rounded-xl text-[14px] font-semibold transition-colors disabled:opacity-30 ${
                     active ? `${FLIP_STYLE[s]} text-white` : "bg-white/10 text-white/80 active:bg-white/20"
                   }`}

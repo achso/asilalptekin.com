@@ -64,7 +64,7 @@ export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;
 
 /** Canvas transform: metres → px inside the canvas SVG. */
 export const PX_PER_M = 110;
-export const ORIGIN: Point = { x: 220, y: 175 };
+export const ORIGIN: Point = { x: 245, y: 175 };
 export const WALL_THICKNESS = 14;
 
 export const toPx = (p: Point): Point => ({
@@ -148,4 +148,12 @@ export function elementAnchor(el: SelectedElement): { p: Point; inward: Point } 
       // Anchor near the top of the floor so the badge/button sit on open floor.
       return { p: { x: centre.x, y: centre.y - 40 }, inward: { x: 0, y: 1 } };
   }
+}
+
+/** Resolve any selectable id (wall, corner or room) to a typed element. */
+export function elementById(id: string): SelectedElement | null {
+  if (WALLS.some((w) => w.id === id)) return { type: "wall", id };
+  if (CORNERS.some((c) => c.id === id)) return { type: "corner", id };
+  if (id === ROOM.id) return { type: "room", id };
+  return null;
 }

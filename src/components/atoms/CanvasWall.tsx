@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import type { KeyboardEvent } from "react";
-import { type DeviationState, isLockedState } from "@/lib/deviationMachine";
+import { type DeviationState, isLockedState } from "@/store/deviationMachine";
 import { cn } from "@/lib/utils";
 
 /**

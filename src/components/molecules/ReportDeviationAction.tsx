@@ -3,11 +3,11 @@
 import { cva } from "class-variance-authority";
 import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
-import type { DeviationState } from "@/lib/deviationMachine";
+import type { DeviationState } from "@/store/deviationMachine";
 import { elementInfo } from "@/lib/floorplan";
 import type { SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { FloatingAnchor } from "../canvas/FloatingAnchor";
+import { FloatingAnchor } from "@/components/atoms/FloatingAnchor";
 
 /**
  * ReportDeviationAction (molecule)

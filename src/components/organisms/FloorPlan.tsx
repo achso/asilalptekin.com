@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { motion } from "framer-motion";
-import type { DeviationState } from "@/lib/deviationMachine";
+import type { DeviationState } from "@/store/deviationMachine";
 import {
   CORNERS,
   WALLS,
@@ -12,9 +12,9 @@ import {
   toPx,
   wallGeometry,
 } from "@/lib/floorplan";
-import type { EscalationStatus, Target, Wall } from "@/lib/types";
-import { sameTarget } from "@/lib/useEscalationStore";
-import { CanvasWall, CanvasWallDefs } from "./canvas/CanvasWall";
+import type { EscalationStatus, SelectedElement, Wall } from "@/lib/types";
+import { sameElement } from "@/store/useDeviationState";
+import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
@@ -33,14 +33,20 @@ const STATUS_STROKE: Record<EscalationStatus, string> = {
 type Props = {
   width: number;
   height: number;
-  selected: Target | null;
-  statusFor: (t: Target) => EscalationStatus | undefined;
-  onSelect: (t: Target | null) => void;
+  selected: SelectedElement | null;
+  statusFor: (t: SelectedElement) => EscalationStatus | undefined;
+  onSelect: (t: SelectedElement | null) => void;
 };
 
-const ROOM_ELEMENT: Target = { type: "room", id: ROOM.id };
+const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
 
-export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }: Props) {
+/**
+ * FloorPlan (organism): the SVG plan. Room floor, CanvasWall atoms, corner
+ * nodes, openings, furniture and dimension lines. Every element is selectable;
+ * tapping empty canvas (outside the room) clears the selection. The dot grid
+ * behind it is CanvasArea's CSS background, so the SVG background is transparent.
+ */
+export function FloorPlan({ width, height, selected, statusFor, onSelect }: Props) {
   return (
     <svg
       width={width}
@@ -53,9 +59,6 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       }}
     >
       <defs>
-        <pattern id="grid-dots" width="44" height="44" patternUnits="userSpaceOnUse">
-          <circle cx="22" cy="22" r="1.2" fill="#b9c6d6" />
-        </pattern>
         <pattern
           id="grid-room"
           width={PX_PER_M / 4}
@@ -74,11 +77,11 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
         <CanvasWallDefs />
       </defs>
 
-      {/* Background: dotted grid outside the room, like magicplan's empty canvas */}
-      <rect data-bg="1" width={width} height={height} fill="url(#grid-dots)" />
+      {/* Transparent hit area for "tap outside the room to deselect" */}
+      <rect data-bg="1" width={width} height={height} fill="transparent" />
 
       <RoomFloor
-        selected={sameTarget(selected, ROOM_ELEMENT)}
+        selected={sameElement(selected, ROOM_ELEMENT)}
         deviationState={statusFor(ROOM_ELEMENT) ?? "idle"}
         onSelect={() => onSelect(ROOM_ELEMENT)}
       />
@@ -89,7 +92,7 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       ))}
 
       {WALLS.map((w) => {
-        const target: Target = { type: "wall", id: w.id };
+        const target: SelectedElement = { type: "wall", id: w.id };
         return (
           <g key={w.id}>
             <CanvasWall
@@ -97,7 +100,7 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
               thickness={WALL_THICKNESS}
               label={w.label}
               deviationState={statusFor(target) ?? "idle"}
-              selected={sameTarget(selected, target)}
+              selected={sameElement(selected, target)}
               onSelect={() => onSelect(target)}
             />
             {w.openings?.map((o, i) => (
@@ -108,9 +111,9 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       })}
 
       {CORNERS.map((c) => {
-        const target: Target = { type: "corner", id: c.id };
+        const target: SelectedElement = { type: "corner", id: c.id };
         const p = toPx(c.p);
-        const isSel = sameTarget(selected, target);
+        const isSel = sameElement(selected, target);
         const status = statusFor(target);
         return (
           <g key={c.id} onPointerDown={() => onSelect(target)} className="cursor-pointer">
