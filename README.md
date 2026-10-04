@@ -84,16 +84,25 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    keyboard:
    - **Issue type:** four options, each a bold title with a one-line
      description: Dimension Mismatch, Undocumented Element, Element Not on
-     Site, Structural Obstacle. *Dimension Mismatch* adds **Measured on site**:
-     tap the value to type a laser reading on the iPad numpad (e.g. 4.12), or
-     nudge it with − / + in 5 cm steps.
-   - **Evidence (at least one photo required).** magicplan's own Photos &
+     Site, Structural Obstacle. Follow-ups expand inline under the chosen row:
+     - *Undocumented Element* reveals **Category**: one tap on a top-level
+       category from magicplan's own "All Objects" menu (Annotations, Doors,
+       Windows, Structural, Plumbing, Electrical, HVAC), with the same
+       isometric glyphs. It's deliberately shallow (no sub-menus); the photo
+       carries the specifics. The category is required, and the report card
+       reads e.g. "North wall · Plumbing".
+     - *Dimension Mismatch* reveals **Measured on site**: tap the value to
+       type a laser reading on the iPad numpad (e.g. 4.12), or nudge it with
+       − / + in 5 cm steps.
+   - **Evidence (at least one photo required).** Unlocks once the issue type
+     (and its category) is set, and scrolls into view. magicplan's own Photos &
      Notes layout: a + tile (opens the iPad's rear camera), up to 7 photos and
      a free-text note. On a laptop, use *"No camera? Use demo photo"*.
    - **Record Voice Memo (optional).** Tap to talk, tap to stop.
    - **Work is blocked here** toggle.
-   - **Send to review** stays disabled until the issue type and photo are
-     provided, and its label says what's missing.
+   - **Send to review** stays disabled until the issue type (plus category)
+     and a photo are provided, and its label says what's missing
+     ("Add category + photo").
 5. After sending, the form closes **right away**. The wall locks in a **red
    hatched pattern** with a compact **status pin** (red lock) on the wall
    (Sending → Delivered), and it appears in **Active Escalations**. The
@@ -159,7 +168,7 @@ state.
   resolved, plus `ToolButton`, `Switch` and `StepLabel`.
 - **Molecules:** `EscalationCard` in all four states (sending, delivered, in
   review, resolved),
-  `IssueTypePicker`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
+  `IssueTypePicker` (with inline category), `CategoryChips`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
 - **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the compact `EscalationPin`,
   the yellow `AttachmentBadge` paperclip, `ElementBadges` precedence in context,
@@ -183,9 +192,10 @@ src/
 │   └── deviationMachine.ts       lifecycle: transition table, revoke rule, labels
 ├── components/
 │   ├── atoms/                    CanvasWall, FloatingAnchor, LockedBadge, ToolButton,
-│   │                             IconButton, Switch, StepLabel
+│   │                             IconButton, Switch, StepLabel, ObjectCategoryIcon
 │   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationPin,
-│   │                             IssueTypePicker, NumericStepper, PhotoEvidenceCapture,
+│   │                             IssueTypePicker, CategoryChips, NumericStepper,
+│   │                             PhotoEvidenceCapture,
 │   │                             VoiceMemoToggle, CanvasControls, ExpertAvailability
 │   └── organisms/                TopBar, DeviceStatusBar, LeftToolbar, CanvasArea,
 │                                 FloorPlan, RightSidebar, DeviationForm, StatusToast,

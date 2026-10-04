@@ -31,11 +31,28 @@ export type IssueType =
   | "element-not-on-site"
   | "structural-obstacle";
 
+/**
+ * What kind of thing an "Undocumented Element" is. Mirrors the top-level
+ * categories of magicplan's own "All Objects" insert menu, so the expert gets
+ * structured data ("undocumented Plumbing here") instead of free text.
+ * Deliberately shallow: one level only; the photo carries the specifics.
+ */
+export type ElementCategory =
+  | "annotations"
+  | "doors"
+  | "windows"
+  | "structural"
+  | "plumbing"
+  | "electrical"
+  | "hvac";
+
 export type Escalation = {
   id: string;
   target: SelectedElement;
   targetLabel: string;
   issueType: IssueType;
+  /** Only for undocumented-element: which object category was found. */
+  category?: ElementCategory;
   /** Only for dimension-mismatch: what the contractor measured on site. */
   measuredM?: number;
   plannedM?: number;

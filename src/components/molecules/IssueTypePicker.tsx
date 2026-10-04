@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { Check, Construction, PackagePlus, Ruler, SearchX } from "lucide-react";
 import { ISSUE_TYPES } from "@/lib/floorplan";
 import type { IssueType } from "@/lib/types";
@@ -19,13 +20,20 @@ const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; stroke
  * description, so no tooltip is needed. Selected: bg-blue-50, blue icon and a
  * blue check on the right. Unselected: white with gray icons. Titles never
  * wrap; the description may take two lines.
+ *
+ * Progressive disclosure: `renderDetail(id)` can return a follow-up input
+ * (category chips, measured length) that expands directly under the active
+ * row, inside the same group, so the question stays next to its answer.
  */
 export function IssueTypePicker({
   value,
   onChange,
+  renderDetail,
 }: {
   value: IssueType | null;
   onChange: (v: IssueType) => void;
+  /** Extra input revealed under the active row; return null for none. */
+  renderDetail?: (id: IssueType) => React.ReactNode;
 }) {
   return (
     <div
@@ -37,9 +45,10 @@ export function IssueTypePicker({
         const Icon = ISSUE_ICONS[t.id];
         const active = value === t.id;
         const descId = `issue-desc-${t.id}`;
+        const detail = active ? renderDetail?.(t.id) : null;
         return (
+          <div key={t.id}>
           <button
-            key={t.id}
             type="button"
             role="radio"
             aria-checked={active}
@@ -70,6 +79,21 @@ export function IssueTypePicker({
               className={cn("shrink-0 text-mp-blue transition-opacity", active ? "opacity-100" : "opacity-0")}
             />
           </button>
+          <AnimatePresence initial={false}>
+            {detail && (
+              <motion.div
+                key="detail"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: "tween", duration: 0.22, ease: "easeOut" }}
+                className="overflow-hidden bg-blue-50"
+              >
+                <div className="px-4 pb-4 pt-1">{detail}</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          </div>
         );
       })}
     </div>

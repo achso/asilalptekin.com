@@ -1,4 +1,4 @@
-import type { Corner, IssueType, Point, SelectedElement, Wall } from "./types";
+import type { Corner, ElementCategory, IssueType, Point, SelectedElement, Wall } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -78,6 +78,23 @@ export const ISSUE_TYPES: { id: IssueType; label: string; description: string }[
 
 export const issueLabel = (id: IssueType) =>
   ISSUE_TYPES.find((t) => t.id === id)?.label ?? id;
+
+/**
+ * Object categories for "Undocumented Element": same names and order as the
+ * native "All Objects" insert menu, top level only (no sub-menus).
+ */
+export const ELEMENT_CATEGORIES: { id: ElementCategory; label: string }[] = [
+  { id: "annotations", label: "Annotations" },
+  { id: "doors", label: "Doors" },
+  { id: "windows", label: "Windows" },
+  { id: "structural", label: "Structural" },
+  { id: "plumbing", label: "Plumbing" },
+  { id: "electrical", label: "Electrical" },
+  { id: "hvac", label: "HVAC" },
+];
+
+export const categoryLabel = (id: ElementCategory) =>
+  ELEMENT_CATEGORIES.find((c) => c.id === id)?.label ?? id;
 
 export const cornerById = (id: string) => CORNERS.find((c) => c.id === id)!;
 export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;

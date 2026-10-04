@@ -1,17 +1,18 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Send } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
+import { CategoryChips } from "@/components/molecules/CategoryChips";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
 import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
 import { PROJECT, elementInfo } from "@/lib/floorplan";
-import type { EscalationDraft, IssueType, SelectedElement } from "@/lib/types";
+import type { ElementCategory, EscalationDraft, IssueType, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,8 +22,10 @@ import { cn } from "@/lib/utils";
  * with structured inputs. The canvas stays visible, so the anchored element
  * remains in view. Composed from isolated molecules:
  *
- *   IssueTypePicker  → what's wrong (radio tiles)
- *   NumericStepper   → measured length, only for Dimension Mismatch on a wall
+ *   IssueTypePicker  → what's wrong (grouped list), with inline follow-ups:
+ *     CategoryChips  → which object (one shallow level), required for
+ *                      Undocumented Element; unlocks Evidence
+ *     NumericStepper → measured length, only for Dimension Mismatch on a wall
  *   PhotoEvidenceCapture → photos (≥ 1 required) + note, magicplan's Photos & Notes layout
  *   VoiceMemoToggle  → optional memo
  *
@@ -41,6 +44,8 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
   const { label, plannedM } = elementInfo(anchor);
 
   const [issue, setIssue] = useState<IssueType | null>(null);
+  const [category, setCategory] = useState<ElementCategory | null>(null);
+  const evidenceRef = useRef<HTMLElement>(null);
   const [measured, setMeasured] = useState(plannedM ?? 0);
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -48,16 +53,25 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
   const [recording, setRecording] = useState(false);
   const [blocking, setBlocking] = useState(true);
 
-  // Submit stays disabled until there's an issue type and at least one photo.
+  // Submit stays disabled until there's an issue type (plus its category for
+  // Undocumented Element) and at least one photo. Evidence itself stays locked
+  // until the issue step is complete.
   const hasPhoto = photos.length > 0;
-  const missing = [!issue && "issue type", !hasPhoto && "photo"].filter(Boolean) as string[];
+  const needsCategory = issue === "undocumented-element";
+  const issueDone = !!issue && (!needsCategory || !!category);
+  const missing = [
+    !issue && "issue type",
+    needsCategory && !category && "category",
+    !hasPhoto && "photo",
+  ].filter(Boolean) as string[];
   const canSend = missing.length === 0 && !recording;
   const showStepper = issue === "dimension-mismatch" && plannedM !== undefined;
 
   const send = () => {
-    if (!issue || !hasPhoto) return;
+    if (!issue || !issueDone || !hasPhoto) return;
     onSubmit({
       issueType: issue,
+      category: needsCategory ? (category ?? undefined) : undefined,
       plannedM,
       measuredM: showStepper ? measured : undefined,
       photoUrls: photos,
@@ -89,40 +103,65 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
       {/* Body */}
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 py-4">
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={1} done={!!issue}>
+          <StepLabel n={1} done={issueDone}>
             Issue type
           </StepLabel>
-          <IssueTypePicker value={issue} onChange={setIssue} />
-          <AnimatePresence initial={false}>
-            {showStepper && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
+          <IssueTypePicker
+            value={issue}
+            onChange={setIssue}
+            renderDetail={(id) =>
+              id === "undocumented-element" ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[13px] font-semibold text-mp-ink">
+                    Category <span className="text-mp-red">*</span>
+                  </p>
+                  <CategoryChips
+                    value={category}
+                    onChange={(c) => {
+                      setCategory(c);
+                      // Evidence just unlocked: bring the camera into view.
+                      requestAnimationFrame(() =>
+                        evidenceRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+                      );
+                    }}
+                  />
+                </div>
+              ) : id === "dimension-mismatch" && showStepper ? (
                 <NumericStepper
                   label="Measured on site"
                   value={measured}
                   onChange={setMeasured}
                   reference={plannedM}
                 />
-              </motion.div>
-            )}
-          </AnimatePresence>
+              ) : null
+            }
+          />
         </section>
 
-        <section className="flex flex-col gap-2.5">
-          <StepLabel n={2} done={hasPhoto}>
+        <section ref={evidenceRef} className="flex scroll-mt-4 flex-col gap-2.5">
+          <StepLabel n={2} done={issueDone && hasPhoto}>
             Evidence <span className="text-mp-red">*</span>
             <span className="ml-1.5 text-[12px] font-normal text-mp-muted">at least 1 photo</span>
           </StepLabel>
-          <PhotoEvidenceCapture
-            photos={photos}
-            onPhotosChange={setPhotos}
-            note={note}
-            onNoteChange={setNote}
-          />
+          {/* Locked until step 1 is complete (incl. the category), so the
+              camera only opens once we know what the photo is of. */}
+          {!issueDone && (
+            <p className="text-[13px] text-mp-muted">
+              {needsCategory ? "Pick a category to unlock the camera." : "Pick an issue type to unlock the camera."}
+            </p>
+          )}
+          <div
+            inert={!issueDone}
+            aria-disabled={!issueDone}
+            className={cn("transition-opacity duration-200", !issueDone && "opacity-40")}
+          >
+            <PhotoEvidenceCapture
+              photos={photos}
+              onPhotosChange={setPhotos}
+              note={note}
+              onNoteChange={setNote}
+            />
+          </div>
         </section>
 
         <section className="flex flex-col gap-2.5">

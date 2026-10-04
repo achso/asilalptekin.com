@@ -11,6 +11,7 @@ import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { EscalationPin } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
+import { CategoryChips } from "@/components/molecules/CategoryChips";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
@@ -21,7 +22,7 @@ import { StatusToast } from "@/components/organisms/StatusToast";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { WALL_THICKNESS, wallById, wallGeometry } from "@/lib/floorplan";
 import { CANVAS_W, PANEL_W } from "@/lib/layout";
-import type { EscalationStatus, IssueType, SelectedElement } from "@/lib/types";
+import type { ElementCategory, EscalationStatus, IssueType, SelectedElement } from "@/lib/types";
 import type { DeviationState } from "@/store/deviationMachine";
 
 /**
@@ -164,8 +165,11 @@ export default function SandboxPage() {
             </div>
           </Specimen>
 
-          <Specimen title="IssueTypePicker" note="Grouped list: bold title + description per type; selected row blue with a check.">
+          <Specimen title="IssueTypePicker" note="Grouped list: bold title + description per type; selected row blue with a check. Undocumented Element expands its category chips inline.">
             <IssueTypePickerDemo onChange={(v) => record(`IssueTypePicker → ${v}`)} />
+          </Specimen>
+          <Specimen title="CategoryChips" note="Object categories from the native All Objects menu, isometric glyphs; active chip has a blue border.">
+            <CategoryChipsDemo onChange={(v) => record(`CategoryChips → ${v}`)} />
           </Specimen>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -483,8 +487,24 @@ function InFlowToast(props: Partial<Pick<React.ComponentProps<typeof StatusToast
   );
 }
 
+function CategoryChipsDemo({ onChange }: { onChange: (v: ElementCategory) => void }) {
+  const [value, setValue] = useState<ElementCategory | null>("plumbing");
+  return (
+    <div className="rounded-xl bg-mp-panel p-4" style={{ width: PANEL_W }}>
+      <CategoryChips
+        value={value}
+        onChange={(v) => {
+          setValue(v);
+          onChange(v);
+        }}
+      />
+    </div>
+  );
+}
+
 function IssueTypePickerDemo({ onChange }: { onChange: (v: IssueType) => void }) {
-  const [value, setValue] = useState<IssueType | null>("dimension-mismatch");
+  const [value, setValue] = useState<IssueType | null>("undocumented-element");
+  const [category, setCategory] = useState<ElementCategory | null>(null);
   return (
     <div className="rounded-xl bg-mp-panel p-4" style={{ width: PANEL_W }}>
       <IssueTypePicker
@@ -493,6 +513,9 @@ function IssueTypePickerDemo({ onChange }: { onChange: (v: IssueType) => void })
           setValue(v);
           onChange(v);
         }}
+        renderDetail={(id) =>
+          id === "undocumented-element" ? <CategoryChips value={category} onChange={setCategory} /> : null
+        }
       />
     </div>
   );
