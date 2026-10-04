@@ -104,7 +104,7 @@ idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
 |---|---|---|
 | Idle (locked plan) | Black wall, drafting tools disabled | — |
 | Delivered | Red hatched wall, "Escalated to Munich" badge | **Revoke Escalation** available |
-| In Review | Hatched wall framed in amber with a pulse, "Munich is reviewing" | Revoke disabled, tooltip: *"Munich is actively reviewing. Revocation disabled."* |
+| In Review | Hatched wall framed in amber with a pulse, "Munich is reviewing" | Revoke hidden; yellow "Munich is reviewing" badge and the note *"Munich is actively reviewing. Revocation disabled."* |
 | Resolved | Green wall, "Resolved · plan updated" | Contractor unblocked; the wall can be reported again |
 
 **Open the hidden Dev Tools:** press **Shift + D**, **triple-tap the clock** in
@@ -122,7 +122,7 @@ Munich-side status between **Delivered / In Review / Resolved**, and has:
    and the panel counts down while the revoke is "in flight".
 3. Before the countdown ends, tap **In Review** in Dev Tools.
 4. The server wins. The revoke is rejected, the escalation comes back as
-   **In Review**, and the Revoke button stays disabled.
+   **In Review**, and the Revoke button stays hidden.
 
 The rule is enforced in the reducer, not only in the UI. A stale tap or
 double-tap on Revoke after the report reaches In Review is rejected with the
@@ -130,38 +130,38 @@ same message.
 
 ---
 
+## Component sandbox
+
+Open **http://localhost:3000/sandbox** (or `:3001` if you run on that port).
+It renders components in isolation on a neutral background, Storybook-style.
+Right now it shows `EscalationCard` in the `delivered` and `in_review` states
+side by side, with an event log that shows when `onRevoke` fires.
+
+---
+
 ## Project structure
 
 ```
-app/
-  layout.tsx               iPad viewport / web-app meta
-  page.tsx                 IPadFrame + AppShell
-  globals.css              Tailwind v4 theme tokens (magicplan palette)
-components/
-  IPadFrame.tsx            Fixed 1180×820 landscape stage, scaled to fit
-  AppShell.tsx             Layout: status bar, top bar, canvas, right panel, toasts
-  Chrome.tsx               Status bar, top nav (Locked badge, Munich availability),
-                           locked tool palette + Report Deviation, undo/redo, floor picker
-  FloorPlanCanvas.tsx      SVG plan: grid, corners, openings, dimensions; composes CanvasWall
-  canvas/
-    CanvasWall.tsx         Atom: one wall, styled by `deviationState` (cva variants)
-    FloatingAnchor.tsx     Positions HTML next to a wall / corner / room
-  escalation/
-    ReportDeviationAction.tsx  Molecule: contextual primary action; null without a selection
-    EscalationCard.tsx     Molecule: sidebar card, content + actions driven by `deviationState`
-  CanvasOverlay.tsx        Floating "Report Deviation" CTA + "Escalated to Munich" badges
-  EscalationsPanel.tsx     Right panel: Active Escalations ↔ inspector tabs ↔ Escalation Form
-  EscalationForm.tsx       Structured evidence capture (issue type, photo, voice, blocking)
-  DevTools.tsx             Hidden presenter panel (Munich-side status flips, race demo)
-lib/
-  floorplan.ts             Room geometry (metres), project context, issue types
-  types.ts                 Target / Wall / Escalation types
-  deviationMachine.ts      Lifecycle: transition table, revoke guard, status labels
-  useEscalationStore.ts    Reducer: selection, capture, server status, optimistic revoke + rollback, toasts
-  useVoiceRecorder.ts      MediaRecorder with a simulated fallback
-  useMunichCutoff.ts       Time left until 15:00 CET
-  demoPhoto.ts             Placeholder site photo for desktop demos
-  utils.ts                 cn(): clsx + tailwind-merge
+src/
+├── app/
+│   ├── page.tsx                  iPad layout shell; owns the store, composes organisms
+│   ├── sandbox/page.tsx          isolated component workbench
+│   ├── layout.tsx, globals.css   viewport meta, Tailwind theme tokens
+├── store/
+│   ├── useDeviationState.ts      escalation workflow store (selection, submit,
+│   │                             revoke with race guard, mock expert review)
+│   └── deviationMachine.ts       lifecycle: transition table, revoke rule, labels
+├── components/
+│   ├── atoms/                    CanvasWall, FloatingAnchor, LockedBadge, ToolButton,
+│   │                             IconButton, Switch, StepLabel
+│   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationBadge,
+│   │                             IssueTypePicker, NumericStepper, PhotoCapture,
+│   │                             VoiceMemoToggle, CanvasControls, ExpertAvailability
+│   └── organisms/                TopBar, DeviceStatusBar, LeftToolbar, CanvasArea,
+│                                 FloorPlan, RightSidebar, DeviationForm, StatusToast,
+│                                 DevToolsPanel, IPadFrame
+└── lib/                          floor plan data + geometry, types, layout constants,
+                                  hooks (voice recorder, Munich cutoff), cn() helper
 ```
 
 State is in memory only (no backend). Reloading the page resets the demo.

@@ -16,7 +16,7 @@ import type { Escalation, EscalationStatus } from "@/lib/types";
  * But the revoke has to reach Munich. If the expert opens the ticket while the
  * revoke is still in flight, the server wins: the revoke is rejected and the
  * escalation is restored in "in_review". Once in review, the Revoke button is
- * disabled outright, so the contractor and the expert never edit the same issue.
+ * removed outright, so the contractor and the expert never edit the same issue.
  */
 
 /**
