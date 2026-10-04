@@ -11,7 +11,7 @@ import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
-import { PhotoCapture, type PhotoValue } from "@/components/molecules/PhotoCapture";
+import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
 import { VoiceMemoToggle } from "@/components/molecules/VoiceMemoToggle";
 import { RoomDefaultSidebar } from "@/components/organisms/RoomDefaultSidebar";
@@ -175,8 +175,11 @@ export default function SandboxPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <Specimen title="PhotoCapture" note="Camera on iPad; demo photo on desktop. Optional caption once a photo is attached.">
-              <PhotoCaptureDemo onChange={(v) => record(`PhotoCapture → ${v ? `photo${v.caption ? `, “${v.caption}”` : ""}` : "removed"}`)} />
+            <Specimen
+              title="PhotoEvidenceCapture"
+              note="magicplan's Photos & Notes layout: add tile (blue border until the first photo) + 7 slots, then a note. Camera on iPad; demo photo on desktop."
+            >
+              <PhotoEvidenceDemo onPhotoAdded={(n) => record(`PhotoEvidenceCapture onPhotoAdded → ${n} photo(s)`)} />
             </Specimen>
             <Specimen title="VoiceMemoToggle" note="Tap to talk, tap to stop. Simulated if the mic is blocked.">
               <div style={{ width: CARD_W }}>
@@ -410,7 +413,7 @@ const MOCK_ESCALATION: Escalation = {
   target: NORTH_WALL,
   targetLabel: "North wall",
   issueType: "obstacle",
-  photoUrl: DEMO_PHOTO,
+  photoUrls: [DEMO_PHOTO],
   blocking: true,
   createdAt: REPORTED,
   status: "delivered",
@@ -495,16 +498,17 @@ function NumericStepperDemo() {
   );
 }
 
-function PhotoCaptureDemo({ onChange }: { onChange: (v: PhotoValue | null) => void }) {
-  const [value, setValue] = useState<PhotoValue | null>(null);
+function PhotoEvidenceDemo({ onPhotoAdded }: { onPhotoAdded: (count: number) => void }) {
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [note, setNote] = useState("");
   return (
-    <div style={{ width: CARD_W }}>
-      <PhotoCapture
-        value={value}
-        onChange={(v) => {
-          setValue(v);
-          onChange(v);
-        }}
+    <div className="rounded-2xl bg-mp-panel p-4" style={{ width: CARD_W + 32 }}>
+      <PhotoEvidenceCapture
+        photos={photos}
+        onPhotosChange={setPhotos}
+        note={note}
+        onNoteChange={setNote}
+        onPhotoAdded={() => onPhotoAdded(photos.length + 1)}
       />
     </div>
   );

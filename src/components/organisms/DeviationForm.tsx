@@ -7,7 +7,7 @@ import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
-import { PhotoCapture, type PhotoValue } from "@/components/molecules/PhotoCapture";
+import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
 import { PROJECT, elementInfo } from "@/lib/floorplan";
 import type { EscalationDraft, IssueType, SelectedElement } from "@/lib/types";
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
  *
  *   IssueTypePicker  → what's wrong (radio tiles)
  *   NumericStepper   → measured length, only for Dimension Mismatch on a wall
- *   PhotoCapture     → mandatory photo + optional caption
+ *   PhotoEvidenceCapture → photos (≥ 1 required) + note, magicplan's Photos & Notes layout
  *   VoiceMemoToggle  → optional memo
  *
  * It submits an `EscalationDraft`; the store adds the anchor, id, timestamps
@@ -40,23 +40,26 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
 
   const [issue, setIssue] = useState<IssueType | null>(null);
   const [measured, setMeasured] = useState(plannedM ?? 0);
-  const [photo, setPhoto] = useState<PhotoValue | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [note, setNote] = useState("");
   const [voiceMemo, setVoiceMemo] = useState<VoiceMemo | undefined>();
   const [recording, setRecording] = useState(false);
   const [blocking, setBlocking] = useState(true);
 
-  const missing = [!issue && "issue type", !photo && "photo"].filter(Boolean) as string[];
+  // Submit stays disabled until there's an issue type and at least one photo.
+  const hasPhoto = photos.length > 0;
+  const missing = [!issue && "issue type", !hasPhoto && "photo"].filter(Boolean) as string[];
   const canSend = missing.length === 0 && !recording;
   const showStepper = issue === "dimension-mismatch" && plannedM !== undefined;
 
   const send = () => {
-    if (!issue || !photo) return;
+    if (!issue || !hasPhoto) return;
     onSubmit({
       issueType: issue,
       plannedM,
       measuredM: showStepper ? measured : undefined,
-      photoUrl: photo.url,
-      photoCaption: photo.caption.trim() || undefined,
+      photoUrls: photos,
+      note: note.trim() || undefined,
       voiceMemo,
       blocking,
     });
@@ -116,10 +119,16 @@ export function DeviationForm({ anchor, onCancel, onSubmit }: DeviationFormProps
         </section>
 
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={2} done={!!photo}>
-            Photo <span className="text-mp-red">*</span>
+          <StepLabel n={2} done={hasPhoto}>
+            Evidence <span className="text-mp-red">*</span>
+            <span className="ml-1.5 text-[12px] font-normal text-mp-muted">at least 1 photo</span>
           </StepLabel>
-          <PhotoCapture value={photo} onChange={setPhoto} />
+          <PhotoEvidenceCapture
+            photos={photos}
+            onPhotosChange={setPhotos}
+            note={note}
+            onNoteChange={setNote}
+          />
         </section>
 
         <section className="flex flex-col gap-2.5">

@@ -76,8 +76,11 @@ export type EscalationCardProps = {
 
   // Optional detail, used in the app; the card renders fine without it.
   targetLabel?: string;
+  /** Cover thumbnail (first evidence photo). */
   photoUrl?: string;
-  photoCaption?: string;
+  /** Total photos attached; shows "+n" on the thumbnail when > 1. */
+  photoCount?: number;
+  note?: string;
   /** Contractor marked work as blocked (default true). Shown as the BLOCKING tag. */
   blocking?: boolean;
   /** When `status` last changed (ms epoch); adds "Opened by Munich 13:42". */
@@ -98,7 +101,8 @@ export function EscalationCard({
   onRevoke,
   targetLabel,
   photoUrl,
-  photoCaption,
+  photoCount = photoUrl ? 1 : 0,
+  note,
   blocking = true,
   statusChangedAt,
   dimension,
@@ -124,8 +128,15 @@ export function EscalationCard({
         className="flex w-full gap-3 p-3 text-left disabled:cursor-default"
       >
         {photoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photoUrl} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
+          <span className="relative size-16 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photoUrl} alt="" className="size-16 rounded-xl object-cover" />
+            {photoCount > 1 && (
+              <span className="absolute bottom-1 right-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-white">
+                +{photoCount - 1}
+              </span>
+            )}
+          </span>
         )}
 
         <div className="min-w-0 flex-1">
@@ -138,9 +149,7 @@ export function EscalationCard({
             <span className="text-[15px] font-semibold leading-tight">{title}</span>
           </div>
           {targetLabel && <div className="truncate text-[13px] text-mp-muted">{targetLabel}</div>}
-          {photoCaption && (
-            <div className="truncate text-[12px] italic text-mp-muted">“{photoCaption}”</div>
-          )}
+          {note && <div className="line-clamp-2 text-[12px] italic text-mp-muted">“{note}”</div>}
 
           {(dimension || voiceMemoSeconds !== undefined) && (
             <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
@@ -258,8 +267,9 @@ export function toEscalationCardProps(
     timestamp: e.createdAt,
     statusChangedAt: e.statusChangedAt,
     targetLabel: e.targetLabel,
-    photoUrl: e.photoUrl,
-    photoCaption: e.photoCaption,
+    photoUrl: e.photoUrls[0],
+    photoCount: e.photoUrls.length,
+    note: e.note,
     blocking: e.blocking,
     dimension:
       e.plannedM !== undefined && e.measuredM !== undefined

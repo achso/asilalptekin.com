@@ -80,8 +80,9 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    keyboard:
    - **Issue type:** a radio group (Wall Missing, Dimension Mismatch, Obstacle, …).
      *Dimension Mismatch* shows a ± stepper for the measured length.
-   - **Take Photo (required).** Opens the iPad's rear camera. On a laptop,
-     use *"No camera? Use demo photo"*.
+   - **Evidence (at least one photo required).** magicplan's own Photos &
+     Notes layout: a + tile (opens the iPad's rear camera), up to 7 photos and
+     a free-text note. On a laptop, use *"No camera? Use demo photo"*.
    - **Record Voice Memo (optional).** Tap to talk, tap to stop.
    - **Work is blocked here** toggle.
    - **Send to review** stays disabled until the issue type and photo are
@@ -146,7 +147,7 @@ state.
 - **Atoms:** `CanvasWall` in idle / selected / delivered / in review /
   resolved, plus `ToolButton`, `Switch` and `StepLabel`.
 - **Molecules:** `EscalationCard` (delivered next to in review),
-  `IssueTypePicker`, `NumericStepper`, `PhotoCapture`, `VoiceMemoToggle` and
+  `IssueTypePicker`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
 - **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the compact `EscalationPin`,
   and every `StatusToast` variant.
@@ -171,7 +172,7 @@ src/
 │   ├── atoms/                    CanvasWall, FloatingAnchor, LockedBadge, ToolButton,
 │   │                             IconButton, Switch, StepLabel
 │   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationPin,
-│   │                             IssueTypePicker, NumericStepper, PhotoCapture,
+│   │                             IssueTypePicker, NumericStepper, PhotoEvidenceCapture,
 │   │                             VoiceMemoToggle, CanvasControls, ExpertAvailability
 │   └── organisms/                TopBar, DeviceStatusBar, LeftToolbar, CanvasArea,
 │                                 FloorPlan, RightSidebar, DeviationForm, StatusToast,

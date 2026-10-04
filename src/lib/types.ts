@@ -41,9 +41,10 @@ export type Escalation = {
   /** Only for dimension-mismatch: what the contractor measured on site. */
   measuredM?: number;
   plannedM?: number;
-  photoUrl: string; // object URL / data URL
-  /** Optional one-line caption typed under the photo. */
-  photoCaption?: string;
+  /** Evidence photos (object / data URLs). At least one is required to submit. */
+  photoUrls: string[];
+  /** Optional free-text note from the evidence step. */
+  note?: string;
   voiceMemo?: { url: string; durationS: number };
   blocking: boolean; // "work is stopped until resolved"
   createdAt: number;
