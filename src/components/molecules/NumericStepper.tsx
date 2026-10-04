@@ -2,11 +2,22 @@
 
 import { motion } from "framer-motion";
 import { Minus, Plus } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * NumericStepper (molecule): big ± buttons instead of a keyboard, for gloved
- * hands. Shows the difference from a reference value (the planned length).
+ * NumericStepper (molecule): hybrid measurement input.
+ *
+ *   [ − ]   [ 4.12  m ]   [ + ]
+ *
+ * - The centre is a real <input type="number" inputMode="decimal">: tap it and
+ *   the iPad shows the numeric keypad, so a laser reading like "4.12" can be
+ *   typed directly. A gray fill and bottom border signal it's editable.
+ * - The big − / + buttons nudge by `step` (5 cm) for gloved micro-adjustments.
+ *
+ * While focused, the field keeps a text draft (so "4." isn't reformatted
+ * mid-keystroke); valid numbers commit as you type, and the draft snaps back to
+ * the formatted value on blur. Values are clamped to [min, max].
  */
 export type NumericStepperProps = {
   label: string;
@@ -16,6 +27,7 @@ export type NumericStepperProps = {
   reference?: number;
   step?: number;
   min?: number;
+  max?: number;
   unit?: string;
   className?: string;
 };
@@ -27,38 +39,90 @@ export function NumericStepper({
   reference,
   step = 0.05,
   min = 0,
+  max = 99.99,
   unit = "m",
   className,
 }: NumericStepperProps) {
-  const set = (v: number) => onChange(Math.max(min, +v.toFixed(2)));
+  const id = useId();
+  const input = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState(value.toFixed(2));
+
+  // Follow external changes (steppers, resets) unless the user is typing.
+  useEffect(() => {
+    if (document.activeElement !== input.current) setDraft(value.toFixed(2));
+  }, [value]);
+
+  const clamp = (v: number) => Math.min(max, Math.max(min, +v.toFixed(2)));
+  const nudge = (dir: 1 | -1) => {
+    const next = clamp(value + dir * step);
+    onChange(next);
+    setDraft(next.toFixed(2));
+  };
+
   const delta = reference !== undefined ? value - reference : 0;
 
   return (
-    <div className={cn("flex items-center gap-2.5 rounded-xl bg-white p-3", className)}>
-      <div className="flex-1" aria-live="polite">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-mp-muted">{label}</div>
-        <div className="text-[24px] font-semibold leading-tight tabular-nums">
-          {value.toFixed(2)} {unit}
+    <div className={cn("rounded-xl bg-white p-3", className)}>
+      <label htmlFor={id} className="block whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-mp-muted">
+        {label}
+      </label>
+
+      <div className="mt-2 flex items-center gap-2.5">
+        <StepButton label={`Decrease by ${Math.round(step * 100)} cm`} onClick={() => nudge(-1)}>
+          <Minus size={24} />
+        </StepButton>
+
+        {/* Tappable field: gray fill + bottom border affordance, blue on focus */}
+        <div className="flex h-14 min-w-0 flex-1 items-center rounded-t-lg border-b-2 border-gray-300 bg-gray-100 px-3 transition-colors focus-within:border-mp-blue focus-within:bg-blue-50/60">
+          <input
+            ref={input}
+            id={id}
+            type="number"
+            inputMode="decimal"
+            enterKeyHint="done"
+            step={0.01}
+            min={min}
+            max={max}
+            value={draft}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              const n = e.target.valueAsNumber;
+              if (Number.isFinite(n)) onChange(clamp(n));
+            }}
+            onBlur={() => setDraft(value.toFixed(2))}
+            onKeyDown={(e) => {
+              // Inside a form: Enter/Done closes the keypad, never submits.
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
+            aria-describedby={reference !== undefined ? `${id}-delta` : undefined}
+            className="min-w-0 flex-1 bg-transparent text-center text-[26px] font-semibold tabular-nums text-mp-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="shrink-0 text-[18px] font-medium text-mp-muted">{unit}</span>
         </div>
-        {reference !== undefined && (
-          <div
-            className={cn(
-              "text-[12px] font-medium tabular-nums",
-              delta === 0 ? "text-mp-muted" : "text-mp-red",
-            )}
-          >
-            {delta === 0
-              ? "Same as plan"
-              : `${delta > 0 ? "+" : ""}${(delta * 100).toFixed(0)} cm vs plan`}
-          </div>
-        )}
+
+        <StepButton label={`Increase by ${Math.round(step * 100)} cm`} onClick={() => nudge(1)}>
+          <Plus size={24} />
+        </StepButton>
       </div>
-      <StepButton label="Decrease" onClick={() => set(value - step)}>
-        <Minus size={24} />
-      </StepButton>
-      <StepButton label="Increase" onClick={() => set(value + step)}>
-        <Plus size={24} />
-      </StepButton>
+
+      {reference !== undefined && (
+        <div
+          id={`${id}-delta`}
+          aria-live="polite"
+          className={cn(
+            "mt-2 whitespace-nowrap text-center text-[12px] font-medium tabular-nums",
+            delta === 0 ? "text-mp-muted" : "text-mp-red",
+          )}
+        >
+          {delta === 0
+            ? `Same as plan (${reference.toFixed(2)} ${unit})`
+            : `${delta > 0 ? "+" : "−"}${Math.abs(Math.round(delta * 100))} cm vs plan (${reference.toFixed(2)} ${unit})`}
+        </div>
+      )}
     </div>
   );
 }
@@ -78,7 +142,7 @@ function StepButton({
       aria-label={label}
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
-      className="grid size-14 place-items-center rounded-xl bg-mp-panel active:bg-mp-line"
+      className="grid size-14 shrink-0 place-items-center rounded-xl bg-mp-panel active:bg-mp-line"
     >
       {children}
     </motion.button>

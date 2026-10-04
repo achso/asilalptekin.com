@@ -26,12 +26,10 @@ export type Opening = {
 export type Corner = { id: string; label: string; p: Point };
 
 export type IssueType =
-  | "wall-missing"
   | "dimension-mismatch"
-  | "obstacle"
-  | "wrong-position"
-  | "opening-missing"
-  | "other";
+  | "undocumented-element"
+  | "element-not-on-site"
+  | "structural-obstacle";
 
 export type Escalation = {
   id: string;

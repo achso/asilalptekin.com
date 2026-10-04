@@ -1,33 +1,24 @@
 "use client";
 
-import {
-  BrickWall,
-  Check,
-  CircleHelp,
-  Construction,
-  DoorOpen,
-  MoveHorizontal,
-  Ruler,
-} from "lucide-react";
+import { Check, Construction, PackagePlus, Ruler, SearchX } from "lucide-react";
 import { ISSUE_TYPES } from "@/lib/floorplan";
 import type { IssueType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
-  "wall-missing": BrickWall,
+const ISSUE_ICONS: Record<IssueType, React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>> = {
   "dimension-mismatch": Ruler,
-  obstacle: Construction,
-  "wrong-position": MoveHorizontal,
-  "opening-missing": DoorOpen,
-  other: CircleHelp,
+  "undocumented-element": PackagePlus,
+  "element-not-on-site": SearchX,
+  "structural-obstacle": Construction,
 };
 
 /**
  * IssueTypePicker (molecule): structured choice instead of free text.
  *
- * An iOS grouped list, one row per type, so every label gets the full width
- * and never wraps ("Dimension Mismatch" didn't fit a half-width tile in
- * SF Pro). Rows are 52px tall, for gloved, one-handed taps.
+ * iOS grouped list: each row stacks a bold title over a short gray
+ * description, so no tooltip is needed. Selected: bg-blue-50, blue icon and a
+ * blue check on the right. Unselected: white with gray icons. Titles never
+ * wrap; the description may take two lines.
  */
 export function IssueTypePicker({
   value,
@@ -45,35 +36,39 @@ export function IssueTypePicker({
       {ISSUE_TYPES.map((t) => {
         const Icon = ISSUE_ICONS[t.id];
         const active = value === t.id;
+        const descId = `issue-desc-${t.id}`;
         return (
           <button
             key={t.id}
             type="button"
             role="radio"
             aria-checked={active}
+            aria-describedby={descId}
             onClick={() => onChange(t.id)}
             className={cn(
-              "flex h-[52px] w-full items-center gap-3 px-4 text-left transition-colors",
-              active ? "bg-mp-blue/10" : "active:bg-mp-panel",
+              "flex min-h-[64px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
+              active ? "bg-blue-50" : "bg-white active:bg-gray-50",
             )}
           >
-            <span
-              className={cn(
-                "grid size-8 shrink-0 place-items-center rounded-lg",
-                active ? "bg-mp-blue text-white" : "bg-mp-panel text-mp-ink",
-              )}
-            >
-              <Icon size={18} strokeWidth={2} />
+            <Icon
+              size={22}
+              strokeWidth={2}
+              className={cn("shrink-0", active ? "text-mp-blue" : "text-gray-400")}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate whitespace-nowrap text-[16px] font-semibold text-mp-ink">
+                {t.label}
+              </span>
+              <span id={descId} className="mt-0.5 block text-[13px] leading-snug text-gray-500">
+                {t.description}
+              </span>
             </span>
-            <span
-              className={cn(
-                "flex-1 truncate whitespace-nowrap text-[16px]",
-                active ? "font-semibold text-mp-blue" : "text-mp-ink",
-              )}
-            >
-              {t.label}
-            </span>
-            {active && <Check size={20} strokeWidth={2.75} className="shrink-0 text-mp-blue" aria-hidden />}
+            <Check
+              size={20}
+              strokeWidth={2.75}
+              aria-hidden
+              className={cn("shrink-0 text-mp-blue transition-opacity", active ? "opacity-100" : "opacity-0")}
+            />
           </button>
         );
       })}

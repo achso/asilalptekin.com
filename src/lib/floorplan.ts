@@ -49,13 +49,31 @@ export const WALLS: Wall[] = [
   },
 ];
 
-export const ISSUE_TYPES: { id: IssueType; label: string; hint: string }[] = [
-  { id: "wall-missing", label: "Wall Missing", hint: "Wall on plan doesn't exist on site" },
-  { id: "dimension-mismatch", label: "Dimension Mismatch", hint: "Measured length differs" },
-  { id: "obstacle", label: "Obstacle", hint: "Pipe, column, duct in the way" },
-  { id: "wrong-position", label: "Wrong Position", hint: "Wall is shifted or angled" },
-  { id: "opening-missing", label: "Door / Window", hint: "Opening missing or moved" },
-  { id: "other", label: "Other", hint: "Explain in voice memo" },
+/**
+ * Issue types: each title is unambiguous on its own, and the description
+ * removes the need for a tooltip.
+ */
+export const ISSUE_TYPES: { id: IssueType; label: string; description: string }[] = [
+  {
+    id: "dimension-mismatch",
+    label: "Dimension Mismatch",
+    description: "Physical length differs from the locked plan.",
+  },
+  {
+    id: "undocumented-element",
+    label: "Undocumented Element",
+    description: "Found a physical wall or object not shown on the plan.",
+  },
+  {
+    id: "element-not-on-site",
+    label: "Element Not on Site",
+    description: "An item drawn on the plan is physically missing.",
+  },
+  {
+    id: "structural-obstacle",
+    label: "Structural Obstacle",
+    description: "Pipes, columns, or hazards blocking execution.",
+  },
 ];
 
 export const issueLabel = (id: IssueType) =>

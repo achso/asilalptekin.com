@@ -78,8 +78,11 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
 4. Tap **Report Deviation**. The right sidebar becomes the **Escalation Form**,
    and the canvas stays visible with the wall highlighted. Nothing needs a
    keyboard:
-   - **Issue type:** a radio group (Wall Missing, Dimension Mismatch, Obstacle, …).
-     *Dimension Mismatch* shows a ± stepper for the measured length.
+   - **Issue type:** four options, each a bold title with a one-line
+     description: Dimension Mismatch, Undocumented Element, Element Not on
+     Site, Structural Obstacle. *Dimension Mismatch* adds **Measured on site**:
+     tap the value to type a laser reading on the iPad numpad (e.g. 4.12), or
+     nudge it with − / + in 5 cm steps.
    - **Evidence (at least one photo required).** magicplan's own Photos &
      Notes layout: a + tile (opens the iPad's rear camera), up to 7 photos and
      a free-text note. On a laptop, use *"No camera? Use demo photo"*.

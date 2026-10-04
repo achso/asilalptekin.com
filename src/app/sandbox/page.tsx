@@ -412,7 +412,7 @@ const MOCK_ESCALATION: Escalation = {
   id: "esc-sandbox",
   target: NORTH_WALL,
   targetLabel: "North wall",
-  issueType: "obstacle",
+  issueType: "structural-obstacle",
   photoUrls: [DEMO_PHOTO],
   blocking: true,
   createdAt: REPORTED,
