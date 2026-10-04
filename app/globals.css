@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mp-blue: #1a7cf5;
+  --color-mp-blue-soft: #64aeea;
+  --color-mp-ink: #111111;
+  --color-mp-canvas: #f6f6f6;
+  --color-mp-panel: #f2f2f4;
+  --color-mp-line: #e3e3e6;
+  --color-mp-muted: #8a8a8e;
+  --color-mp-red: #e5352b;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+  background: #1c1c1e;
+  color: var(--color-mp-ink);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* iPad-native feel: no text selection / callouts on long press, no tap flash */
+.ipad * {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.ipad textarea,
+.ipad input {
+  user-select: text;
+}
