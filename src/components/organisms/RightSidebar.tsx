@@ -8,6 +8,7 @@ import type { Escalation, EscalationDraft, EscalationStatus, SelectedElement } f
 import { cn } from "@/lib/utils";
 import { isActive } from "@/store/deviationMachine";
 import { EscalationCard, toEscalationCardProps } from "@/components/molecules/EscalationCard";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { DeviationForm } from "./DeviationForm";
 import { RoomDefaultSidebar } from "./RoomDefaultSidebar";
 
@@ -49,14 +50,16 @@ export function RightSidebar(props: Props) {
       aria-label="Escalations"
       className={cn("relative h-full overflow-hidden border-l border-mp-line bg-mp-panel", props.className)}
     >
-      <AnimatePresence mode="popLayout" initial={false}>
+      {/* Panels are absolutely positioned, so enter/exit overlap without
+          popLayout's synchronous layout measurement. */}
+      <AnimatePresence initial={false}>
         <motion.div
           key={mode === "summary" ? "summary" : `${mode}-${selected?.id}`}
           initial={{ opacity: 0, x: mode === "form" ? 40 : 16 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: mode === "form" ? 40 : -16 }}
-          transition={{ type: "spring", stiffness: 420, damping: 38 }}
-          className="absolute inset-0 flex flex-col"
+          transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
+          className="absolute inset-0 flex flex-col will-change-transform"
         >
           {mode === "form" && captureAnchor ? (
             <DeviationForm
@@ -130,25 +133,13 @@ function Inspector({
         </button>
       </div>
 
-      {/* Segmented control */}
-      <div className="mx-5 flex rounded-xl bg-mp-line/70 p-1">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="relative h-10 flex-1 rounded-lg text-[14px] font-medium"
-          >
-            {tab === t && (
-              <motion.span
-                layoutId="inspector-tab"
-                className="absolute inset-0 rounded-lg bg-white shadow-sm"
-                transition={{ type: "spring", stiffness: 500, damping: 38 }}
-              />
-            )}
-            <span className="relative">{t}</span>
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        label="Element panels"
+        options={TABS}
+        value={tab}
+        onChange={setTab}
+        className="mx-5"
+      />
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {pendingRevoke ? (

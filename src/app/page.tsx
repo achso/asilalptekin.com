@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
+import { useCallback } from "react";
 import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
 import { CanvasArea } from "@/components/organisms/CanvasArea";
 import { DeviceStatusBar } from "@/components/organisms/DeviceStatusBar";
@@ -16,6 +17,7 @@ import { StatusToast } from "@/components/organisms/StatusToast";
 import { TopBar } from "@/components/organisms/TopBar";
 import { PROJECT, elementInfo } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
+import type { SelectedElement } from "@/lib/types";
 import { useDeviationState } from "@/store/useDeviationState";
 
 /**
@@ -42,11 +44,22 @@ export default function Page() {
 
   const selectedPending = selectedElement ? store.pendingRevokeFor(selectedElement) : undefined;
 
+  // Stable callbacks so the memoised CanvasArea skips re-rendering the SVG plan
+  // when only unrelated state (toast, sidebar, toolbar) changes.
+  const { escalationFor, selectElement, clearSelection } = store;
+  const statusFor = useCallback(
+    (el: SelectedElement) => escalationFor(el)?.status,
+    [escalationFor],
+  );
+  const onSelect = useCallback(
+    (el: SelectedElement | null) => (el ? selectElement(el.id) : clearSelection()),
+    [selectElement, clearSelection],
+  );
+
   // Report Deviation (top of the LeftToolbar, the only entry point) must be
   // anchored to geometry: only offered for a selected element, never while its
   // form is open or a revoke is still in flight.
   const actionElement = captureAnchor || selectedPending ? null : selectedElement;
-  const actionKey = actionElement ? `${actionElement.type}:${actionElement.id}` : "none";
 
   const breadcrumbs = [
     PROJECT.floor,
@@ -79,8 +92,8 @@ export default function Page() {
               className="[grid-area:stack]"
               selectedElement={selectedElement}
               escalations={store.escalations}
-              statusFor={(el) => store.escalationFor(el)?.status}
-              onSelect={(el) => (el ? store.selectElement(el.id) : store.clearSelection())}
+              statusFor={statusFor}
+              onSelect={onSelect}
             />
 
             <LeftToolbar
@@ -92,7 +105,9 @@ export default function Page() {
                 <AnimatePresence>
                   {actionElement && (
                     <ReportDeviationAction
-                      key={actionKey}
+                      // Stable key: switching wall → floor updates the button in place
+                      // instead of replaying exit + enter (which stacked two buttons).
+                      key="report-deviation-action"
                       selectedElement={actionElement}
                       deviationState={store.escalationStatus}
                       onReport={store.startReport}

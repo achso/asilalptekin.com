@@ -21,8 +21,13 @@ import type { DeviationState } from "@/store/deviationMachine";
  *                                       DeviationForm knows its anchor.
  *
  * For an exit animation, the parent renders it inside <AnimatePresence>,
- * conditionally on `selectedElement` and keyed by the element.
+ * conditionally on `selectedElement`, with a stable key (not per element) so
+ * changing the selection updates it in place instead of remounting.
  */
+
+/** Short tween on transform + opacity only (GPU-composited, no layout work). */
+const ENTER = { duration: 0.16, ease: [0.2, 0, 0, 1] } as const;
+const EXIT = { duration: 0.12, ease: [0.4, 0, 1, 1] } as const;
 
 /** States from which a (new) report can be started. Resolved elements can be re-reported. */
 const REPORTABLE: ReadonlySet<DeviationState> = new Set(["idle", "resolved"]);
@@ -54,14 +59,13 @@ export function ReportDeviationAction({
       data-anchor-type={selectedElement.type}
       data-anchor-id={selectedElement.id}
       aria-label={`Report deviation on ${label}`}
-      initial={{ x: -24, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -24, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      whileTap={{ scale: 0.95 }}
+      initial={{ x: -12, opacity: 0 }}
+      animate={{ x: 0, opacity: 1, transition: ENTER }}
+      exit={{ x: -12, opacity: 0, transition: EXIT }}
+      whileTap={{ scale: 0.96, transition: { duration: 0.08 } }}
       onClick={() => onReport(selectedElement)}
       className={cn(
-        "flex h-14 items-center gap-2.5 whitespace-nowrap rounded-xl bg-mp-red px-4 text-[17px] font-semibold text-white shadow-[0_6px_16px_rgba(229,53,43,0.3)] active:brightness-95",
+        "flex h-14 items-center gap-2.5 whitespace-nowrap rounded-xl bg-mp-red px-4 will-change-transform text-[17px] font-semibold text-white shadow-[0_6px_16px_rgba(229,53,43,0.3)] active:brightness-95",
         className,
       )}
     >

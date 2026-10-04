@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, ChevronsUpDown, Info, Lock, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { EscalationCard, type EscalationCardProps } from "@/components/molecules/EscalationCard";
 import { cn } from "@/lib/utils";
 
@@ -81,35 +82,13 @@ export function RoomDefaultSidebar({
       </header>
 
       {/* ── Segmented control ──────────────────────────────────── */}
-      <div role="tablist" aria-label="Room panels" className="mx-5 flex rounded-xl bg-[#e3e3e6] p-1">
-        {TABS.map((t, i) => {
-          const active = tab === t;
-          const prevActive = i > 0 && tab === TABS[i - 1];
-          return (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTab(t)}
-              className="relative h-10 flex-1 rounded-lg text-[14px] font-medium"
-            >
-              {active && (
-                <motion.span
-                  layoutId="room-default-tab"
-                  className="absolute inset-0 rounded-lg bg-white shadow-sm"
-                  transition={{ type: "spring", stiffness: 500, damping: 38 }}
-                />
-              )}
-              {/* iOS-style hairline between inactive segments */}
-              {i > 0 && !active && !prevActive && (
-                <span className="absolute inset-y-2.5 left-0 w-px bg-[#c8c8cc]" aria-hidden />
-              )}
-              <span className="relative">{t}</span>
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        label="Room panels"
+        options={TABS}
+        value={tab}
+        onChange={setTab}
+        className="mx-5"
+      />
       <div className="mt-3 h-px bg-mp-line" />
 
       {/* ── Scrolling content ──────────────────────────────────── */}

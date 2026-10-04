@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { EscalationBadges } from "@/components/molecules/EscalationBadge";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
@@ -11,6 +12,9 @@ import { FloorPlan } from "./FloorPlan";
  * CanvasArea (organism): the main work surface. A dot-grid background (CSS),
  * the SVG FloorPlan, and the status badges pinned to escalated geometry.
  * magicplan's canvas chrome (undo/redo, floor picker) sits on top.
+ *
+ * Memoised: with stable props from page.tsx it re-renders only when the
+ * selection or the escalations change, not on toasts or sidebar updates.
  *
  * The canvas only handles selection and status. It never starts a report: the
  * single entry point is ReportDeviationAction at the top of the LeftToolbar,
@@ -24,7 +28,7 @@ export type CanvasAreaProps = {
   className?: string;
 };
 
-export function CanvasArea({
+export const CanvasArea = memo(function CanvasArea({
   selectedElement,
   escalations,
   statusFor,
@@ -56,4 +60,4 @@ export function CanvasArea({
       <FloorPicker />
     </main>
   );
-}
+});
