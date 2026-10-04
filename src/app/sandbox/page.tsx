@@ -6,7 +6,7 @@ import { LockedBadge } from "@/components/atoms/LockedBadge";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
 import { ToolButton } from "@/components/atoms/ToolButton";
-import { EscalationBadges } from "@/components/molecules/EscalationBadge";
+import { EscalationPin, EscalationPins } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
@@ -226,14 +226,33 @@ export default function SandboxPage() {
           </div>
 
           <Specimen
-            title="In context: spatial badge"
-            note="EscalationBadge at real canvas coordinates, pinned to an escalated wall."
+            title="EscalationPin"
+            note="Compact status marker: a 24px disc inside a 44px touch target. Replaces the wide text pill so several reports stay legible."
+          >
+            <div className="flex flex-wrap items-center gap-8">
+              {(["delivered", "in_review", "resolved"] as const).map((status) => (
+                <Labeled key={status} label={`status="${status}"`}>
+                  <div className="flex items-center gap-2 rounded-xl bg-mp-canvas px-3 py-1">
+                    <EscalationPin
+                      status={status}
+                      label="North wall"
+                      onPress={() => record(`EscalationPin (${status}) pressed → select wall`)}
+                    />
+                  </div>
+                </Labeled>
+              ))}
+            </div>
+          </Specimen>
+
+          <Specimen
+            title="In context: pin on an escalated wall"
+            note="EscalationPins at real canvas coordinates: centred on the wall, over its red hatch."
           >
             <div className="flex flex-col gap-6">
-              <MiniCanvas label="delivered · EscalationBadge" wallState="delivered">
-                <EscalationBadges
+              <MiniCanvas label="delivered · EscalationPin" wallState="delivered">
+                <EscalationPins
                   escalations={[MOCK_ESCALATION]}
-                  onPress={() => record("EscalationBadge pressed → select wall")}
+                  onPress={() => record("EscalationPin pressed → select wall")}
                 />
               </MiniCanvas>
             </div>

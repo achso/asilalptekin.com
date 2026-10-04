@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
-import { EscalationBadges } from "@/components/molecules/EscalationBadge";
+import { EscalationPins } from "@/components/molecules/EscalationPin";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import type { Escalation, EscalationStatus, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { FloorPlan } from "./FloorPlan";
 
 /**
  * CanvasArea (organism): the main work surface. A dot-grid background (CSS),
- * the SVG FloorPlan, and the status badges pinned to escalated geometry.
+ * the SVG FloorPlan, and compact status pins on escalated geometry.
  * magicplan's canvas chrome (undo/redo, floor picker) sits on top.
  *
  * Memoised: with stable props from page.tsx it re-renders only when the
@@ -54,7 +54,7 @@ export const CanvasArea = memo(function CanvasArea({
         onSelect={onSelect}
       />
 
-      <EscalationBadges escalations={escalations} onPress={onSelect} />
+      <EscalationPins escalations={escalations} onPress={onSelect} />
 
       <UndoRedo />
       <FloorPicker />

@@ -85,7 +85,7 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    - **Send to review** stays disabled until the issue type and photo are
      provided, and its label says what's missing.
 5. After sending, the form closes **right away**. The wall locks in a **red
-   hatched pattern** with a persistent **"Escalated to expert"** badge
+   hatched pattern** with a compact **status pin** (red lock) on the wall
    (Sending → Delivered), and it appears in **Active Escalations**. The
    contractor moves on.
 
@@ -108,9 +108,9 @@ idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
 | State | Canvas | Escalation card |
 |---|---|---|
 | Idle (locked plan) | Black wall, drafting tools disabled | — |
-| Delivered | Red hatched wall, "Escalated to expert" badge | **Revoke Escalation** available |
-| In Review | Hatched wall framed in amber with a pulse, "Expert is reviewing" | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |
-| Resolved | Green wall, "Resolved · plan updated" | Contractor unblocked; the wall can be reported again |
+| Delivered | Red hatched wall, red lock pin | **Revoke Escalation** available |
+| In Review | Hatched wall framed in amber with a pulse, amber eye pin | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |
+| Resolved | Green wall, green check pin | Contractor unblocked; the wall can be reported again |
 
 **Open the hidden Dev Tools:** press **Shift + D**, **triple-tap the clock** in
 the status bar (works on the iPad), or load **`/?dev=1`**. The panel flips the
@@ -146,7 +146,7 @@ state.
 - **Molecules:** `EscalationCard` (delivered next to in review),
   `IssueTypePicker`, `NumericStepper`, `PhotoCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
-- **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the spatial `EscalationBadge`,
+- **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the compact `EscalationPin`,
   and every `StatusToast` variant.
 
 Interactive specimens log their callbacks in an event log at the bottom.
@@ -168,7 +168,7 @@ src/
 ├── components/
 │   ├── atoms/                    CanvasWall, FloatingAnchor, LockedBadge, ToolButton,
 │   │                             IconButton, Switch, StepLabel
-│   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationBadge,
+│   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationPin,
 │   │                             IssueTypePicker, NumericStepper, PhotoCapture,
 │   │                             VoiceMemoToggle, CanvasControls, ExpertAvailability
 │   └── organisms/                TopBar, DeviceStatusBar, LeftToolbar, CanvasArea,
