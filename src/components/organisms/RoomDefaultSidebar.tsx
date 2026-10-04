@@ -1,23 +1,28 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, ChevronsUpDown, Info, Lock, Plus, X } from "lucide-react";
+import { Info, Lock, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
+import { Switch } from "@/components/atoms/Switch";
 import { EscalationCard, type EscalationCardProps } from "@/components/molecules/EscalationCard";
+import { PROJECT, ROOM } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
 
 /**
  * RoomDefaultSidebar (organism)
  *
  * The sidebar's baseline state when nothing is selected: magicplan's
- * room-level Details panel. Header and tabs stay put; the content scrolls.
+ * room-level Details panel (here the "Music Room"). Header and tabs stay put;
+ * the content scrolls.
  *
- * Escalations come first. If the room has unresolved reports, their full
- * EscalationCards (photo, issue, status, Revoke) render at the top of the
- * Details tab, with no intermediate "View on plan" step. While anything is
- * escalated, the room properties below are shown read-only (padlocks, muted),
- * because the plan is blocked until the expert responds.
+ * Execution phase: the permit is approved and the budget locked, so every
+ * property is read-only, always. No steppers, no chevrons, disabled inputs and
+ * switch, Add New Area disabled. A note at the bottom points to the one action
+ * that is open: tap the room or a wall and escalate.
+ *
+ * Unresolved escalations render as full EscalationCards at the top of the
+ * Details tab (photo, status, Revoke), with no extra click to reach them.
  */
 
 export type RoomStat = { value: string; label: string };
@@ -30,35 +35,34 @@ export type RoomDefaultSidebarProps = {
   stats?: RoomStat[];
   ceilingHeight?: string;
   livingAreaPct?: number;
-  /** Unresolved escalations in this room, newest first. Empty = idle. */
+  /** Unresolved escalations in this room, newest first. */
   escalations?: RoomEscalation[];
   onClose?: () => void;
   className?: string;
 };
 
 const DEFAULT_STATS: RoomStat[] = [
-  { value: "4.72 m²", label: "Floor Area" },
-  { value: "23.92 m²", label: "Wall Area" },
-  { value: "6.76 m", label: "Perimeter" },
-  { value: "14.79 m³", label: "Volume" },
+  { value: ROOM.stats.floorArea, label: "Floor Area" },
+  { value: ROOM.stats.wallArea, label: "Wall Area" },
+  { value: ROOM.stats.perimeter, label: "Perimeter" },
+  { value: ROOM.stats.volume, label: "Volume" },
 ];
 
 const TABS = ["Details", "Photos & Notes", "Forms"] as const;
 type Tab = (typeof TABS)[number];
 
 export function RoomDefaultSidebar({
-  roomName = "Other",
-  floor = "5th Floor",
-  roomType = "Other",
+  roomName = PROJECT.room,
+  floor = PROJECT.floor,
+  roomType = PROJECT.room,
   stats = DEFAULT_STATS,
-  ceilingHeight = "3.13 m",
+  ceilingHeight = ROOM.stats.ceilingHeight,
   livingAreaPct = 100,
   escalations = [],
   onClose,
   className,
 }: RoomDefaultSidebarProps) {
   const [tab, setTab] = useState<Tab>("Details");
-  const locked = escalations.length > 0;
 
   return (
     <section
@@ -81,14 +85,7 @@ export function RoomDefaultSidebar({
         </button>
       </header>
 
-      {/* ── Segmented control ──────────────────────────────────── */}
-      <SegmentedControl
-        label="Room panels"
-        options={TABS}
-        value={tab}
-        onChange={setTab}
-        className="mx-5"
-      />
+      <SegmentedControl label="Room panels" options={TABS} value={tab} onChange={setTab} className="mx-5" />
       <div className="mt-3 h-px bg-mp-line" />
 
       {/* ── Scrolling content ──────────────────────────────────── */}
@@ -97,7 +94,7 @@ export function RoomDefaultSidebar({
           <div className="flex flex-col">
             {/* Escalations first: the full ticket, no click-through */}
             <AnimatePresence initial={false}>
-              {locked && (
+              {escalations.length > 0 && (
                 <motion.section
                   key="escalations"
                   aria-label="Active escalations"
@@ -108,7 +105,7 @@ export function RoomDefaultSidebar({
                 >
                   <SectionHeader
                     title={
-                      <span className="flex items-center gap-2 text-mp-red">
+                      <span className="text-mp-red">
                         Active Escalation{escalations.length > 1 ? `s (${escalations.length})` : ""}
                       </span>
                     }
@@ -132,7 +129,7 @@ export function RoomDefaultSidebar({
               )}
             </AnimatePresence>
 
-            {/* Room properties: read-only while the plan is blocked */}
+            {/* ── Statistics (computed, read-only by nature) ─────── */}
             <SectionHeader
               title="Statistics"
               action={
@@ -141,12 +138,7 @@ export function RoomDefaultSidebar({
                 </button>
               }
             />
-            <dl
-              className={cn(
-                "grid grid-cols-4 divide-x divide-[#d6d6da] rounded-2xl bg-[#e9e9ec] py-3.5 transition-opacity",
-                locked && "opacity-60",
-              )}
-            >
+            <dl className="grid grid-cols-4 divide-x divide-[#d6d6da] rounded-2xl bg-[#e9e9ec] py-3.5">
               {stats.map((s) => (
                 <div key={s.label} className="flex flex-col items-center px-1 text-center">
                   <dt className="order-2 mt-0.5 text-[11px] text-mp-muted">{s.label}</dt>
@@ -157,21 +149,20 @@ export function RoomDefaultSidebar({
               ))}
             </dl>
 
-            <SectionHeader title="Dimensions" locked={locked} />
+            {/* ── Dimensions ─────────────────────────────────────── */}
+            <SectionHeader title="Dimensions" />
             <Group>
-              <Row label="Ceiling Height" locked={locked}>
-                <ValuePill locked={locked}>
-                  {ceilingHeight}
-                  {!locked && <ChevronsUpDown size={15} className="text-mp-muted" />}
-                </ValuePill>
+              <Row label="Ceiling Height">
+                {/* Read-only: plain value, no up/down stepper */}
+                <ReadOnlyValue>{ceilingHeight}</ReadOnlyValue>
               </Row>
-              <Row label="Living Area (%)" locked={locked}>
-                <ValuePill locked={locked}>{livingAreaPct}</ValuePill>
+              <Row label="Living Area (%)">
+                <DisabledInput label="Living Area (%)" value={String(livingAreaPct)} className="w-[150px]" />
               </Row>
             </Group>
 
+            {/* ── Affected Areas ─────────────────────────────────── */}
             <SectionHeader
-              locked={locked}
               title={
                 <span className="flex items-center gap-1.5">
                   Affected Areas
@@ -188,41 +179,51 @@ export function RoomDefaultSidebar({
             />
             <button
               type="button"
-              disabled={locked}
-              className="flex h-14 w-full items-center gap-3 rounded-2xl bg-white px-4 text-[17px] text-mp-blue active:bg-[#f0f0f2] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled
+              aria-disabled="true"
+              className="flex h-14 w-full cursor-not-allowed items-center gap-3 rounded-2xl bg-white px-4 text-[17px] text-mp-blue opacity-50"
             >
-              <Plus size={22} strokeWidth={2} /> Add New Area
+              <Plus size={22} strokeWidth={2} aria-hidden /> Add New Area
             </button>
             <p className="mt-2 px-1 text-[13px] leading-snug text-mp-muted">
               Define one or more affected areas (overlapping allowed) within a room or a wall.
               Affected areas can be included in your exports.
             </p>
 
-            <SectionHeader title="General" locked={locked} />
+            {/* ── General ─────────────────────────────────────────── */}
+            <SectionHeader title="General" />
             <Group>
-              <Row label="Floor" locked={locked}>
-                <ValuePill locked={locked}>
-                  {floor}
-                  {!locked && <ChevronRight size={16} className="text-mp-muted" />}
-                </ValuePill>
+              <Row label="Floor">
+                <ReadOnlyValue>{floor}</ReadOnlyValue>
               </Row>
-              <Row label="Room Type" locked={locked}>
-                <ValuePill locked={locked}>
-                  {roomType}
-                  {!locked && <ChevronRight size={16} className="text-mp-muted" />}
-                </ValuePill>
+              <Row label="Room Type">
+                <ReadOnlyValue>{roomType}</ReadOnlyValue>
               </Row>
-              <Row label="Room Name" locked={locked}>
-                <ValuePill locked={locked}>{roomName}</ValuePill>
+              <Row label="Room Name">
+                <DisabledInput label="Room Name" value={roomName} className="w-[180px]" />
+              </Row>
+              <Row label="Room Color">
+                <span
+                  role="switch"
+                  aria-checked="false"
+                  aria-disabled="true"
+                  aria-label="Room Color (disabled)"
+                  className="cursor-not-allowed opacity-60"
+                >
+                  {/* Darker track so the off/disabled switch stays visible on white */}
+                  <Switch checked={false} className="bg-gray-300" />
+                </span>
               </Row>
             </Group>
 
-            {locked && (
-              <p className="mt-3 flex gap-2 px-1 text-[12px] leading-snug text-mp-muted">
-                <Lock size={13} className="mt-0.5 shrink-0" aria-hidden />
-                Room properties are read-only until the remote expert resolves the escalation.
-              </p>
-            )}
+            {/* ── Locked-state note ───────────────────────────────── */}
+            <p className="mt-5 flex gap-2 px-1 text-[12px] leading-snug text-mp-muted">
+              <Lock size={14} className="mt-px shrink-0" aria-hidden />
+              <span>
+                Properties are read-only during the execution phase. To report a discrepancy, tap
+                the room or wall to escalate.
+              </span>
+            </p>
           </div>
         ) : (
           <div className="mt-4 rounded-2xl bg-white p-4 text-[14px] text-mp-muted">
@@ -238,21 +239,10 @@ export function RoomDefaultSidebar({
 
 // ── Parts ───────────────────────────────────────────────────────────────────
 
-function SectionHeader({
-  title,
-  action,
-  locked,
-}: {
-  title: React.ReactNode;
-  action?: React.ReactNode;
-  locked?: boolean;
-}) {
+function SectionHeader({ title, action }: { title: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="mb-2 mt-6 flex items-center justify-between px-1 first:mt-4">
-      <h3 className="flex items-center gap-1.5 text-[15px] font-semibold text-mp-muted">
-        {title}
-        {locked && <Lock size={12} aria-label="Read-only" />}
-      </h3>
+      <h3 className="text-[15px] font-semibold text-mp-muted">{title}</h3>
       {action}
     </div>
   );
@@ -264,36 +254,45 @@ function Group({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Row({
-  label,
-  locked,
-  children,
-}: {
-  label: string;
-  locked?: boolean;
-  children: React.ReactNode;
-}) {
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div
-      aria-readonly={locked || undefined}
-      className={cn("flex h-14 items-center justify-between gap-3 px-4", locked && "text-mp-muted")}
-    >
-      <span className="text-[16px]">{label}</span>
+    <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2" aria-readonly="true">
+      <span className="shrink-0 text-[16px]">{label}</span>
       {children}
     </div>
   );
 }
 
-function ValuePill({ locked, children }: { locked?: boolean; children: React.ReactNode }) {
+/** A value shown as text only: no stepper, no chevron, nothing to tap. */
+function ReadOnlyValue({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className={cn(
-        "flex items-center gap-1.5 rounded-lg bg-[#f0f0f2] px-3 py-1.5 text-[15px] tabular-nums",
-        locked && "opacity-60",
-      )}
-    >
+    <span className="rounded-lg bg-[#f0f0f2] px-3 py-1.5 text-[15px] tabular-nums text-mp-ink">
       {children}
-      {locked && <Lock size={12} aria-hidden />}
     </span>
+  );
+}
+
+/** iOS-style text field in its disabled state. */
+function DisabledInput({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <input
+      type="text"
+      aria-label={label}
+      value={value}
+      disabled
+      readOnly
+      className={cn(
+        "h-10 min-w-0 cursor-not-allowed rounded-lg bg-gray-100 px-3 text-[15px] text-gray-400 outline-none",
+        className,
+      )}
+    />
   );
 }

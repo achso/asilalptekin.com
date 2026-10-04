@@ -205,8 +205,8 @@ function dimensionRows(target: SelectedElement): [string, string][] {
       return [["Angle", "90°"]];
     case "room":
       return [
-        ["Floor area", `${(ROOM.widthM * ROOM.depthM).toFixed(2)} m²`],
-        ["Perimeter", `${(2 * (ROOM.widthM + ROOM.depthM)).toFixed(2)} m`],
+        ["Floor area", ROOM.stats.floorArea],
+        ["Perimeter", ROOM.stats.perimeter],
       ];
   }
 }

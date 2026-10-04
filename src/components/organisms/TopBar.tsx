@@ -5,7 +5,7 @@ import { LockedBadge } from "@/components/atoms/LockedBadge";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 
 /**
- * TopBar (organism): back button, breadcrumbs (Kitchen / Ground Floor and the
+ * TopBar (organism): back button, breadcrumbs (Music Room / 5th Floor and the
  * selected element, if any), the plan-lock badge, expert availability, and
  * magicplan's help/share/info actions.
  */

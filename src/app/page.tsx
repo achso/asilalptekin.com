@@ -97,6 +97,9 @@ export default function Page() {
             />
 
             <LeftToolbar
+              // Room view (nothing or the floor selected) → room-level actions;
+              // a wall or corner selected → element drafting tools. All locked.
+              mode={selectedElement && selectedElement.type !== "room" ? "element" : "room"}
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
               onLockedTool={() =>
                 store.notify(selectedElement ? LOCKED_MESSAGE : LOCKED_MESSAGE_NO_SELECTION, "locked")

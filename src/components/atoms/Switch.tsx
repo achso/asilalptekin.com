@@ -17,7 +17,7 @@ export function Switch({
     <span
       aria-hidden
       className={cn(
-        "relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors",
+        "relative inline-block h-[31px] w-[51px] shrink-0 rounded-full align-middle transition-colors",
         checked ? (tone === "red" ? "bg-mp-red" : "bg-mp-blue") : "bg-mp-line",
         className,
       )}

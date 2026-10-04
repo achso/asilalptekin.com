@@ -1,14 +1,14 @@
 import type { Corner, IssueType, Point, SelectedElement, Wall } from "./types";
 
 /**
- * One room, captured in metres. Mirrors the 4.55 × 3.33 m room from the
- * magicplan reference screens (door on the west, door + window on the east).
+ * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
+ * magicplan reference screens (door on the west; window, door, window on the east).
  */
 export const PROJECT = {
-  name: "Kitchen Renovation",
+  name: "Music Room Renovation",
   address: "Lindenstraße 14, Augsburg",
-  floor: "Ground Floor",
-  room: "Kitchen",
+  floor: "5th Floor",
+  room: "Music Room",
   budgetEur: 40000,
   permit: "Approved last Tuesday",
   previousVisit: "2 years ago (different floor plan)",
@@ -18,8 +18,8 @@ export const PROJECT = {
 export const CORNERS: Corner[] = [
   { id: "c-nw", label: "NW corner", p: { x: 0, y: 0 } },
   { id: "c-ne", label: "NE corner", p: { x: 4.55, y: 0 } },
-  { id: "c-se", label: "SE corner", p: { x: 4.55, y: 3.33 } },
-  { id: "c-sw", label: "SW corner", p: { x: 0, y: 3.33 } },
+  { id: "c-se", label: "SE corner", p: { x: 4.55, y: 3.3 } },
+  { id: "c-sw", label: "SW corner", p: { x: 0, y: 3.3 } },
 ];
 
 export const WALLS: Wall[] = [
@@ -29,11 +29,12 @@ export const WALLS: Wall[] = [
     label: "East wall",
     from: "c-ne",
     to: "c-se",
-    lengthM: 3.33,
+    lengthM: 3.3,
     openings: [
-      { kind: "window", offsetM: 0.9, widthM: 0.45 },
-      { kind: "door", offsetM: 1.35, widthM: 0.63, swing: 1 },
-      { kind: "window", offsetM: 1.98, widthM: 0.45 },
+      // 0.88 · window 0.45 · door 0.63 · window 0.45 · 0.88 (from the NE corner)
+      { kind: "window", offsetM: 0.88, widthM: 0.45 },
+      { kind: "door", offsetM: 1.33, widthM: 0.63, swing: 1 },
+      { kind: "window", offsetM: 1.96, widthM: 0.45 },
     ],
   },
   { id: "w-south", label: "South wall", from: "c-se", to: "c-sw", lengthM: 4.55 },
@@ -42,8 +43,9 @@ export const WALLS: Wall[] = [
     label: "West wall",
     from: "c-sw",
     to: "c-nw",
-    lengthM: 3.33,
-    openings: [{ kind: "door", offsetM: 1.78, widthM: 0.78, swing: 1 }],
+    lengthM: 3.3,
+    // Door 0.81 wide, 0.73 below the NW corner (offset measured from the SW corner)
+    openings: [{ kind: "door", offsetM: 1.76, widthM: 0.81, swing: 1 }],
   },
 ];
 
@@ -90,10 +92,22 @@ export function wallGeometry(wall: Wall) {
 // ── Selectable elements ─────────────────────────────────────────────────────
 
 export const ROOM = {
-  id: "r-kitchen",
-  label: "Kitchen floor",
+  id: "r-music-room",
+  label: "Music Room floor",
   widthM: 4.55,
-  depthM: 3.33,
+  depthM: 3.3,
+  /**
+   * Captured statistics as magicplan reports them (perimeter and wall area are
+   * net of openings, so they aren't simply derived from width × depth).
+   * Single source for the room panel and the floor inspector.
+   */
+  stats: {
+    floorArea: "15.00 m²",
+    wallArea: "43.81 m²",
+    perimeter: "14.24 m",
+    volume: "46.78 m³",
+    ceilingHeight: "3.12 m",
+  },
 };
 
 export type ElementInfo = {
@@ -118,11 +132,9 @@ export function elementInfo(el: SelectedElement): ElementInfo {
     case "corner":
       return { label: cornerById(el.id).label, summary: "Corner · 90°" };
     case "room": {
-      const area = ROOM.widthM * ROOM.depthM;
-      const perimeter = 2 * (ROOM.widthM + ROOM.depthM);
       return {
         label: ROOM.label,
-        summary: `${area.toFixed(2)} m² · perimeter ${perimeter.toFixed(2)} m`,
+        summary: `${ROOM.stats.floorArea} · perimeter ${ROOM.stats.perimeter}`,
       };
     }
   }

@@ -58,16 +58,18 @@ iPad Air / Pro 11" landscape) and scales to fit the window.
 The permit is approved, so the plan is in its **execution state**: the header
 shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
 
-1. **Try a drafting tool** (Insert, Add Corner, Add Wall, Split Room, Delete).
-   They're greyed out. Tapping one shows a toast: *"Plan locked for execution.
-   Use 'Report Deviation' to alert the remote expert."*
+1. **Try a tool in the left toolbar.** In the room view it shows magicplan's
+   room actions (Insert, Set Size, Edit Layout, Duplicate, Delete). With a wall
+   or corner selected it shows the drafting tools (Insert, Add Corner, Add
+   Wall, Split Room, Delete). All of them are disabled; tapping one shows a
+   toast explaining that the plan is locked for execution.
 2. **Nothing is selected yet, so there's no Report Deviation button.** A
-   report has to be anchored to geometry. The sidebar shows the room's
-   details (magicplan's room panel), and the hint at the bottom guides the
-   contractor. While any report is unresolved, its full **EscalationCard**
-   (photo, issue, status, Revoke) sits at the top of the room panel. There's
-   no extra click to reach the ticket, and the room properties below turn
-   read-only.
+   report has to be anchored to geometry. The sidebar shows the **Music Room**
+   panel (statistics, dimensions, affected areas, general), read-only
+   throughout the execution phase: no steppers or chevrons, disabled inputs
+   and switch, and a note on how to escalate. While any report is unresolved,
+   its full **EscalationCard** (photo, issue, status, Revoke) sits at the top
+   of that panel, with no extra click to reach the ticket.
 3. **Tap a wall, a corner, or the floor (the whole room).** It highlights, the
    sidebar shows the read-only **Details / Photos & Notes / Forms** inspector,
    and **📍 Report Deviation** animates in at the top of the left toolbar, the
@@ -107,7 +109,7 @@ idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
 
 | State | Canvas | Escalation card |
 |---|---|---|
-| Idle (locked plan) | Black wall, drafting tools disabled | — |
+| Idle (locked plan) | Black wall, toolbar tools disabled | — |
 | Delivered | Red hatched wall, red lock pin | **Revoke Escalation** available |
 | In Review | Hatched wall framed in amber with a pulse, amber eye pin | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |
 | Resolved | Green wall, green check pin | Contractor unblocked; the wall can be reported again |

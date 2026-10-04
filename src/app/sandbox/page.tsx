@@ -82,18 +82,18 @@ export default function SandboxPage() {
             <CanvasWallStates />
           </Specimen>
 
-          <Specimen title="ToolButton" note="`locked` keeps the button tappable so the app can explain why it's disabled.">
+          <Specimen title="ToolButton" note="`locked`: the button is disabled (pointer-events-none, opacity-50); a wrapper catches the tap so the app can explain why.">
             <div className="flex flex-wrap items-center gap-3">
               <Labeled label="default">
                 <ToolButton onClick={() => record("ToolButton (default) clicked")}>Add Wall</ToolButton>
               </Labeled>
               <Labeled label="locked">
-                <ToolButton locked onClick={() => record("ToolButton (locked) clicked → show lock toast")}>
+                <ToolButton locked onLockedTap={() => record("ToolButton (locked) tapped → show lock toast")}>
                   Add Wall
                 </ToolButton>
               </Labeled>
               <Labeled label="locked · danger">
-                <ToolButton locked tone="danger" onClick={() => record("ToolButton (danger) clicked")}>
+                <ToolButton locked tone="danger" onLockedTap={() => record("ToolButton (locked danger) tapped → show lock toast")}>
                   Delete…
                 </ToolButton>
               </Labeled>
@@ -295,7 +295,7 @@ export default function SandboxPage() {
         <Section id="organisms" title="Organisms" description="Full panels composed from molecules.">
           <Specimen
             title="RoomDefaultSidebar"
-            note="Idle state of the right sidebar (nothing selected): room-level details. With unresolved escalations, their full EscalationCards sit on top and the room properties turn read-only. Header and tabs stay fixed; content scrolls inside a 700px frame."
+            note="Idle state of the right sidebar (nothing selected): room-level details. Always read-only (execution phase). Unresolved escalations render as full EscalationCards on top. Header and tabs stay fixed; content scrolls inside a 700px frame."
           >
             <div className="flex flex-wrap gap-6">
               <Labeled label="escalations={[]}">
