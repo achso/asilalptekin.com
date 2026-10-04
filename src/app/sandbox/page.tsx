@@ -276,10 +276,23 @@ export default function SandboxPage() {
         <Section id="organisms" title="Organisms" description="Full panels composed from molecules.">
           <Specimen
             title="RoomDefaultSidebar"
-            note="Idle state of the right sidebar (nothing selected): room-level details. Header and tabs stay fixed; content scrolls inside a 700px frame."
+            note="Idle state of the right sidebar (nothing selected): room-level details. With unresolved escalations, a red warning sits above Statistics. Header and tabs stay fixed; content scrolls inside a 700px frame."
           >
-            <div className="h-[700px] w-fit overflow-hidden rounded-2xl border border-gray-200">
-              <RoomDefaultSidebar onClose={() => record("RoomDefaultSidebar onClose()")} />
+            <div className="flex flex-wrap gap-6">
+              <Labeled label="escalationCount={0}">
+                <div className="h-[700px] w-fit overflow-hidden rounded-2xl border border-gray-200">
+                  <RoomDefaultSidebar onClose={() => record("RoomDefaultSidebar onClose()")} />
+                </div>
+              </Labeled>
+              <Labeled label="escalationCount={2}">
+                <div className="h-[700px] w-fit overflow-hidden rounded-2xl border border-gray-200">
+                  <RoomDefaultSidebar
+                    escalationCount={2}
+                    onViewOnPlan={() => record("RoomDefaultSidebar onViewOnPlan() → select affected wall")}
+                    onClose={() => record("RoomDefaultSidebar onClose()")}
+                  />
+                </div>
+              </Labeled>
             </div>
           </Specimen>
         </Section>

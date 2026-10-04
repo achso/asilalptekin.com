@@ -62,8 +62,11 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
    They're greyed out. Tapping one shows a toast: *"Plan locked for execution.
    Use 'Report Deviation' to alert the remote expert."*
 2. **Nothing is selected yet, so there's no Report Deviation button.** A
-   report has to be anchored to geometry. The hint at the bottom and the
-   sidebar's empty state guide the contractor instead.
+   report has to be anchored to geometry. The sidebar shows the room's
+   details (magicplan's room panel), and the hint at the bottom guides the
+   contractor. While any report is unresolved, a red **Active Escalations**
+   warning sits above the room statistics, and **View on plan** jumps to the
+   affected element.
 3. **Tap a wall, a corner, or the floor (the whole room).** It highlights, the
    sidebar shows the read-only **Details / Photos & Notes / Forms** inspector,
    and **📍 Report Deviation** animates in at the top of the left toolbar, the

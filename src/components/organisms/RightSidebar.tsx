@@ -33,8 +33,8 @@ type Mode = "summary" | "inspector" | "form";
 /**
  * RightSidebar (organism): the contextual panel, three states:
  *
- *  - summary   (nothing selected)          → RoomDefaultSidebar (room details),
- *                                            with Active Escalations on top once any exist
+ *  - summary   (nothing selected)          → RoomDefaultSidebar (room details), with an
+ *                                            Active Escalations warning while any are unresolved
  *  - inspector (wall/corner/room selected) → Details / Photos & Notes / Forms, plus
  *                                            the element's EscalationCard if reported
  *  - form      (Report Deviation tapped)   → DeviationForm takes over the panel
@@ -42,6 +42,7 @@ type Mode = "summary" | "inspector" | "form";
 export function RightSidebar(props: Props) {
   const { selected, captureAnchor } = props;
   const mode: Mode = captureAnchor ? "form" : selected ? "inspector" : "summary";
+  const activeEscalations = props.escalations.filter(isActive); // newest first
 
   return (
     <aside
@@ -75,74 +76,16 @@ export function RightSidebar(props: Props) {
           ) : (
             <RoomDefaultSidebar
               className="w-full"
-              topSlot={
-                props.escalations.length > 0 ? (
-                  <ActiveEscalations
-                    escalations={props.escalations}
-                    onFocus={props.onFocus}
-                    onRevoke={props.onRevoke}
-                  />
-                ) : undefined
+              escalationCount={activeEscalations.length}
+              // Select the newest unresolved report's element → its card opens in the inspector.
+              onViewOnPlan={
+                activeEscalations[0] ? () => props.onFocus(activeEscalations[0].target) : undefined
               }
             />
           )}
         </motion.div>
       </AnimatePresence>
     </aside>
-  );
-}
-
-/** Active Escalations list, shown above the room details once anything is reported. */
-function ActiveEscalations({
-  escalations,
-  onFocus,
-  onRevoke,
-}: {
-  escalations: Escalation[];
-  onFocus: (t: SelectedElement) => void;
-  onRevoke: (id: string) => void;
-}) {
-  const activeCount = escalations.filter(isActive).length;
-  // Open items first, resolved ones sink to the bottom.
-  const sorted = [...escalations].sort((a, b) => Number(!isActive(a)) - Number(!isActive(b)));
-  return (
-    <section aria-label="Active escalations" className="mt-4">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <h3 className="flex items-center gap-2 text-[15px] font-semibold text-mp-muted">
-          Active Escalations
-          <motion.span
-            key={activeCount}
-            initial={{ scale: 1.4 }}
-            animate={{ scale: 1 }}
-            className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[12px] font-bold ${
-              activeCount ? "bg-mp-red text-white" : "bg-mp-line text-mp-muted"
-            }`}
-          >
-            {activeCount}
-          </motion.span>
-        </h3>
-        <span className="text-[12px] text-mp-muted">One-way · no reply needed</span>
-      </div>
-      <ul className="flex flex-col gap-3">
-        <AnimatePresence initial={false}>
-          {sorted.map((e) => (
-            <motion.li
-              key={e.id}
-              layout
-              initial={{ opacity: 0, y: -12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
-            >
-              <EscalationCard
-                {...toEscalationCardProps(e)}
-                onPress={() => onFocus(e.target)}
-                onRevoke={() => onRevoke(e.id)}
-              />
-            </motion.li>
-          ))}
-        </AnimatePresence>
-      </ul>
-    </section>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ChevronRight, ChevronsUpDown, Info, Plus, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, ChevronRight, ChevronsUpDown, Info, MapPin, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -12,9 +12,10 @@ import { cn } from "@/lib/utils";
  * room-level Details panel (statistics, dimensions, affected areas, general).
  * Header and tabs stay put; the content below scrolls on its own.
  *
- * `topSlot` renders above Statistics. RightSidebar uses it for the Active
- * Escalations list once something has been reported, so the summary stays
- * one glance away without hiding the room details.
+ * When the room has unresolved escalations (`escalationCount > 0`), a
+ * high-visibility warning sits above Statistics, so a contractor opening the
+ * room sees the blocker before the numbers. "View on plan" selects the
+ * affected element, which brings up its EscalationCard in the inspector.
  */
 
 export type RoomStat = { value: string; label: string };
@@ -25,7 +26,10 @@ export type RoomDefaultSidebarProps = {
   stats?: RoomStat[];
   ceilingHeight?: string;
   livingAreaPct?: number;
-  topSlot?: React.ReactNode;
+  /** Unresolved escalations in this room; > 0 shows the warning module. */
+  escalationCount?: number;
+  /** "View on plan": select the affected element on the canvas. */
+  onViewOnPlan?: () => void;
   onClose?: () => void;
   className?: string;
 };
@@ -47,7 +51,8 @@ export function RoomDefaultSidebar({
   stats = DEFAULT_STATS,
   ceilingHeight = "3.13 m",
   livingAreaPct = 100,
-  topSlot,
+  escalationCount = 0,
+  onViewOnPlan,
   onClose,
   className,
 }: RoomDefaultSidebarProps) {
@@ -110,7 +115,19 @@ export function RoomDefaultSidebar({
       <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8 pt-2">
         {tab === "Details" ? (
           <div className="flex flex-col">
-            {topSlot}
+            <AnimatePresence initial={false}>
+              {escalationCount > 0 && (
+                <motion.div
+                  key="escalations"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <ActiveEscalationsAlert count={escalationCount} onViewOnPlan={onViewOnPlan} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <SectionHeader
               title="Statistics"
@@ -202,6 +219,41 @@ export function RoomDefaultSidebar({
 }
 
 // ── Parts ───────────────────────────────────────────────────────────────────
+
+/** High-visibility "this room is blocked" warning, shown before the statistics. */
+function ActiveEscalationsAlert({
+  count,
+  onViewOnPlan,
+}: {
+  count: number;
+  onViewOnPlan?: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="mt-4 rounded-r-xl border-l-4 border-red-500 bg-red-50 py-3 pl-3.5 pr-3"
+    >
+      <div className="flex items-start gap-2.5">
+        <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-600" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-bold text-red-700">Active Escalations ({count})</p>
+          <p className="mt-0.5 text-[13px] leading-snug text-red-900/80">
+            Execution blocked pending remote expert review.
+          </p>
+          {onViewOnPlan && (
+            <button
+              type="button"
+              onClick={onViewOnPlan}
+              className="-ml-1 mt-1.5 flex h-9 items-center gap-1 rounded-md px-1 text-[14px] font-semibold text-red-700 underline-offset-2 active:underline"
+            >
+              <MapPin size={15} strokeWidth={2.5} aria-hidden /> View on plan
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SectionHeader({ title, action }: { title: React.ReactNode; action?: React.ReactNode }) {
   return (
