@@ -19,6 +19,19 @@ import type { Escalation, EscalationStatus } from "./types";
  * disabled outright, so the contractor and the expert never edit the same issue.
  */
 
+/**
+ * What a UI element on the plan is showing. "idle" = no report (plan locked,
+ * nothing escalated). "sending" is the brief upload phase before "delivered";
+ * the UI treats it as delivered with a spinner.
+ */
+export type DeviationState = "idle" | EscalationStatus;
+
+export const deviationStateOf = (e: Escalation | undefined): DeviationState => e?.status ?? "idle";
+
+/** Locked = escalated and still waiting on Munich (drawn hatched on the canvas). */
+export const isLockedState = (s: DeviationState) =>
+  s === "sending" || s === "delivered" || s === "in_review";
+
 /** Forward-only transitions the "server" (Munich) may make. */
 export const TRANSITIONS: Record<EscalationStatus, EscalationStatus[]> = {
   sending: ["delivered"],

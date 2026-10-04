@@ -11,6 +11,7 @@ import {
 } from "@/lib/floorplan";
 import type { EscalationStatus, Target, Wall } from "@/lib/types";
 import { sameTarget } from "@/lib/useEscalationStore";
+import { CanvasWall, CanvasWallDefs } from "./canvas/CanvasWall";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
@@ -65,16 +66,7 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
             strokeWidth="0.8"
           />
         </pattern>
-        <pattern
-          id="hatch-red"
-          width="8"
-          height="8"
-          patternUnits="userSpaceOnUse"
-          patternTransform="rotate(45)"
-        >
-          <rect width="8" height="8" fill="#fde3e1" />
-          <line x1="0" y1="0" x2="0" y2="8" stroke={RED} strokeWidth="4" />
-        </pattern>
+        <CanvasWallDefs />
       </defs>
 
       {/* Background: dotted grid outside the room, like magicplan's empty canvas */}
@@ -90,13 +82,19 @@ export function FloorPlanCanvas({ width, height, selected, statusFor, onSelect }
       {WALLS.map((w) => {
         const target: Target = { kind: "wall", id: w.id };
         return (
-          <WallShape
-            key={w.id}
-            wall={w}
-            selected={sameTarget(selected, target)}
-            status={statusFor(target)}
-            onSelect={() => onSelect(target)}
-          />
+          <g key={w.id}>
+            <CanvasWall
+              {...wallLine(w)}
+              thickness={WALL_THICKNESS}
+              label={w.label}
+              deviationState={statusFor(target) ?? "idle"}
+              selected={sameTarget(selected, target)}
+              onSelect={() => onSelect(target)}
+            />
+            {w.openings?.map((o, i) => (
+              <OpeningShape key={i} wall={w} opening={o} />
+            ))}
+          </g>
         );
       })}
 
@@ -161,86 +159,22 @@ function Furniture() {
   );
 }
 
-function WallShape({
-  wall,
-  selected,
-  status,
-  onSelect,
-}: {
-  wall: Wall;
-  selected: boolean;
-  status?: EscalationStatus;
-  onSelect: () => void;
-}) {
-  // Locked = escalated and not yet resolved by Munich → red hatch.
-  const locked = !!status && status !== "resolved";
+/**
+ * Wall centreline for CanvasWall: extended by half a thickness at both ends so
+ * corners overlap cleanly, and shifted outward so the inner face sits exactly
+ * on the room outline (magicplan measures interior dimensions).
+ */
+function wallLine(wall: Wall) {
   const g = wallGeometry(wall);
-  // Extend each wall by half thickness so corners overlap cleanly.
   const ext = WALL_THICKNESS / 2;
-  const x1 = g.a.x - g.ux * ext;
-  const y1 = g.a.y - g.uy * ext;
-  const x2 = g.b.x + g.ux * ext;
-  const y2 = g.b.y + g.uy * ext;
-  // Offset the wall body outward so the inner face sits on the room line.
   const ox = -g.nx * ext;
   const oy = -g.ny * ext;
-
-  return (
-    <g onPointerDown={onSelect} className="cursor-pointer">
-      {/* 48px-wide invisible hit target — gloves, dust, one hand */}
-      <line x1={x1 + ox} y1={y1 + oy} x2={x2 + ox} y2={y2 + oy} stroke="transparent" strokeWidth={48} />
-
-      <motion.line
-        x1={x1 + ox}
-        y1={y1 + oy}
-        x2={x2 + ox}
-        y2={y2 + oy}
-        strokeWidth={WALL_THICKNESS + (selected || status ? 6 : 0)}
-        initial={false}
-        animate={{ stroke: status ? STATUS_STROKE[status] : selected ? BLUE : "#111" }}
-        transition={{ duration: 0.3 }}
-        style={{ pointerEvents: "none" }}
-      />
-      {locked && (
-        <line
-          x1={x1 + ox}
-          y1={y1 + oy}
-          x2={x2 + ox}
-          y2={y2 + oy}
-          stroke="url(#hatch-red)"
-          strokeWidth={WALL_THICKNESS + 2}
-          pointerEvents="none"
-        />
-      )}
-
-      {/* "Munich is looking at this" pulse */}
-      {status === "in_review" && (
-        <motion.line
-          x1={x1 + ox}
-          y1={y1 + oy}
-          x2={x2 + ox}
-          y2={y2 + oy}
-          stroke={AMBER}
-          strokeLinecap="round"
-          initial={{ opacity: 0.5, strokeWidth: WALL_THICKNESS + 6 }}
-          animate={{ opacity: 0, strokeWidth: WALL_THICKNESS + 30 }}
-          transition={{ repeat: Infinity, duration: 1.6, ease: "easeOut" }}
-          style={{ pointerEvents: "none" }}
-        />
-      )}
-
-      {wall.openings?.map((o, i) => (
-        <OpeningShape key={i} wall={wall} opening={o} />
-      ))}
-
-      {selected && !locked && (
-        <>
-          <circle cx={g.a.x} cy={g.a.y} r={11} fill="#fff" stroke="#111" strokeWidth={2} pointerEvents="none" />
-          <circle cx={g.b.x} cy={g.b.y} r={11} fill="#fff" stroke="#111" strokeWidth={2} pointerEvents="none" />
-        </>
-      )}
-    </g>
-  );
+  return {
+    x1: g.a.x - g.ux * ext + ox,
+    y1: g.a.y - g.uy * ext + oy,
+    x2: g.b.x + g.ux * ext + ox,
+    y2: g.b.y + g.uy * ext + oy,
+  };
 }
 
 function OpeningShape({ wall, opening }: { wall: Wall; opening: NonNullable<Wall["openings"]>[number] }) {

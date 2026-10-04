@@ -139,8 +139,11 @@ components/
   AppShell.tsx             Layout: status bar, top bar, canvas, right panel, toasts
   Chrome.tsx               Status bar, top nav (Locked badge, Munich availability),
                            locked tool palette + Report Deviation, undo/redo, floor picker
-  FloorPlanCanvas.tsx      SVG plan: grid, walls, corners, openings, dimensions,
-                           selection + hatched "locked" state
+  FloorPlanCanvas.tsx      SVG plan: grid, corners, openings, dimensions; composes CanvasWall
+  canvas/
+    CanvasWall.tsx         Atom: one wall, styled by `deviationState` (cva variants)
+  escalation/
+    EscalationCard.tsx     Molecule: sidebar card, content + actions driven by `deviationState`
   CanvasOverlay.tsx        Floating "Report Deviation" CTA + "Escalated to Munich" badges
   EscalationsPanel.tsx     Right panel: Active Escalations ↔ inspector tabs ↔ Escalation Form
   EscalationForm.tsx       Structured evidence capture (issue type, photo, voice, blocking)
@@ -153,6 +156,7 @@ lib/
   useVoiceRecorder.ts      MediaRecorder with a simulated fallback
   useMunichCutoff.ts       Time left until 15:00 CET
   demoPhoto.ts             Placeholder site photo for desktop demos
+  utils.ts                 cn(): clsx + tailwind-merge
 ```
 
 State is in memory only (no backend). Reloading the page resets the demo.

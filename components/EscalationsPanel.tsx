@@ -2,31 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import {
-  CheckCheck,
-  CheckCircle2,
-  ChevronRight,
-  CloudUpload,
-  FileText,
-  Eye,
-  Info,
-  Loader2,
-  Lock,
-  Mic,
-  Ruler,
-  Undo2,
-  X,
-} from "lucide-react";
-import { PROJECT, cornerById, issueLabel, wallById } from "@/lib/floorplan";
+import { FileText, Info, Loader2, Lock, X } from "lucide-react";
+import { PROJECT, cornerById, wallById } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
 import type { Escalation, EscalationStatus, Target } from "@/lib/types";
-import {
-  REVOKE_DISABLED_MESSAGE,
-  STATUS_META,
-  canRevoke,
-  isActive,
-} from "@/lib/deviationMachine";
+import { isActive } from "@/lib/deviationMachine";
 import { EscalationForm } from "./EscalationForm";
+import { EscalationCard, toEscalationCardProps } from "./escalation/EscalationCard";
 
 type Props = {
   selected: Target | null;
@@ -144,7 +126,7 @@ function Summary({
                   exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
                 >
                   <EscalationCard
-                    e={e}
+                    {...toEscalationCardProps(e)}
                     onPress={() => onFocus(e.target)}
                     onRevoke={() => onRevoke(e.id)}
                   />
@@ -224,7 +206,10 @@ function Inspector({
           <RevokeInFlight e={pendingRevoke} />
         ) : escalation ? (
           <div className="mb-4">
-            <EscalationCard e={escalation} onRevoke={() => onRevoke(escalation.id)} />
+            <EscalationCard
+              {...toEscalationCardProps(escalation)}
+              onRevoke={() => onRevoke(escalation.id)}
+            />
             <p className="mt-2 px-1 text-[12px] text-mp-muted">{INSPECTOR_HINT[escalation.status]}</p>
           </div>
         ) : null}
@@ -330,140 +315,6 @@ const INSPECTOR_HINT: Record<EscalationStatus, string> = {
   resolved: "Plan updated by Munich. This wall is unblocked. Report again if it still doesn't match.",
 };
 
-const STATUS_PILL: Record<EscalationStatus, { cls: string; icon: React.ReactNode }> = {
-  sending: { cls: "text-mp-blue", icon: <CloudUpload size={13} className="animate-pulse" /> },
-  delivered: { cls: "text-mp-red", icon: <CheckCheck size={13} /> },
-  in_review: { cls: "text-amber-600", icon: <Eye size={13} className="animate-pulse" /> },
-  resolved: { cls: "text-emerald-600", icon: <CheckCircle2 size={13} /> },
-};
-
-/**
- * Active Escalation card. Revoke is offered only while Munich hasn't opened
- * the report; once it's In Review, the button is disabled and an always-visible
- * tooltip explains why (iPad has no hover, so it doesn't rely on one).
- */
-function EscalationCard({
-  e,
-  onPress,
-  onRevoke,
-}: {
-  e: Escalation;
-  onPress?: () => void;
-  onRevoke: () => void;
-}) {
-  const pill = STATUS_PILL[e.status];
-  const resolved = e.status === "resolved";
-  const ring =
-    e.status === "in_review" ? "ring-amber-400" : resolved ? "ring-emerald-500/60" : "ring-transparent";
-
-  return (
-    <motion.div
-      layout
-      className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-2 transition-shadow ${ring} ${
-        resolved ? "opacity-90" : ""
-      }`}
-    >
-      <button
-        onClick={onPress}
-        disabled={!onPress}
-        className="flex w-full gap-3 p-3 text-left disabled:cursor-default"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={e.photoUrl} alt="" className="h-[64px] w-[64px] shrink-0 rounded-xl object-cover" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            {e.blocking && !resolved && (
-              <span className="rounded-md bg-mp-red px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                Blocking
-              </span>
-            )}
-            <span className="truncate text-[15px] font-semibold">{issueLabel(e.issueType)}</span>
-          </div>
-          <div className="truncate text-[13px] text-mp-muted">
-            {e.targetLabel} · {timeAgo(e.createdAt)}
-          </div>
-          <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
-            {e.measuredM !== undefined && e.plannedM !== undefined && (
-              <span className="flex items-center gap-1 font-medium text-mp-ink">
-                <Ruler size={12} /> {e.plannedM.toFixed(2)} → {e.measuredM.toFixed(2)} m
-              </span>
-            )}
-            {e.voiceMemo && (
-              <span className="flex items-center gap-1">
-                <Mic size={12} /> {e.voiceMemo.durationS}s
-              </span>
-            )}
-          </div>
-        </div>
-        {onPress && <ChevronRight size={18} className="mt-1 shrink-0 text-mp-muted" />}
-      </button>
-
-      {/* Footer: status + revoke affordance */}
-      <div className="flex items-center gap-2 border-t border-mp-line px-3 py-2">
-        <motion.span
-          key={e.status}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className={`flex items-center gap-1 text-[13px] font-semibold ${pill.cls}`}
-        >
-          {pill.icon} {STATUS_META[e.status].label}
-        </motion.span>
-        <span className="flex-1" />
-        <RevokeControl status={e.status} onRevoke={onRevoke} />
-      </div>
-      {e.status === "in_review" && <RevokeLockedTip />}
-    </motion.div>
-  );
-}
-
-function RevokeControl({ status, onRevoke }: { status: EscalationStatus; onRevoke: () => void }) {
-  if (status === "resolved") return null;
-
-  if (canRevoke(status)) {
-    return (
-      <motion.button
-        key="revoke"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        whileTap={{ scale: 0.96 }}
-        onClick={onRevoke}
-        className="flex h-10 items-center gap-1.5 rounded-lg border border-mp-line px-3 text-[13px] font-semibold text-mp-ink active:bg-mp-panel"
-      >
-        <Undo2 size={15} /> Revoke Escalation
-      </motion.button>
-    );
-  }
-
-  // In review: revoke is locked (tooltip rendered below the footer, see RevokeLockedTip).
-  return (
-    <button
-      disabled
-      aria-disabled="true"
-      aria-describedby="revoke-locked-tip"
-      className="flex h-10 cursor-not-allowed items-center gap-1.5 rounded-lg border border-mp-line px-3 text-[13px] font-semibold text-mp-muted opacity-50"
-    >
-      <Lock size={14} /> Revoke Escalation
-    </button>
-  );
-}
-
-/** Always visible, because touch has no hover. Caret points at the disabled Revoke button. */
-function RevokeLockedTip() {
-  return (
-    <motion.div
-      id="revoke-locked-tip"
-      role="tooltip"
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative mx-3 mb-3 flex items-center gap-2 rounded-lg bg-mp-ink px-3 py-2 text-[12px] font-medium leading-snug text-white"
-    >
-      <span className="absolute -top-1 right-[72px] h-2 w-2 rotate-45 bg-mp-ink" />
-      <Eye size={14} className="shrink-0 text-amber-300" />
-      {REVOKE_DISABLED_MESSAGE}
-    </motion.div>
-  );
-}
-
 /** Shown while an optimistic revoke waits for the server to confirm. */
 function RevokeInFlight({ e }: { e: Escalation }) {
   return (
@@ -516,10 +367,4 @@ function JobContext() {
       </dl>
     </div>
   );
-}
-
-function timeAgo(ts: number) {
-  const s = Math.round((Date.now() - ts) / 1000);
-  if (s < 60) return "just now";
-  return `${Math.round(s / 60)} min ago`;
 }

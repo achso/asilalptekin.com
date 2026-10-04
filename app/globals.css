@@ -9,6 +9,19 @@
   --color-mp-line: #e3e3e6;
   --color-mp-muted: #8a8a8e;
   --color-mp-red: #e5352b;
+  /* "Munich is looking at this" pulse on an in-review wall (SVG stroke) */
+  --animate-wall-pulse: wall-pulse 1.6s ease-out infinite;
+  @keyframes wall-pulse {
+    from {
+      stroke-width: 20px;
+      stroke-opacity: 0.5;
+    }
+    to {
+      stroke-width: 46px;
+      stroke-opacity: 0;
+    }
+  }
+
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
 }
 
