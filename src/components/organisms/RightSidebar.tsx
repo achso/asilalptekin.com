@@ -33,8 +33,8 @@ type Mode = "summary" | "inspector" | "form";
 /**
  * RightSidebar (organism): the contextual panel, three states:
  *
- *  - summary   (nothing selected)          → RoomDefaultSidebar (room details), with an
- *                                            Active Escalations warning while any are unresolved
+ *  - summary   (nothing selected)          → RoomDefaultSidebar (room details), with the full
+ *                                            EscalationCard(s) on top while any are unresolved
  *  - inspector (wall/corner/room selected) → Details / Photos & Notes / Forms, plus
  *                                            the element's EscalationCard if reported
  *  - form      (Report Deviation tapped)   → DeviationForm takes over the panel
@@ -76,11 +76,14 @@ export function RightSidebar(props: Props) {
           ) : (
             <RoomDefaultSidebar
               className="w-full"
-              escalationCount={activeEscalations.length}
-              // Select the newest unresolved report's element → its card opens in the inspector.
-              onViewOnPlan={
-                activeEscalations[0] ? () => props.onFocus(activeEscalations[0].target) : undefined
-              }
+              // Full cards (photo, status, Revoke) for every unresolved report, newest first.
+              // Tapping a card selects its element on the plan.
+              escalations={activeEscalations.map((e) => ({
+                id: e.id,
+                ...toEscalationCardProps(e),
+                onPress: () => props.onFocus(e.target),
+                onRevoke: () => props.onRevoke(e.id),
+              }))}
             />
           )}
         </motion.div>

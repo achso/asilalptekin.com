@@ -64,9 +64,10 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
 2. **Nothing is selected yet, so there's no Report Deviation button.** A
    report has to be anchored to geometry. The sidebar shows the room's
    details (magicplan's room panel), and the hint at the bottom guides the
-   contractor. While any report is unresolved, a red **Active Escalations**
-   warning sits above the room statistics, and **View on plan** jumps to the
-   affected element.
+   contractor. While any report is unresolved, its full **EscalationCard**
+   (photo, issue, status, Revoke) sits at the top of the room panel. There's
+   no extra click to reach the ticket, and the room properties below turn
+   read-only.
 3. **Tap a wall, a corner, or the floor (the whole room).** It highlights, the
    sidebar shows the read-only **Details / Photos & Notes / Forms** inspector,
    and **📍 Report Deviation** animates in at the top of the left toolbar, the

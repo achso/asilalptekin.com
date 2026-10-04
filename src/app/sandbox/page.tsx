@@ -276,19 +276,31 @@ export default function SandboxPage() {
         <Section id="organisms" title="Organisms" description="Full panels composed from molecules.">
           <Specimen
             title="RoomDefaultSidebar"
-            note="Idle state of the right sidebar (nothing selected): room-level details. With unresolved escalations, a red warning sits above Statistics. Header and tabs stay fixed; content scrolls inside a 700px frame."
+            note="Idle state of the right sidebar (nothing selected): room-level details. With unresolved escalations, their full EscalationCards sit on top and the room properties turn read-only. Header and tabs stay fixed; content scrolls inside a 700px frame."
           >
             <div className="flex flex-wrap gap-6">
-              <Labeled label="escalationCount={0}">
+              <Labeled label="escalations={[]}">
                 <div className="h-[700px] w-fit overflow-hidden rounded-2xl border border-gray-200">
                   <RoomDefaultSidebar onClose={() => record("RoomDefaultSidebar onClose()")} />
                 </div>
               </Labeled>
-              <Labeled label="escalationCount={2}">
+              <Labeled label="escalations={[delivered]}">
                 <div className="h-[700px] w-fit overflow-hidden rounded-2xl border border-gray-200">
                   <RoomDefaultSidebar
-                    escalationCount={2}
-                    onViewOnPlan={() => record("RoomDefaultSidebar onViewOnPlan() → select affected wall")}
+                    escalations={[
+                      {
+                        id: "esc-sandbox-room",
+                        status: "delivered",
+                        issueType: "dimension-mismatch",
+                        timestamp: REPORTED,
+                        statusChangedAt: REPORTED + 2_000,
+                        targetLabel: "North wall",
+                        photoUrl: DEMO_PHOTO,
+                        dimension: { plannedM: 4.55, measuredM: 4.35 },
+                        onPress: () => record("Room card onPress() → select North wall"),
+                        onRevoke: () => record("Room card onRevoke()"),
+                      },
+                    ]}
                     onClose={() => record("RoomDefaultSidebar onClose()")}
                   />
                 </div>
