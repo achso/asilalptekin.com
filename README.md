@@ -93,16 +93,24 @@ sidebar with the intent already filled in.
    pill hides; a red banner says *Tap where the wall starts* (✕ cancels).
 3. **Two taps draw the wall** (UX audit #1). Tap 1 drops the start; the banner
    turns into *Tap where the wall ends* and a rubber band with a live length
-   follows the pointer. Tap 2 sets the end. Points snap to a 5 cm grid, onto an
-   existing wall's inner face within 15 cm, and the end squares up with the
-   start within 10° of horizontal / vertical.
+   follows the pointer. Tap 2 sets the end. Points snap to a 5 cm grid and
+   onto an existing wall's inner face within 15 cm. **Angles are 90°**: a
+   wall started on an existing wall is always perpendicular to it (as in
+   magicplan, no angle to set, only the length follows the pointer); a wall
+   started free in the room is horizontal or vertical.
 4. The wall is drawn as a **red dashed line at true length**, with its length
    beside it, and is selected (title *New wall (proposed)*). The
    `EscalationDraftPane` opens with the **length prefilled** from the drawing
    and the location in words: *Drawn on plan · runs north–south · From North
    wall, 1.40 m from west to 1.40 m from west, 2.40 m from north*. The
    contractor corrects the length with the tape measure reading if it differs.
-5. Delete… removes the drawn wall (nothing was sent).
+5. Once drawn it behaves like an object, and **the plan and the length field
+   are one value**: type a length or tap − / + and the wall redraws; drag its
+   **end handle** to resize and the field follows. Drag the wall (the ring
+   with two arrows) to **move it left / right**: anchored, it slides along
+   its host wall only and stays attached and perpendicular; free, it moves
+   both ways. Every drag is one ⌘Z step.
+6. Delete… removes the drawn wall (nothing was sent).
 
 **From a spot on a wall.** Tap a wall first: as in magicplan, the exact spot
 gets a **blue triangle** with a white notch through the wall, and the toolbar

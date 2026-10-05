@@ -12,6 +12,8 @@ import {
   objectDims,
   reportName,
   lineLength,
+  lineWithLength,
+  snapWallEnd,
   snapWallPoint,
   wallSpotInside,
   wallSpotPoint,
@@ -135,6 +137,7 @@ type Action =
   | { type: "updateDraft"; patch: Partial<Pick<Draft, "measuredM" | "proposed">> }
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
+  | { type: "setLine"; line: WallLine; key: "end" | "move" }
   | { type: "selectItem"; id: string }
   | { type: "moveItem"; id: string; center: Point }
   | { type: "rotateItem"; id: string; rotation: number }
@@ -216,6 +219,11 @@ const selectionAfterDraft = (state: State): SelectedElement | null =>
       ? { type: "wall", id: state.draft.spot.wallId }
       : null
     : state.selectedElement;
+
+const lineMid = (l: WallLine): Point => ({
+  x: +((l.a.x + l.b.x) / 2).toFixed(2),
+  y: +((l.a.y + l.b.y) / 2).toFixed(2),
+});
 
 let itemSeq = 0;
 const newItem = (center: Point, rotation = 0): GhostItem => ({ id: `item-${Date.now()}-${itemSeq++}`, center, rotation });
@@ -327,9 +335,29 @@ function reducer(state: State, action: Action): State {
       };
     }
 
-    case "updateDraft":
-      if (!state.draft) return state;
-      return withHistory(state, { ...state.draft, ...action.patch }, `draft:${Object.keys(action.patch).sort().join(",")}`);
+    case "updateDraft": {
+      const d = state.draft;
+      if (!d) return state;
+      const next = { ...d, ...action.patch };
+      // A drawn wall and its length are one value: typing a length redraws it.
+      if (d.line && action.patch.measuredM != null && action.patch.measuredM >= 0.05) {
+        next.line = lineWithLength(d.line, action.patch.measuredM);
+        next.marker = lineMid(next.line);
+      }
+      return withHistory(state, next, `draft:${Object.keys(action.patch).sort().join(",")}`);
+    }
+
+    case "setLine": {
+      // Canvas edits of a drawn wall (drag the end = resize, drag the body =
+      // move). The length field follows. One gesture = one undo step.
+      const d = state.draft;
+      if (!d?.line) return state;
+      return withHistory(
+        state,
+        { ...d, line: action.line, marker: lineMid(action.line), measuredM: lineLength(action.line) },
+        `line:${action.key}`,
+      );
+    }
 
     case "startGhost": {
       if (state.draft) return askDiscard(state, action);
@@ -382,7 +410,7 @@ function reducer(state: State, action: Action): State {
         if (!state.wallStart) return { ...state, wallStart: snapWallPoint(action.point) };
         // Tap 2: the end. The wall now has direction and true length: open the
         // pane with the drawn length prefilled. A tap on the start is ignored.
-        const line = { a: state.wallStart, b: snapWallPoint(action.point, state.wallStart) };
+        const line = { a: state.wallStart, b: snapWallEnd(state.wallStart, action.point) };
         const length = lineLength(line);
         if (length < 0.2) return state;
         return {
@@ -395,7 +423,7 @@ function reducer(state: State, action: Action): State {
             intent: "missing-element",
             category: WALL_CATEGORY,
             line,
-            marker: { x: +((line.a.x + line.b.x) / 2).toFixed(2), y: +((line.a.y + line.b.y) / 2).toFixed(2) },
+            marker: lineMid(line),
             measuredM: length,
           },
         };
@@ -711,6 +739,11 @@ export function useDeviationState() {
   );
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   /** Slide an inserted element along the wall it's attached to. */
+  /** Resize (drag the end) or move (drag the body) the drawn wall. */
+  const setLine = useCallback(
+    (line: WallLine, key: "end" | "move") => dispatch({ type: "setLine", line, key }),
+    [],
+  );
   const selectItem = useCallback((id: string) => dispatch({ type: "selectItem", id }), []);
   const moveItem = useCallback((id: string, center: Point) => dispatch({ type: "moveItem", id, center }), []);
   const rotateItem = useCallback((id: string, rotation: number) => dispatch({ type: "rotateItem", id, rotation }), []);
@@ -890,6 +923,7 @@ export function useDeviationState() {
     updateDraft,
     startGhostDraft,
     placeGhost,
+    setLine,
     selectItem,
     moveItem,
     rotateItem,

@@ -13,13 +13,16 @@ import {
   toPx,
   wallGeometry,
   GHOST_ITEM_SIZE,
+  lineHost,
   lineLength,
+  snapWallEnd,
   snapWallPoint,
+  translateLine,
   wallSpotAt,
   wallSpotPx,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { EscalationStatus, GhostItem, Point, SelectedElement, Wall, WallLine, WallSpot } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
@@ -62,6 +65,8 @@ type Props = {
   /** Drawing a wall (two taps): the first tap, once made. */
   wallStart?: Point | null;
   drawingWall?: boolean;
+  /** The drawn wall: resized (end) or moved (body) on the canvas. */
+  onLineChange?: (line: WallLine, key: "end" | "move") => void;
   /** Inserted objects: select / drag / rotate a copy. */
   onSelectItem?: (id: string) => void;
   onMoveItem?: (id: string, center: Point) => void;
@@ -104,6 +109,7 @@ export function FloorPlan({
   onSelectItem,
   onMoveItem,
   onRotateItem,
+  onLineChange,
   onPlace,
   markers,
   onDimensionTap,
@@ -312,7 +318,9 @@ export function FloorPlan({
           onRotate={onRotateItem}
         />
       ) : (
-        draftGhost?.line && <GhostLine line={draftGhost.line} color={GHOST_RED} draft selected={ghostSelected} />
+        draftGhost?.line && (
+          <GhostLine line={draftGhost.line} color={GHOST_RED} draft selected={ghostSelected} onChange={onLineChange} />
+        )
       )}
       {drawingWall && <WallPreview start={wallStart} hover={hover} />}
     </svg>
@@ -476,11 +484,14 @@ function GhostLine({
   color,
   draft = false,
   selected = false,
+  onChange,
 }: {
   line: WallLine;
   color: string;
   draft?: boolean;
   selected?: boolean;
+  /** Draft only: drag the end handle to resize, the body to move (left / right when anchored). */
+  onChange?: (line: WallLine, key: "end" | "move") => void;
 }) {
   const a = toPx(line.a);
   const b = toPx(line.b);
@@ -488,10 +499,46 @@ function GhostLine({
   // Label offset to the line's side (perpendicular), so it never sits on it.
   const nx = -(b.y - a.y) / len;
   const ny = (b.x - a.x) / len;
-  const mid = { x: (a.x + b.x) / 2 + nx * 18, y: (a.y + b.y) / 2 + ny * 18 };
+  const editable = draft && !!onChange;
+  // Further out while the move ring shows, so they don't overlap.
+  const off = editable && selected ? 34 : 18;
+  const mid = { x: (a.x + b.x) / 2 + nx * off, y: (a.y + b.y) / 2 + ny * off };
   const vertical = Math.abs(b.y - a.y) > Math.abs(b.x - a.x);
+  const host = lineHost(line.a);
+  const drag = useRef<{ mode: "end" | "move"; p0: Point; line0: WallLine } | null>(null);
+  const toM = (e: React.PointerEvent<SVGElement>) => {
+    const ctm = (e.currentTarget as SVGElement).ownerSVGElement?.getScreenCTM();
+    return ctm ? toMetres(new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse())) : null;
+  };
+  const start = (mode: "end" | "move") => (e: React.PointerEvent<SVGGElement>) => {
+    e.stopPropagation(); // its own gesture: no deselect, no discard prompt
+    const p = toM(e);
+    if (!p) return;
+    (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
+    drag.current = { mode, p0: p, line0: line };
+  };
+  const move = (e: React.PointerEvent<SVGGElement>) => {
+    const d = drag.current;
+    const p = d && toM(e);
+    if (!d || !p) return;
+    onChange!(
+      d.mode === "end" ? { a: d.line0.a, b: snapWallEnd(d.line0.a, p) } : translateLine(d.line0, p.x - d.p0.x, p.y - d.p0.y),
+      d.mode,
+    );
+  };
+  const end = () => (drag.current = null);
+  const gesture = (mode: "end" | "move") =>
+    editable ? { onPointerDown: start(mode), onPointerMove: move, onPointerUp: end, onPointerCancel: end } : {};
+  // Move handle: the native ring with two arrows, along the host wall (or both axes when free).
+  const c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  const along = host ? host.along : { x: (b.x - a.x) / len, y: (b.y - a.y) / len };
   return (
-    <g pointerEvents="none" data-ghost={draft ? "draft" : "submitted"} data-ghost-kind="line" data-selected={selected || undefined}>
+    <g
+      pointerEvents={editable ? "auto" : "none"}
+      data-ghost={draft ? "draft" : "submitted"}
+      data-ghost-kind="line"
+      data-selected={selected || undefined}
+    >
       {selected && (
         <line
           data-ghost-selection
@@ -503,23 +550,36 @@ function GhostLine({
           strokeOpacity={0.45}
           strokeWidth={WALL_THICKNESS + 8}
           strokeLinecap="round"
+          pointerEvents="none"
         />
       )}
-      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth={WALL_THICKNESS - 4} strokeOpacity={0.15} />
-      <line
-        data-ghost-line
-        x1={a.x}
-        y1={a.y}
-        x2={b.x}
-        y2={b.y}
-        stroke={color}
-        strokeWidth={3}
-        strokeDasharray="9 6"
-      />
-      {[a, b].map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={5} fill="#fff" stroke={color} strokeWidth={2.5} />
-      ))}
-      <LengthTag x={mid.x} y={mid.y} text={`${lineLength(line).toFixed(2)} m`} color={color} vertical={vertical} />
+      {/* Body: drag to move (fat-finger hit area). */}
+      <g data-line-body className={editable ? "cursor-grab active:cursor-grabbing" : undefined} style={{ touchAction: "none" }} {...gesture("move")}>
+        {editable && <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth={30} />}
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth={WALL_THICKNESS - 4} strokeOpacity={0.15} />
+        <line data-ghost-line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth={3} strokeDasharray="9 6" />
+        <circle cx={a.x} cy={a.y} r={5} fill="#fff" stroke={color} strokeWidth={2.5} />
+        {editable && selected && (
+          <g data-slide-handle pointerEvents="none">
+            <circle cx={c.x} cy={c.y} r={20} fill="rgba(107, 107, 214, 0.12)" stroke="#6b6bd6" strokeWidth={1.25} />
+            {[1, -1].map((dir) => {
+              const t = { x: c.x + along.x * dir * 14, y: c.y + along.y * dir * 14 };
+              const q = { x: c.x + along.x * dir * 4, y: c.y + along.y * dir * 4 };
+              const px = -along.y * 8;
+              const py = along.x * 8;
+              return <polygon key={dir} points={`${t.x},${t.y} ${q.x + px},${q.y + py} ${q.x - px},${q.y - py}`} fill="#6b6bd6" />;
+            })}
+          </g>
+        )}
+      </g>
+      {/* End: drag to resize (the length field follows). */}
+      <g data-line-end className={editable ? "cursor-grab" : undefined} style={{ touchAction: "none" }} {...gesture("end")}>
+        {editable && <circle cx={b.x} cy={b.y} r={22} fill="transparent" />}
+        <circle cx={b.x} cy={b.y} r={editable && selected ? 8 : 5} fill="#fff" stroke={editable && selected ? BLUE_STRONG : color} strokeWidth={2.5} />
+      </g>
+      <g pointerEvents="none">
+        <LengthTag x={mid.x} y={mid.y} text={`${lineLength(line).toFixed(2)} m`} color={color} vertical={vertical} />
+      </g>
     </g>
   );
 }
@@ -528,7 +588,7 @@ function GhostLine({
 function WallPreview({ start, hover }: { start: Point | null; hover: Point | null }) {
   if (!start && !hover) return null;
   const s = start && toPx(start);
-  const end = start && hover ? snapWallPoint(hover, start) : null;
+  const end = start && hover ? snapWallEnd(start, hover) : null;
   const h = hover && toPx(start ? end! : snapWallPoint(hover));
   return (
     <g pointerEvents="none" data-wall-preview>

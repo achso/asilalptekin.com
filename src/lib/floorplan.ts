@@ -203,26 +203,89 @@ export function wallSpotPoint(spot: WallSpot): Point {
 
 const GRID_M = 0.05;
 const WALL_SNAP_M = 0.15;
-const AXIS_SNAP_DEG = 10;
+
+const snapGrid = (v: number) => +(Math.round(v / GRID_M) * GRID_M).toFixed(2);
 
 /**
- * Snap a tapped point for wall drawing: to a 5 cm grid, onto an existing
- * wall's inner face when close, and (for the end point) square to the start
- * when the line is within 10° of horizontal / vertical. Kept inside the room.
+ * Snap a wall's start point: to a 5 cm grid, and onto an existing wall's inner
+ * face when within 15 cm (then the new wall is anchored to it). Kept inside the room.
  */
-export function snapWallPoint(p: Point, from?: Point | null): Point {
-  let x = Math.round(p.x / GRID_M) * GRID_M;
-  let y = Math.round(p.y / GRID_M) * GRID_M;
-  if (from) {
-    const deg = Math.abs((Math.atan2(y - from.y, x - from.x) * 180) / Math.PI);
-    if (deg < AXIS_SNAP_DEG || deg > 180 - AXIS_SNAP_DEG) y = from.y;
-    else if (Math.abs(deg - 90) < AXIS_SNAP_DEG) x = from.x;
-  }
+export function snapWallPoint(p: Point): Point {
+  let x = snapGrid(p.x);
+  let y = snapGrid(p.y);
   if (Math.abs(x) < WALL_SNAP_M) x = 0;
   if (Math.abs(x - ROOM.widthM) < WALL_SNAP_M) x = ROOM.widthM;
   if (Math.abs(y) < WALL_SNAP_M) y = 0;
   if (Math.abs(y - ROOM.depthM) < WALL_SNAP_M) y = ROOM.depthM;
   return clampToRoom({ x, y });
+}
+
+/**
+ * The existing wall a drawn wall starts on (its start sits on the inner face),
+ * with the inward direction (perpendicular, into the room) and the direction
+ * along that wall. null when the wall starts free in the room.
+ */
+export function lineHost(a: Point): { wallId: string; inward: Point; along: Point } | null {
+  const e = 0.01;
+  if (a.y < e) return { wallId: "w-north", inward: { x: 0, y: 1 }, along: { x: 1, y: 0 } };
+  if (a.y > ROOM.depthM - e) return { wallId: "w-south", inward: { x: 0, y: -1 }, along: { x: 1, y: 0 } };
+  if (a.x < e) return { wallId: "w-west", inward: { x: 1, y: 0 }, along: { x: 0, y: 1 } };
+  if (a.x > ROOM.widthM - e) return { wallId: "w-east", inward: { x: -1, y: 0 }, along: { x: 0, y: 1 } };
+  return null;
+}
+
+const MIN_DRAWN_M = 0.2;
+
+/**
+ * Where a wall from `a` ends, for a pointer at `p`. Anchored to an existing
+ * wall (as in magicplan) it's always perpendicular: only the length follows
+ * the pointer. Free in the room it snaps to 90° (horizontal or vertical).
+ * Length on a 5 cm grid; the end snaps onto a wall face nearby; inside the room.
+ */
+export function snapWallEnd(a: Point, p: Point): Point {
+  const host = lineHost(a);
+  if (host) {
+    const t = Math.max(MIN_DRAWN_M, snapGrid((p.x - a.x) * host.inward.x + (p.y - a.y) * host.inward.y));
+    return lineWithLength({ a, b: { x: a.x + host.inward.x, y: a.y + host.inward.y } }, t).b;
+  }
+  const dx = p.x - a.x;
+  const dy = p.y - a.y;
+  const b = Math.abs(dx) >= Math.abs(dy) ? { x: p.x, y: a.y } : { x: a.x, y: p.y };
+  const s = snapWallPoint(b);
+  return Math.abs(dx) >= Math.abs(dy) ? { x: s.x, y: a.y } : { x: a.x, y: s.y };
+}
+
+/** The same wall at a new length: the start stays, the end moves along its direction (inside the room). */
+export function lineWithLength(l: WallLine, lengthM: number): WallLine {
+  const len = Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y) || 1;
+  const ux = (l.b.x - l.a.x) / len;
+  const uy = (l.b.y - l.a.y) / len;
+  return { a: l.a, b: clampToRoom({ x: l.a.x + ux * lengthM, y: l.a.y + uy * lengthM }) };
+}
+
+/**
+ * Move a drawn wall by (dx, dy). Anchored, it slides along its host wall only
+ * (stays attached, stays perpendicular); free, it moves both ways. On the
+ * grid, and never out of the room.
+ */
+export function translateLine(l: WallLine, dx: number, dy: number): WallLine {
+  const host = lineHost(l.a);
+  let mx = host ? dx * host.along.x : dx;
+  let my = host ? dy * host.along.y : dy;
+  mx = snapGrid(mx);
+  my = snapGrid(my);
+  const minX = Math.min(l.a.x, l.b.x);
+  const maxX = Math.max(l.a.x, l.b.x);
+  const minY = Math.min(l.a.y, l.b.y);
+  const maxY = Math.max(l.a.y, l.b.y);
+  // Keep the whole wall inside; when sliding, 5 cm off the corners (along the
+  // host wall only, so it stays attached to it).
+  const padX = host && host.along.x ? 0.05 : 0;
+  const padY = host && host.along.y ? 0.05 : 0;
+  mx = Math.min(Math.max(mx, padX - minX), ROOM.widthM - padX - maxX);
+  my = Math.min(Math.max(my, padY - minY), ROOM.depthM - padY - maxY);
+  const r = (v: number) => +v.toFixed(2);
+  return { a: { x: r(l.a.x + mx), y: r(l.a.y + my) }, b: { x: r(l.b.x + mx), y: r(l.b.y + my) } };
 }
 
 export const lineLength = (l: WallLine) => +Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y).toFixed(2);

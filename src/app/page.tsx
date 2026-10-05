@@ -318,6 +318,7 @@ export default function Page() {
               onSelectItem={store.selectItem}
               onMoveItem={store.moveItem}
               onRotateItem={store.rotateItem}
+              onLineChange={store.setLine}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
