@@ -30,6 +30,7 @@ const wallBody = cva("fill-none transition-[stroke] duration-300 ease-out", {
   variants: {
     state: {
       idle: "stroke-mp-ink",
+      queued: "stroke-mp-red",
       sending: "stroke-mp-red",
       delivered: "stroke-mp-red",
       in_review: "stroke-amber-500",
@@ -149,6 +150,7 @@ export function CanvasWall({
 
 const STATE_LABEL: Record<DeviationState, string> = {
   idle: "no deviation reported",
+  queued: "saved, waiting for connection",
   sending: "sending to expert",
   delivered: "escalated to expert",
   in_review: "in review by expert",

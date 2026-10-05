@@ -9,6 +9,7 @@ const ARROW_BLUE = "#1a7cf5";
 const SNAP_GREEN = "#22c55e";
 const GHOST_RED = "#EF4444";
 const STATUS: Record<EscalationStatus, string> = {
+  queued: "#9ca3af",
   sending: "#e5352b",
   delivered: "#e5352b",
   in_review: "#f59e0b",

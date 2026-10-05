@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { motion } from "framer-motion";
-import { Check, Eye, Lock } from "lucide-react";
+import { Check, CloudOff, Eye, Lock } from "lucide-react";
 import type { EscalationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/store/deviationMachine";
@@ -28,6 +28,7 @@ const disc = cva(
   {
     variants: {
       status: {
+        queued: "bg-gray-400",
         sending: "bg-red-500",
         delivered: "bg-red-500",
         in_review: "bg-amber-500",
@@ -38,6 +39,7 @@ const disc = cva(
 );
 
 const ICON: Record<EscalationStatus, React.ReactNode> = {
+  queued: <CloudOff size={12} strokeWidth={3} aria-hidden />,
   sending: <Lock size={12} strokeWidth={3} aria-hidden />,
   delivered: <Lock size={12} strokeWidth={3} aria-hidden />,
   in_review: <Eye size={13} strokeWidth={2.75} aria-hidden />,

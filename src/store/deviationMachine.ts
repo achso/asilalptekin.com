@@ -3,11 +3,11 @@ import type { Escalation, EscalationStatus } from "@/lib/types";
 /**
  * Lifecycle of a single deviation, seen from the contractor's iPad.
  *
- *            submit                 Munich opens            Munich updates CAD
- *   idle ───────────▶ sending ──▶ delivered ───────────▶ in_review ───────────▶ resolved
- *    ▲     (locked)      │  (sync)     │                       ✕
- *    │                   │             │                 revoke rejected
- *    └──── revoke ───────┴─────────────┘                 (Munich got there first)
+ *          submit   connection           expert opens        expert updates CAD
+ *   idle ──────▶ queued ──────▶ sending ──▶ delivered ─────────▶ in_review ─────────▶ resolved
+ *    ▲  (saved on    │  (offline    │  (upload)   │                    ✕
+ *    │   the iPad)   │   first)     │             │              revoke rejected
+ *    └──── revoke ───┴──────────────┴─────────────┘              (expert got there first)
  *     (optimistic, confirmed by server after network latency)
  *
  * "idle" is not stored: a wall with no escalation (or a revoked one) is idle.
@@ -30,10 +30,16 @@ export const deviationStateOf = (e: Escalation | undefined): DeviationState => e
 
 /** Locked = escalated and still waiting on Munich (drawn hatched on the canvas). */
 export const isLockedState = (s: DeviationState) =>
-  s === "sending" || s === "delivered" || s === "in_review";
+  s === "queued" || s === "sending" || s === "delivered" || s === "in_review";
+
+/** The full lifecycle, in order (the card's double-tap cheat steps through it). */
+export const LIFECYCLE: EscalationStatus[] = ["queued", "sending", "delivered", "in_review", "resolved"];
+export const nextStatus = (s: EscalationStatus): EscalationStatus | null =>
+  LIFECYCLE[LIFECYCLE.indexOf(s) + 1] ?? null;
 
 /** Forward-only transitions the "server" (Munich) may make. */
 export const TRANSITIONS: Record<EscalationStatus, EscalationStatus[]> = {
+  queued: ["sending"],
   sending: ["delivered"],
   delivered: ["in_review"],
   in_review: ["resolved"],
@@ -44,7 +50,7 @@ export const canTransition = (from: EscalationStatus, to: EscalationStatus) =>
   TRANSITIONS[from].includes(to);
 
 /** The contractor may only pull back a report Munich hasn't started on. */
-export const canRevoke = (s: EscalationStatus) => s === "sending" || s === "delivered";
+export const canRevoke = (s: EscalationStatus) => s === "queued" || s === "sending" || s === "delivered";
 
 /** Active = the wall is still locked/blocked on site. */
 export const isActive = (e: Escalation | undefined) => !!e && e.status !== "resolved";
@@ -55,6 +61,7 @@ export const STATUS_META: Record<
   EscalationStatus,
   { label: string; badge: string; tone: "red" | "amber" | "green" }
 > = {
+  queued: { label: "Saved", badge: "Waiting for connection", tone: "red" },
   sending: { label: "Sending", badge: "Escalated to expert", tone: "red" },
   delivered: { label: "Delivered", badge: "Escalated to expert", tone: "red" },
   in_review: { label: "In Review", badge: "Expert is reviewing", tone: "amber" },

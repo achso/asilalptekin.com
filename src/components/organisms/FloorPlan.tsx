@@ -27,6 +27,7 @@ const GREEN = "#16a34a";
 
 /** Outer stroke colour per deviation state. In review keeps the red hatch, framed amber. */
 const STATUS_STROKE: Record<EscalationStatus, string> = {
+  queued: RED,
   sending: RED,
   delivered: RED,
   in_review: AMBER,
@@ -245,6 +246,7 @@ const roomTint = cva("pointer-events-none transition-[fill,opacity] duration-300
   variants: {
     state: {
       idle: "fill-transparent",
+      queued: "fill-[url(#canvas-wall-hatch)] opacity-25",
       sending: "fill-[url(#canvas-wall-hatch)] opacity-25",
       delivered: "fill-[url(#canvas-wall-hatch)] opacity-25",
       in_review: "fill-amber-400/20",

@@ -40,6 +40,7 @@ const NORTH_WALL: SelectedElement = { type: "wall", id: "w-north" };
 
 /** Every lifecycle state an escalated element's card can be in. */
 const CARD_STATES: { status: EscalationStatus; caption: string; changedAt: number }[] = [
+  { status: "queued", caption: "offline · saved on the iPad, revocable", changedAt: REPORTED },
   { status: "sending", caption: "uploading, revocable", changedAt: REPORTED },
   { status: "delivered", caption: "revocable", changedAt: REPORTED + 2_000 },
   { status: "in_review", caption: "revoke locked", changedAt: OPENED },

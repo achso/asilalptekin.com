@@ -326,6 +326,7 @@ export default function Page() {
             onFocus={(el) => store.selectElement(el.id)}
             onClear={store.clearSelection}
             onRevoke={(id) => store.revokeEscalation(id)}
+            onAdvance={store.advanceEscalation}
             mediaFor={store.mediaFor}
             onMediaChange={store.setMediaFor}
           />

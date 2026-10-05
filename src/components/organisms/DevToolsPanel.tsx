@@ -10,6 +10,7 @@ import type { DemoSettings } from "@/store/useDeviationState";
 const FLIP: EscalationStatus[] = ["delivered", "in_review", "resolved"];
 
 const FLIP_STYLE: Record<EscalationStatus, string> = {
+  queued: "bg-gray-400",
   sending: "bg-sky-500",
   delivered: "bg-mp-red",
   in_review: "bg-amber-500",

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPinCheck, Move3d, PackagePlus, Ruler, Send, Trash2 } from "lucide-react";
+import { Check, MapPinCheck, Move3d, PackagePlus, Ruler, Send, Trash2, TriangleAlert, SearchX } from "lucide-react";
 import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
@@ -9,8 +9,8 @@ import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
-import { PROJECT, ROOM, objectById, objectDims, wallById } from "@/lib/floorplan";
-import type { EscalationDraft, ObjectDims } from "@/lib/types";
+import { ISSUE_TYPES, PROJECT, ROOM, issueLabel, objectById, objectDims, wallById } from "@/lib/floorplan";
+import type { EscalationDraft, IssueType, ObjectDims } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Draft, draftLabel } from "@/store/useDeviationState";
 
@@ -66,6 +66,18 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
     ...(moved ? [{ key: "center", label: "Position" }] : []),
   ];
 
+  // The intercepted action implies the issue type; the contractor can still
+  // change it (e.g. to Site Condition Hazard). Then the intercept's inputs
+  // aren't needed: the photo and note carry it.
+  const naturalType: IssueType = isRemove
+    ? "element-not-on-site"
+    : isWallLength || isObject
+      ? "dimension-mismatch"
+      : "undocumented-element";
+  const [issueType, setIssueType] = useState<IssueType>(naturalType);
+  const [pickingType, setPickingType] = useState(false);
+  const overridden = issueType !== naturalType;
+
   const measured = draft.measuredM ?? null;
   const setMeasured = (v: number) => onChange({ measuredM: v });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -76,7 +88,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
 
   const hasLength = measured !== null && measured > 0;
   const hasPhoto = photos.length > 0;
-  const structuredDone = isRemove || (isObject ? changed.length > 0 : hasLength);
+  const structuredDone = overridden || isRemove || (isObject ? changed.length > 0 : hasLength);
   const missing = [!structuredDone && (isObject ? "change" : "length"), !hasPhoto && "photo"].filter(
     Boolean,
   ) as string[];
@@ -84,16 +96,14 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
 
   const send = () => {
     if (!canSend) return;
+    // Changed type: send the type, photo and note; skip the intercept's values.
+    const keep = !overridden;
     onSubmit({
-      issueType: isRemove
-        ? "element-not-on-site"
-        : isWallLength || isObject
-          ? "dimension-mismatch"
-          : "undocumented-element",
-      plannedM,
-      measuredM: isObject || isRemove ? undefined : (measured ?? undefined),
-      category: intent === "missing-element" ? category : undefined,
-      objectChange: isObject && plan && proposed ? { from: plan, to: proposed } : undefined,
+      issueType,
+      plannedM: keep ? plannedM : undefined,
+      measuredM: keep && !isObject && !isRemove ? (measured ?? undefined) : undefined,
+      category: keep && intent === "missing-element" ? category : undefined,
+      objectChange: keep && isObject && plan && proposed ? { from: plan, to: proposed } : undefined,
       photoUrls: photos,
       note: note.trim() || undefined,
       voiceMemo,
@@ -112,8 +122,8 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
     >
       <ModalHeader
         leading="info"
-        title="Escalation Draft"
-        subtitle={label}
+        title="Report Deviation"
+        subtitle={isWallLength ? `${label} · plan ${plannedM!.toFixed(2)} m` : label}
         onClose={onCancel}
         closeLabel="Discard draft"
         className="border-b border-mp-line"
@@ -123,7 +133,15 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
         {/* "Proposing: …" — what the locked plan intercepted */}
         <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-red-50 text-mp-red">
-            {isRemove ? (
+            {overridden ? (
+              issueType === "site-condition-hazard" ? (
+                <TriangleAlert size={22} aria-hidden />
+              ) : issueType === "element-not-on-site" ? (
+                <SearchX size={22} aria-hidden />
+              ) : (
+                <PackagePlus size={22} aria-hidden />
+              )
+            ) : isRemove ? (
               <Trash2 size={22} aria-hidden />
             ) : isWallLength ? (
               <Ruler size={22} aria-hidden />
@@ -134,16 +152,25 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
             )}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-mp-red">Proposing</span>
+            <span className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-mp-red">Proposing</span>
+              {/* Padded hit area (44 px tall) without pushing the title around. */}
+              <button
+                type="button"
+                onClick={() => setPickingType((v) => !v)}
+                aria-expanded={pickingType}
+                className="-my-3 -mr-1 px-2 py-3 text-[13px] font-semibold text-mp-blue"
+              >
+                {pickingType ? "Done" : "Change type"}
+              </button>
+            </span>
             <span className="block truncate whitespace-nowrap text-[16px] font-semibold text-mp-ink">
-              {isRemove
-                ? "Element Not on Site"
-                : isWallLength || isObject
-                  ? "Dimension Mismatch"
-                  : "Undocumented Element"}
+              {issueLabel(issueType)}
             </span>
             <span className="block text-[12px] leading-snug text-mp-muted">
-              {isRemove
+              {overridden
+                ? `${label} · ${ISSUE_TYPES.find((t) => t.id === issueType)?.description ?? ""}`
+                : isRemove
                 ? `${label} · drawn on the plan, missing on site`
                 : isWallLength
                 ? `${label} · plan ${plannedM!.toFixed(2)} m`
@@ -154,7 +181,45 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           </span>
         </div>
 
-        {isRemove ? (
+        {/* Issue type: title + subtitle, no tooltips. The intercept preselects it. */}
+        {pickingType && (
+          <div role="radiogroup" aria-label="Issue type" className="-mt-2 shrink-0 divide-y divide-mp-line overflow-hidden rounded-2xl bg-white">
+            {ISSUE_TYPES.map((t) => {
+              const active = issueType === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => {
+                    setIssueType(t.id);
+                    setPickingType(false);
+                  }}
+                  className={cn(
+                    "flex min-h-[60px] w-full items-center gap-3 px-4 py-2.5 text-left",
+                    active ? "bg-blue-50" : "bg-white active:bg-gray-50",
+                  )}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate whitespace-nowrap text-[15px] font-semibold text-mp-ink">
+                      {t.label}
+                      {t.id === naturalType && <span className="ml-1.5 text-[12px] font-normal text-mp-muted">· suggested</span>}
+                    </span>
+                    <span className="mt-0.5 block text-[12px] leading-snug text-gray-500">{t.description}</span>
+                  </span>
+                  <Check size={18} strokeWidth={2.75} aria-hidden className={cn("shrink-0 text-mp-blue", active ? "opacity-100" : "opacity-0")} />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {overridden ? (
+          <p className="-mt-2 px-1 text-[13px] leading-snug text-mp-muted">
+            Reported as {issueLabel(issueType)}: the photo and your note carry the details.
+          </p>
+        ) : isRemove ? (
           <p className="-mt-2 px-1 text-[13px] leading-snug text-mp-muted">
             Nothing is deleted: the plan stays locked. The remote expert reviews the removal and
             updates the plan. A photo of the spot is all that&apos;s needed.
@@ -263,16 +328,6 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
 
       {/* Sticky submit with the auto-attached metadata */}
       <div className="border-t border-mp-line bg-white px-4 pb-4 pt-3">
-        <ul aria-label="Attached automatically" className="mb-2.5 flex flex-wrap gap-1.5">
-          {[`Budget €${PROJECT.budgetEur / 1000}k`, "Permit approved", "Plan snapshot"].map((m) => (
-            <li
-              key={m}
-              className="whitespace-nowrap rounded-full bg-mp-panel px-2.5 py-1 text-[11px] font-medium text-mp-muted"
-            >
-              {m}
-            </li>
-          ))}
-        </ul>
         <motion.button
           type="submit"
           whileTap={canSend ? { scale: 0.97 } : undefined}
@@ -287,6 +342,12 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           <Send size={20} />
           {canSend ? "Send to review" : recording ? "Stop recording first" : `Add ${missing.join(" + ")}`}
         </motion.button>
+        {/* Context the expert gets without anyone typing it. */}
+        <p aria-label="Attached automatically" className="mt-2.5 text-[11px] leading-snug text-mp-muted">
+          <span className="font-semibold">Auto-attached to ticket:</span> Plan snapshot, dimensions. Budget: ≈ €
+          {PROJECT.budgetEur.toLocaleString("en-US")}. Permit: {PROJECT.permit}. Site history: last visited 2 years ago
+          (different plan). Remote expert available until 15:00 CET.
+        </p>
       </div>
     </form>
   );

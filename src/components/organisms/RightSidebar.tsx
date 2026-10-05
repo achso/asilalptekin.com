@@ -42,6 +42,8 @@ type Props = {
   onFocus: (t: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
+  /** Reviewer cheat: double-tap a card header → next lifecycle state. */
+  onAdvance?: (id: string) => void;
   /** Standard Photos & Notes per element (store-owned, drives the canvas paperclip). */
   mediaFor: (el: SelectedElement) => ElementMedia;
   onMediaChange: (el: SelectedElement, m: ElementMedia) => void;
@@ -108,6 +110,7 @@ export function RightSidebar(props: Props) {
               onMeasureWall={props.onMeasureWall}
               onMeasureObject={props.onMeasureObject}
               onRevoke={props.onRevoke}
+              onAdvance={props.onAdvance}
               media={mediaFor(selected)}
               onMediaChange={setMediaFor(selected)}
             />
@@ -125,6 +128,7 @@ export function RightSidebar(props: Props) {
                 ...toEscalationCardProps(e),
                 onPress: () => props.onFocus(e.target),
                 onRevoke: () => props.onRevoke(e.id),
+                onAdvance: props.onAdvance && (() => props.onAdvance!(e.id)),
               }))}
             />
           )}
@@ -144,6 +148,7 @@ function Inspector({
   pendingRevoke,
   onClear,
   onRevoke,
+  onAdvance,
   media,
   onMediaChange,
   tabRequest,
@@ -156,6 +161,7 @@ function Inspector({
   pendingRevoke?: Escalation;
   onClear: () => void;
   onRevoke: (id: string) => void;
+  onAdvance?: (id: string) => void;
   media: ElementMedia;
   onMediaChange: (m: ElementMedia) => void;
   tabRequest?: TabRequest | null;
@@ -200,6 +206,7 @@ function Inspector({
             <EscalationCard
               {...toEscalationCardProps(escalation)}
               onRevoke={() => onRevoke(escalation.id)}
+              onAdvance={onAdvance && (() => onAdvance(escalation.id))}
             />
             <p className="mt-2 px-1 text-[12px] text-mp-muted">{INSPECTOR_HINT[escalation.status]}</p>
           </div>
@@ -357,6 +364,7 @@ function LockedValue({ children }: { children: React.ReactNode }) {
 }
 
 const INSPECTOR_HINT: Record<EscalationStatus, string> = {
+  queued: "Saved on this iPad. It sends automatically as soon as there's a connection.",
   sending: "Uploading in the background. You can keep working.",
   delivered: "No reply needed. The expert will update the plan. Carry on with other work.",
   in_review: "The remote expert has this open. Leave this wall as it is for now.",

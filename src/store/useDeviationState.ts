@@ -12,8 +12,10 @@ import type {
   Point,
   SelectedElement,
 } from "@/lib/types";
+import { isExpertOnline } from "@/lib/useMunichCutoff";
 import {
   type DeviationState,
+  nextStatus,
   REVOKE_DISABLED_MESSAGE,
   canRevoke,
   canTransition,
@@ -334,7 +336,7 @@ function reducer(state: State, action: Action): State {
           e,
           ...state.escalations.filter((x) => !(sameElement(x.target, e.target) && x.status === "resolved")),
         ],
-        toast: toast(`${e.targetLabel} sent for review. You can move on.`, "success"),
+        toast: toast(`${e.targetLabel} saved. It sends in the background, you can move on.`, "success"),
       };
     }
 
@@ -553,19 +555,30 @@ export function useDeviationState() {
         target: anchor,
         targetLabel: draftLabel(anchor),
         createdAt: now,
-        status: "sending",
+        // Offline-first: saved on the iPad before anything leaves it.
+        status: "queued",
         statusChangedAt: now,
       };
       dispatch({ type: "submit", escalation });
 
-      // Simulated background upload (offline-first: sending → delivered).
+      // Simulated backend (mock polling):
+      //   queued ─1 s (or when back online)─▶ sending ─1.5 s─▶ delivered
+      //   ─3 s, if the expert is online (before 15:00 CET)─▶ in_review
+      // The transition table rejects any step a revoke got ahead of.
       const id = escalation.id;
-      later(1800, () => dispatch({ type: "serverStatus", id, status: "delivered" }));
-      if (stateRef.current.demo.autoAdvance) {
-        // The transition table rejects these if a revoke landed first.
-        later(7000, () => dispatch({ type: "serverStatus", id, status: "in_review" }));
-        later(14000, () => dispatch({ type: "serverStatus", id, status: "resolved" }));
-      }
+      const set = (status: EscalationStatus) => dispatch({ type: "serverStatus", id, status });
+      const upload = () => {
+        set("sending");
+        later(1500, () => {
+          set("delivered");
+          const demo = stateRef.current.demo;
+          if (isExpertOnline() || demo.autoAdvance) later(3000, () => set("in_review"));
+          if (demo.autoAdvance) later(10000, () => set("resolved"));
+        });
+      };
+      later(1000, () =>
+        navigator.onLine ? upload() : window.addEventListener("online", upload, { once: true }),
+      );
     },
     [later],
   );
@@ -600,6 +613,16 @@ export function useDeviationState() {
     },
     [focusedEscalationId],
   );
+
+  /**
+   * Cheat for reviewers (double-tap a card's header): force the report to the
+   * next lifecycle state now, to see every state without waiting on timers.
+   */
+  const advanceEscalation = useCallback((id: string) => {
+    const e = stateRef.current.escalations.find((x) => x.id === id);
+    const next = e && nextStatus(e.status);
+    if (next) dispatch({ type: "serverStatus", id, status: next, force: true });
+  }, []);
 
   /** Dev tools: Munich-side override; may move backwards for the presentation. */
   const devSetStatus = useCallback(
@@ -675,6 +698,7 @@ export function useDeviationState() {
     submitEscalation,
     revokeEscalation,
     mockExpertReview,
+    advanceEscalation,
     setMediaFor,
     devSetStatus,
     setDemo,

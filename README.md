@@ -171,10 +171,26 @@ countdown to 15:00 Europe/Berlin).
 
 ## Presenter controls: deviation lifecycle and the revoke race
 
+**Simulated backend.** Every report starts **queued** (saved on the iPad) and
+moves on by itself: **sending** after 1 s (or as soon as the iPad is back
+online), **delivered** 1.5 s later, then **in review** 3 s later if the remote
+expert is online (before 15:00 CET). **Cheat for reviewers:** double-tap a
+card's header to force the next state (queued → sending → delivered → in
+review → resolved) without waiting. Resolved reports leave *Active
+Escalations*; select the element to see its resolved card.
+
+**Report Deviation pane.** The intercepted action preselects the issue type;
+*Change type* lists all four with their one-line definitions (Dimension
+Mismatch, Undocumented Element, Element Not on Site, Site Condition Hazard).
+Picking another type keeps the photo and note but drops the intercept's
+values. Under the send button: *Auto-attached to ticket: plan snapshot,
+dimensions, budget ≈ €40,000, permit approved last Tuesday, site history,
+expert availability.*
+
 Each report moves through an explicit state machine (`lib/deviationMachine.ts`):
 
 ```
-idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
+idle ─submit─▶ queued ─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
  ▲                 │           │             ✕
  └──── revoke ─────┴───────────┘      revoke rejected
    (optimistic; confirmed by the server after network latency)
@@ -182,6 +198,7 @@ idle ─submit─▶ sending ─▶ delivered ─▶ in_review ─▶ resolved
 
 | State | Canvas | Escalation card |
 |---|---|---|
+| Queued (offline-first) | Hatched wall, gray cloud-off pin | Gray **Saved** pill, "Reported 14:46 · Offline"; sends by itself when a connection returns; Revoke available |
 | Idle (locked plan) | Black wall, toolbar tools disabled | — |
 | Delivered | Red hatched wall, red lock pin | **Revoke Escalation** available |
 | In Review | Hatched wall framed in amber with a pulse, amber eye pin | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |

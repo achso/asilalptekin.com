@@ -2,7 +2,8 @@
 
 import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCheck, CheckCircle2, ChevronRight, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
+import { useRef } from "react";
+import { CheckCheck, CheckCircle2, ChevronRight, CloudOff, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
 import { issueLabel } from "@/lib/floorplan";
 import type { Escalation, EscalationStatus, IssueType, ObjectState } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ const card = cva(
   {
     variants: {
       status: {
+        queued: "ring-transparent",
         sending: "ring-transparent",
         delivered: "ring-transparent",
         in_review: "ring-amber-400",
@@ -43,10 +45,11 @@ const card = cva(
 );
 
 const statusBadge = cva(
-  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold",
+  "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold",
   {
     variants: {
       status: {
+        queued: "bg-gray-100 text-gray-500",
         sending: "bg-sky-50 text-mp-blue",
         delivered: "bg-red-50 text-mp-red",
         in_review: "bg-amber-100 text-amber-800",
@@ -57,6 +60,8 @@ const statusBadge = cva(
 );
 
 const BADGE: Record<EscalationStatus, { icon: React.ReactNode; text: string }> = {
+  // Short pill; the "waiting for connection" detail sits in the line below.
+  queued: { icon: <CloudOff size={13} />, text: "Saved" },
   sending: { icon: <Loader2 size={13} className="animate-spin" />, text: "Sending…" },
   delivered: { icon: <CheckCheck size={13} />, text: "Delivered" },
   in_review: { icon: <Eye size={13} className="animate-pulse" />, text: "Expert is reviewing" },
@@ -94,6 +99,12 @@ export type EscalationCardProps = {
   voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
+  /**
+   * Reviewer cheat: a double-tap on the card's header forces the next
+   * lifecycle state (queued → sending → delivered → in review → resolved),
+   * so every state can be checked without waiting for the simulated backend.
+   */
+  onAdvance?: () => void;
   className?: string;
 };
 
@@ -115,8 +126,11 @@ export function EscalationCard({
   changeSummary,
   voiceMemoSeconds,
   onPress,
+  onAdvance,
   className,
 }: EscalationCardProps) {
+  const lastTap = useRef(0);
+  const pressTimer = useRef<number | undefined>(undefined);
   const revocable = canRevoke(status); // sending | delivered
   const showBlocking = revocable && blocking;
   const title = issueLabel(issueType);
@@ -130,9 +144,26 @@ export function EscalationCard({
     >
       <button
         type="button"
-        onClick={onPress}
-        disabled={!onPress}
-        className="flex w-full gap-3 p-3 text-left disabled:cursor-default"
+        // Double-tap detection by hand (iPad Safari doesn't reliably fire
+        // dblclick). With the cheat available, a single tap waits 280 ms so a
+        // second tap can claim the gesture before onPress navigates away.
+        onClick={() => {
+          if (!onAdvance) return onPress?.();
+          const now = Date.now();
+          if (now - lastTap.current < 350) {
+            lastTap.current = 0;
+            window.clearTimeout(pressTimer.current);
+            onAdvance();
+            return;
+          }
+          lastTap.current = now;
+          if (onPress) pressTimer.current = window.setTimeout(onPress, 280);
+        }}
+        disabled={!onPress && !onAdvance}
+        className={cn(
+          "flex w-full touch-manipulation gap-3 p-3 text-left disabled:cursor-default",
+          !onPress && "cursor-default",
+        )}
       >
         {photoUrl && (
           <span className="relative size-16 shrink-0">
@@ -256,6 +287,7 @@ function Timestamps({
   return (
     <div className="mt-1 text-[11px] leading-tight tabular-nums text-mp-muted">
       <time dateTime={new Date(timestamp).toISOString()}>Reported {clock(timestamp)}</time>
+      {status === "queued" && " · Offline"}
       {since && statusChangedAt && statusChangedAt > timestamp && (
         <>
           {" · "}
