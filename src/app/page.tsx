@@ -15,7 +15,7 @@ import { TopBar } from "@/components/organisms/TopBar";
 import { PROJECT, dimensionLabelAt, elementInfo, objectById, toPx, wallById } from "@/lib/floorplan";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
-import type { ObjectDims, Point, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, ObjectDims, Point, SelectedElement } from "@/lib/types";
 import type { TabRequest } from "@/lib/useTabRequest";
 import { useDeviationState } from "@/store/useDeviationState";
 import { DiscardDraftDialog } from "@/components/molecules/DiscardDraftDialog";
@@ -167,6 +167,16 @@ export default function Page() {
     };
   })();
 
+  // Elements proposed for removal (Delete…): the open draft wins over sent reports.
+  const removals = useMemo(() => {
+    const out: Record<string, EscalationStatus | "draft"> = {};
+    for (const e of [...store.escalations].reverse()) {
+      if (e.issueType === "element-not-on-site") out[`${e.target.type}:${e.target.id}`] = e.status;
+    }
+    if (draft?.intent === "remove") out[`${draft.anchor.type}:${draft.anchor.id}`] = "draft";
+    return out;
+  }, [store.escalations, draft]);
+
   // Proposals drawn over objects: the open draft (red) wins over a sent report.
   const objectProposals = useMemo(() => {
     const out: Record<string, ObjectProposal> = {};
@@ -236,6 +246,7 @@ export default function Page() {
               objectProposals={objectProposals}
               onRotateObject={onRotateObject}
               onMoveObject={onMoveObject}
+              removals={removals}
             />
 
             <LeftToolbar
@@ -246,6 +257,11 @@ export default function Page() {
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
               inserting={inserting}
               draftOpen={!!draft}
+              canDelete={
+                !!selectedElement && ["wall", "corner", "object"].includes(selectedElement.type)
+              }
+              deleting={draft?.intent === "remove"}
+              onDelete={() => selectedElement && startDraft(selectedElement, "remove")}
               onInsertCategory={startGhostDraft}
               // Insert again stops placing; an open draft stays (only ✕ / Send close it).
               onCancelInsert={() => (draft ? requestDiscard() : cancelDraft())}

@@ -47,6 +47,7 @@ export type CanvasAreaProps = {
   objectProposals?: Record<string, ObjectProposal | undefined>;
   onRotateObject?: (objectId: string, rotation: number) => void;
   onMoveObject?: (objectId: string, center: Point) => void;
+  removals?: Record<string, EscalationStatus | "draft" | undefined>;
   /** Undo / redo for the open draft (the plan itself is locked). */
   undo?: { canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void };
   className?: string;
@@ -67,6 +68,7 @@ export const CanvasArea = memo(function CanvasArea({
   objectProposals,
   onRotateObject,
   onMoveObject,
+  removals,
   undo,
   className,
 }: CanvasAreaProps) {
@@ -96,6 +98,7 @@ export const CanvasArea = memo(function CanvasArea({
         objectProposals={objectProposals}
         onRotateObject={onRotateObject}
         onMoveObject={onMoveObject}
+        removals={removals}
       />
 
       {/* Placement prompt: the canvas is in a different mode, so say so on the canvas. */}

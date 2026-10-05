@@ -64,7 +64,7 @@ button. The contractor does what they'd do in magicplan anyway, the locked
 plan **intercepts** it, and an **Escalation Draft** slides into the right
 sidebar with the intent already filled in.
 
-> This is a *Wizard of Oz* prototype: three interaction paths are wired up
+> This is a *Wizard of Oz* prototype: four interaction paths are wired up
 > end to end, to demonstrate the UX concept. Every other tool stays locked
 > and explains why when tapped.
 
@@ -124,6 +124,16 @@ sidebar with the intent already filled in.
    same proposal, live on the canvas. Send needs at least one change and a
    photo; the card reads e.g. "W 0.95 → 1.10 m · ↻ 0° → 45°", and the
    ghost stays on the plan in its status colour.
+
+### Path 4: "This isn't on site at all"
+
+Select a wall, a corner or an object: **Delete…** in the left toolbar comes
+alive (it stays locked in the room view). Tapping it deletes nothing: it opens
+*Proposing · Element Not on Site · Small table (rectangular)*. The element is
+crossed out on the plan (red dashed outline and cross for an object, a red
+dashed overlay on a wall, a ring on a corner) and only a photo is needed. Once
+sent, the cross-out stays in the report's status colour until the expert
+reviews it.
 
 ### All paths
 

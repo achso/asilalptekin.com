@@ -57,10 +57,12 @@ export type IssueType =
  *   missing-element → Insert → Object → any category → tap the plan → red
  *                     dashed ghost → Undocumented Element → <category>
  *                     (every category is the same trapdoor; only its name travels)
+ *   remove          → select a wall / corner / object → Delete… → Element Not on
+ *                     Site (nothing is deleted; the expert reviews it)
  *   object-change   → select an object → change a value (popover) or rotate it
  *                     → its proposed size / rotation, drawn as a red dashed ghost
  */
-export type DraftIntent = "wall-length" | "missing-element" | "object-change";
+export type DraftIntent = "wall-length" | "missing-element" | "object-change" | "remove";
 
 export type Escalation = {
   id: string;

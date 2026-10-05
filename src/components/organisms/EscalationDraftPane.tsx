@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPinCheck, Move3d, PackagePlus, Ruler, Send } from "lucide-react";
+import { MapPinCheck, Move3d, PackagePlus, Ruler, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
@@ -54,6 +54,8 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
   const label = draftLabel(anchor);
   const isWallLength = intent === "wall-length";
   const isObject = intent === "object-change";
+  // Delete… on a wall / corner / object: nothing to measure, only evidence.
+  const isRemove = intent === "remove";
   const plannedM = isWallLength ? wallById(anchor.id).lengthM : undefined;
   const plan = isObject ? objectDims(objectById(anchor.id)) : null;
   const proposed = draft.proposed;
@@ -74,7 +76,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
 
   const hasLength = measured !== null && measured > 0;
   const hasPhoto = photos.length > 0;
-  const structuredDone = isObject ? changed.length > 0 : hasLength;
+  const structuredDone = isRemove || (isObject ? changed.length > 0 : hasLength);
   const missing = [!structuredDone && (isObject ? "change" : "length"), !hasPhoto && "photo"].filter(
     Boolean,
   ) as string[];
@@ -83,9 +85,13 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
   const send = () => {
     if (!canSend) return;
     onSubmit({
-      issueType: isWallLength || isObject ? "dimension-mismatch" : "undocumented-element",
+      issueType: isRemove
+        ? "element-not-on-site"
+        : isWallLength || isObject
+          ? "dimension-mismatch"
+          : "undocumented-element",
       plannedM,
-      measuredM: isObject ? undefined : (measured ?? undefined),
+      measuredM: isObject || isRemove ? undefined : (measured ?? undefined),
       category: intent === "missing-element" ? category : undefined,
       objectChange: isObject && plan && proposed ? { from: plan, to: proposed } : undefined,
       photoUrls: photos,
@@ -117,7 +123,9 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
         {/* "Proposing: …" — what the locked plan intercepted */}
         <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-red-50 text-mp-red">
-            {isWallLength ? (
+            {isRemove ? (
+              <Trash2 size={22} aria-hidden />
+            ) : isWallLength ? (
               <Ruler size={22} aria-hidden />
             ) : isObject ? (
               <Move3d size={22} aria-hidden />
@@ -128,10 +136,16 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           <span className="min-w-0 flex-1">
             <span className="block text-[11px] font-semibold uppercase tracking-wide text-mp-red">Proposing</span>
             <span className="block truncate whitespace-nowrap text-[16px] font-semibold text-mp-ink">
-              {isWallLength || isObject ? "Dimension Mismatch" : "Undocumented Element"}
+              {isRemove
+                ? "Element Not on Site"
+                : isWallLength || isObject
+                  ? "Dimension Mismatch"
+                  : "Undocumented Element"}
             </span>
             <span className="block text-[12px] leading-snug text-mp-muted">
-              {isWallLength
+              {isRemove
+                ? `${label} · drawn on the plan, missing on site`
+                : isWallLength
                 ? `${label} · plan ${plannedM!.toFixed(2)} m`
                 : isObject
                   ? `${label} · drawn red on the plan`
@@ -140,7 +154,12 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           </span>
         </div>
 
-        {isObject && plan && proposed ? (
+        {isRemove ? (
+          <p className="-mt-2 px-1 text-[13px] leading-snug text-mp-muted">
+            Nothing is deleted: the plan stays locked. The remote expert reviews the removal and
+            updates the plan. A photo of the spot is all that&apos;s needed.
+          </p>
+        ) : isObject && plan && proposed ? (
           <section className="flex flex-col gap-2.5">
             <StepLabel n={1} done={structuredDone}>
               Proposed changes <span className="text-mp-red">*</span>
@@ -213,7 +232,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
         )}
 
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={2} done={hasPhoto}>
+          <StepLabel n={isRemove ? 1 : 2} done={hasPhoto}>
             Evidence <span className="text-mp-red">*</span>
             <span className="ml-1.5 text-[12px] font-normal text-mp-muted">at least 1 photo</span>
           </StepLabel>
@@ -221,7 +240,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
         </section>
 
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={3} done={!!voiceMemo} optional>
+          <StepLabel n={isRemove ? 2 : 3} done={!!voiceMemo} optional>
             Voice memo
           </StepLabel>
           <VoiceMemoToggle onChange={setVoiceMemo} onRecordingChange={setRecording} />

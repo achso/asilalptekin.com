@@ -61,7 +61,10 @@ const ELEMENT_TOOLS: Tool[] = [
  * LeftToolbar (organism)
  *
  * The permit is approved, so the plan is in its execution phase. magicplan's
- * tools stay where users expect them and are locked, except one:
+ * tools stay where users expect them and are locked, except two:
+ *
+ *   Delete… (a wall / corner / object selected) → "Element Not on Site" draft;
+ *     nothing is deleted, the remote expert reviews the removal.
  *
  *   + Insert → native popover (Room · Object · Note · Photo · Form)
  *     Object → category grid (Structural, Plumbing, …)
@@ -79,6 +82,9 @@ export function LeftToolbar({
   mode,
   inserting,
   draftOpen = false,
+  canDelete = false,
+  deleting = false,
+  onDelete,
   onInsertCategory,
   onCancelInsert,
   onInsertOther,
@@ -90,6 +96,11 @@ export function LeftToolbar({
   inserting: boolean;
   /** An escalation draft is open: Insert can't start another (only ✕ / Send close it). */
   draftOpen?: boolean;
+  /** A wall, corner or object is selected: Delete… proposes its removal. */
+  canDelete?: boolean;
+  /** Its removal draft is open: Delete… shows pressed. */
+  deleting?: boolean;
+  onDelete?: () => void;
   /** The universal trapdoor: every category lands here. */
   onInsertCategory: (category: string) => void;
   onCancelInsert: () => void;
@@ -135,6 +146,19 @@ export function LeftToolbar({
           >
             <t.icon size={20} aria-hidden /> {t.label}
             {t.chevron && <ChevronsUpDown size={16} className="text-mp-muted" aria-hidden />}
+          </ToolButton>
+        ) : t.label === "Delete…" && canDelete ? (
+          // A wall / corner / object is selected: Delete is live, but it never
+          // deletes: it proposes "Element Not on Site" for expert review.
+          <ToolButton
+            key={t.label}
+            tone="danger"
+            aria-pressed={deleting}
+            onClick={onDelete}
+            className={cn(deleting && "border-mp-red bg-red-50")}
+            title="Propose removal for expert review"
+          >
+            <t.icon size={20} aria-hidden /> {t.label}
           </ToolButton>
         ) : (
           <ToolButton

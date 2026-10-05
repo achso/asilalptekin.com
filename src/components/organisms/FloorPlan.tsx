@@ -52,6 +52,8 @@ type Props = {
   objectProposals?: Record<string, ObjectProposal | undefined>;
   onRotateObject?: (objectId: string, rotation: number) => void;
   onMoveObject?: (objectId: string, center: Point) => void;
+  /** Elements proposed for removal ("wall:id" → "draft" | status), drawn crossed out. */
+  removals?: Record<string, EscalationStatus | "draft" | undefined>;
 };
 
 const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
@@ -77,6 +79,7 @@ export function FloorPlan({
   objectProposals = {},
   onRotateObject,
   onMoveObject,
+  removals = {},
 }: Props) {
   return (
     <svg
@@ -137,6 +140,9 @@ export function FloorPlan({
         onSelect={onSelect}
         onRotate={(id, r) => onRotateObject?.(id, r)}
         onMove={(id, c) => onMoveObject?.(id, c)}
+        removals={Object.fromEntries(
+          Object.entries(removals).flatMap(([k, v]) => (k.startsWith("object:") ? [[k.slice(7), v]] : [])),
+        )}
       />
 
       {WALLS.map((w) => (
@@ -186,6 +192,44 @@ export function FloorPlan({
               strokeWidth={isSel ? 4 : 2}
             />
           </g>
+        );
+      })}
+
+      {/* Walls / corners proposed for removal: red dashed overlay (status colour once sent). */}
+      {WALLS.map((w) => {
+        const r = removals[`wall:${w.id}`];
+        if (!r) return null;
+        const l = wallLine(w);
+        return (
+          <line
+            key={`rm-${w.id}`}
+            data-removal={r}
+            {...l}
+            stroke={r === "draft" ? GHOST_RED : STATUS_STROKE[r]}
+            strokeWidth={WALL_THICKNESS + 6}
+            strokeDasharray="10 8"
+            strokeOpacity={0.85}
+            pointerEvents="none"
+          />
+        );
+      })}
+      {CORNERS.map((c) => {
+        const r = removals[`corner:${c.id}`];
+        if (!r) return null;
+        const p = toPx(c.p);
+        return (
+          <circle
+            key={`rm-${c.id}`}
+            data-removal={r}
+            cx={p.x}
+            cy={p.y}
+            r={18}
+            fill="none"
+            stroke={r === "draft" ? GHOST_RED : STATUS_STROKE[r]}
+            strokeWidth={3}
+            strokeDasharray="5 4"
+            pointerEvents="none"
+          />
         );
       })}
 

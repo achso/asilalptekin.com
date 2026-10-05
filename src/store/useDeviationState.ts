@@ -217,7 +217,11 @@ function reducer(state: State, action: Action): State {
     }
 
     case "startDraft":
-      if (state.draft && !sameElement(state.draft.anchor, action.anchor)) return askDiscard(state, action);
+      // Another element, or another kind of proposal for this one (e.g. Delete on
+      // an object being resized): ask before replacing the open draft.
+      if (state.draft && (!sameElement(state.draft.anchor, action.anchor) || state.draft.intent !== action.intent)) {
+        return askDiscard(state, action);
+      }
       {
         // Keep selection in sync with the anchor so the canvas highlights it.
         const draft: Draft = { anchor: action.anchor, intent: action.intent, measuredM: action.measuredM ?? null };

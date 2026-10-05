@@ -37,9 +37,12 @@ export function PlanObjects({
   onSelect,
   onRotate,
   onMove,
+  removals = {},
 }: {
   selected: SelectedElement | null;
   proposals: Record<string, ObjectProposal | undefined>;
+  /** Objects proposed for removal (Delete…): "draft" while drafting, else the report's status. */
+  removals?: Record<string, EscalationStatus | "draft" | undefined>;
   onSelect: (el: SelectedElement) => void;
   onRotate: (objectId: string, rotation: number) => void;
   onMove: (objectId: string, center: Point) => void;
@@ -51,6 +54,7 @@ export function PlanObjects({
           key={o.id}
           object={o}
           proposal={proposals[o.id]}
+          removal={removals[o.id]}
           selected={selected?.type === "object" && selected.id === o.id}
           onSelect={() => onSelect({ type: "object", id: o.id })}
           onRotate={(r) => onRotate(o.id, r)}
@@ -68,9 +72,11 @@ function PlanObjectView({
   onSelect,
   onRotate,
   onMove,
+  removal,
 }: {
   object: PlanObject;
   proposal?: ObjectProposal;
+  removal?: EscalationStatus | "draft";
   selected: boolean;
   onSelect: () => void;
   onRotate: (rotation: number) => void;
@@ -151,6 +157,29 @@ function PlanObjectView({
       >
         <ObjectShape kind={o.kind} w={o.widthM * PX_PER_M} h={o.depthM * PX_PER_M} />
       </g>
+
+      {/* Proposed for removal: red dashed outline + cross over the plan's object. */}
+      {removal && (
+        <g
+          data-removal={removal}
+          transform={`translate(${origin.x} ${origin.y}) rotate(${o.rotation})`}
+          stroke={removal === "draft" ? GHOST_RED : STATUS[removal]}
+          strokeWidth={2.5}
+          fill="none"
+          pointerEvents="none"
+        >
+          {(() => {
+            const w = o.widthM * PX_PER_M + 8;
+            const h = o.depthM * PX_PER_M + 8;
+            return (
+              <>
+                <rect x={-w / 2} y={-h / 2} width={w} height={h} strokeDasharray="5 4" />
+                <path d={`M${-w / 2} ${-h / 2} L${w / 2} ${h / 2} M${w / 2} ${-h / 2} L${-w / 2} ${h / 2}`} />
+              </>
+            );
+          })()}
+        </g>
+      )}
 
       {/* Moved: a dashed arrow from where the plan has it to the proposal. */}
       {proposal && movedAway && (
