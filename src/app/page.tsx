@@ -85,6 +85,8 @@ export default function Page() {
                 spot: e.markerSpot,
                 perpendicular: !!e.markerSpot && e.category === "Structural",
                 lengthM: e.measuredM,
+                items: e.items,
+                category: e.category,
               },
             ]
           : [],
@@ -99,13 +101,20 @@ export default function Page() {
             spot: draft.spot,
             perpendicular: !!draft.spot && draft.category === "Structural",
             lengthM: draft.measuredM,
+            items: draft.items,
+            activeItem: draft.activeItem,
+            category: draft.category,
           }
         : null,
-    [draft?.marker, draft?.spot, draft?.category, draft?.measuredM],
+    [draft?.marker, draft?.spot, draft?.category, draft?.measuredM, draft?.items, draft?.activeItem],
   );
   // The blue triangle: on the selected wall's tapped spot, or the spot the
   // open ghost is tied to (it goes once the ghost is moved off it).
-  const tapSpot = draft ? (draft.spot ?? null) : store.wallSpot;
+  const tapSpot = draft
+    ? (draft.spot ?? null)
+    : selectedElement?.type === "wall" && store.wallSpot?.wallId === selectedElement.id
+      ? store.wallSpot
+      : null;
   const onSelect = useCallback(
     (el: SelectedElement | null) => (el ? selectElement(el.id) : clearSelection()),
     [selectElement, clearSelection],
@@ -281,6 +290,9 @@ export default function Page() {
               draftGhost={draftGhost}
               ghostSelected={selectedElement?.type === "ghost"}
               onMoveSpot={store.moveSpot}
+              onSelectItem={store.selectItem}
+              onMoveItem={store.moveItem}
+              onRotateItem={store.rotateItem}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
@@ -297,15 +309,28 @@ export default function Page() {
               // Room view (nothing or the floor selected) → room-level actions;
               // a wall or corner selected → element drafting tools. All locked
               // except Insert, which starts ghost drafting.
-              mode={selectedElement && selectedElement.type !== "room" ? "element" : "room"}
+              mode={
+                !selectedElement || selectedElement.type === "room"
+                  ? "room"
+                  : selectedElement.type === "object" || (selectedElement.type === "ghost" && !!draft?.items)
+                    ? "object"
+                    : "element"
+              }
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
               inserting={inserting}
               draftOpen={!!draft}
               canDelete={
-                !!selectedElement && ["wall", "corner", "object"].includes(selectedElement.type)
+                !!selectedElement && ["wall", "corner", "object", "ghost"].includes(selectedElement.type)
               }
+              // Inserted objects: Duplicate adds a copy; Delete removes the selected one.
+              canDuplicate={selectedElement?.type === "ghost" && !!draft?.items}
+              onDuplicate={store.duplicateItem}
               deleting={draft?.intent === "remove"}
-              onDelete={() => selectedElement && startDraft(selectedElement, "remove")}
+              onDelete={() =>
+                selectedElement?.type === "ghost"
+                  ? store.deleteItem()
+                  : selectedElement && startDraft(selectedElement, "remove")
+              }
               onInsertCategory={startGhostDraft}
               // Insert again stops placing; an open draft stays (only ✕ / Send close it).
               onCancelInsert={() => (draft ? requestDiscard() : cancelDraft())}

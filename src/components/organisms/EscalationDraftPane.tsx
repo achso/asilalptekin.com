@@ -285,14 +285,18 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                       At the marked spot · {wallById(draft.spot.wallId).label}
                     </span>
                     <span className="block text-[12px] leading-snug text-mp-muted">
-                      {wallSpotText(draft.spot)} · drag it along the wall
+                      {wallSpotText(draft.spot)} · {draft.items ? "drag to move, rotate with the arrow" : "drag it along the wall"}
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="block text-[15px] font-semibold text-mp-ink">Placed on plan</span>
+                    <span className="block text-[15px] font-semibold text-mp-ink">
+                      Placed on plan{(draft.items?.length ?? 0) > 1 ? ` · ${draft.items!.length} items` : ""}
+                    </span>
                     <span className="block text-[12px] leading-snug text-mp-muted">
-                      {marker.x.toFixed(2)} m from west · {marker.y.toFixed(2)} m from north · tap the plan to move
+                      {draft.items
+                        ? "Drag to move · rotate with the arrow · Duplicate adds one"
+                        : `${marker.x.toFixed(2)} m from west · ${marker.y.toFixed(2)} m from north · tap the plan to move`}
                     </span>
                   </>
                 )}

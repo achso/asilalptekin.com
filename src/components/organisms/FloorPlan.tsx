@@ -12,14 +12,16 @@ import {
   toMetres,
   toPx,
   wallGeometry,
+  ghostItemSize,
   wallById,
   wallSpotAt,
   wallSpotPx,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
-import type { EscalationStatus, Point, SelectedElement, Wall, WallSpot } from "@/lib/types";
+import type { EscalationStatus, GhostItem, Point, SelectedElement, Wall, WallSpot } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
+import { GhostItems } from "./GhostItems";
 import { type ObjectProposal, PlanObjects } from "./PlanObjects";
 
 const BLUE = "#64aeea";
@@ -56,6 +58,10 @@ type Props = {
   ghostSelected?: boolean;
   /** Drag an inserted element along the wall it's attached to (new offset, metres). */
   onMoveSpot?: (offsetM: number) => void;
+  /** Inserted objects: select / drag / rotate a copy. */
+  onSelectItem?: (id: string) => void;
+  onMoveItem?: (id: string, center: Point) => void;
+  onRotateItem?: (id: string, rotation: number) => void;
   onPlace?: (p: Point) => void;
   /** Ghost walls of submitted proposals, drawn in their status colour. */
   markers?: (GhostSpec & { id: string; status: EscalationStatus })[];
@@ -90,6 +96,9 @@ export function FloorPlan({
   draftGhost,
   ghostSelected = false,
   onMoveSpot,
+  onSelectItem,
+  onMoveItem,
+  onRotateItem,
   onPlace,
   markers,
   onDimensionTap,
@@ -260,10 +269,35 @@ export function FloorPlan({
         );
       })}
 
-      {markers?.map((m) => (
-        <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
-      ))}
-      {draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft selected={ghostSelected} onSlide={onMoveSpot} />}
+      {markers?.map((m) =>
+        m.items ? (
+          <GhostItems
+            key={m.id}
+            items={m.items}
+            size={ghostItemSize(m.category)}
+            category={m.category}
+            color={STATUS_STROKE[m.status]}
+          />
+        ) : (
+          <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
+        ),
+      )}
+      {draftGhost?.items ? (
+        <GhostItems
+          items={draftGhost.items}
+          size={ghostItemSize(draftGhost.category)}
+          category={draftGhost.category}
+          color={GHOST_RED}
+          interactive
+          selected={ghostSelected}
+          activeId={draftGhost.activeItem}
+          onSelect={onSelectItem}
+          onMove={onMoveItem}
+          onRotate={onRotateItem}
+        />
+      ) : (
+        draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft selected={ghostSelected} onSlide={onMoveSpot} />
+      )}
     </svg>
   );
 }
@@ -389,6 +423,10 @@ export type GhostSpec = {
   perpendicular?: boolean;
   /** The measured length, once entered (perpendicular walls grow to it). */
   lengthM?: number | null;
+  /** Inserted objects (drag / rotate / duplicate); drawn by GhostItems instead. */
+  items?: GhostItem[];
+  activeItem?: string;
+  category?: string;
 };
 
 /** magicplan's default length for an inserted wall. */

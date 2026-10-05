@@ -186,6 +186,27 @@ export function wallSpotGhost(spot: WallSpot): Point {
   return { x: +m.x.toFixed(2), y: +m.y.toFixed(2) };
 }
 
+/**
+ * Footprint of an inserted object, by category: a square for anything placed
+ * in the room, a wall segment (≈ 0.9 m) for Structural.
+ */
+export const ghostItemSize = (category?: string) =>
+  category === "Structural" ? { widthM: 0.9, depthM: 0.09 } : { widthM: 0.6, depthM: 0.6 };
+
+/** Centre for an object inserted at a spot: against the wall, inside the room. */
+export function wallSpotInside(spot: WallSpot, depthM: number): Point {
+  const { p, nx, ny } = wallSpotPx(spot);
+  const d = (depthM / 2 + 0.03) * PX_PER_M;
+  const m = toMetres({ x: p.x + nx * d, y: p.y + ny * d });
+  return { x: +m.x.toFixed(2), y: +m.y.toFixed(2) };
+}
+
+/** Keep an object's centre inside the room. */
+export const clampToRoom = (c: Point): Point => ({
+  x: +Math.min(ROOM.widthM, Math.max(0, c.x)).toFixed(2),
+  y: +Math.min(ROOM.depthM, Math.max(0, c.y)).toFixed(2),
+});
+
 /** "1.80 m from the west end": the wall's start corner named by compass direction. */
 export function wallSpotText(spot: WallSpot) {
   const { ux, uy } = wallSpotPx(spot);

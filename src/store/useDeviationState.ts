@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { PROJECT, elementById, elementInfo, objectById, objectDims, wallSpotGhost } from "@/lib/floorplan";
+import {
+  PROJECT,
+  ROOM,
+  clampToRoom,
+  elementById,
+  elementInfo,
+  ghostItemSize,
+  objectById,
+  objectDims,
+  wallSpotGhost,
+  wallSpotInside,
+} from "@/lib/floorplan";
 import type {
   DraftIntent,
   ElementMedia,
@@ -10,6 +21,7 @@ import type {
   EscalationStatus,
   ObjectState,
   Point,
+  GhostItem,
   SelectedElement,
   WallSpot,
 } from "@/lib/types";
@@ -115,6 +127,11 @@ type Action =
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
   | { type: "moveSpot"; offsetM: number }
+  | { type: "selectItem"; id: string }
+  | { type: "moveItem"; id: string; center: Point }
+  | { type: "rotateItem"; id: string; rotation: number }
+  | { type: "duplicateItem" }
+  | { type: "deleteItem" }
   | { type: "cancelDraft" }
   | { type: "undo" }
   | { type: "redo" }
@@ -190,6 +207,15 @@ const selectionAfterDraft = (state: State): SelectedElement | null =>
       : null
     : state.selectedElement;
 
+let itemSeq = 0;
+const newItem = (center: Point, rotation = 0): GhostItem => ({ id: `item-${Date.now()}-${itemSeq++}`, center, rotation });
+
+/** Apply a change to the open draft's items (marker follows the first copy). */
+function withItems(state: State, items: GhostItem[], key: string, extra: Partial<Draft> = {}): State {
+  const d = state.draft!;
+  return withHistory(state, { ...d, ...extra, items, marker: items[0]?.center ?? d.marker }, key);
+}
+
 export type InteractionMode = "select" | "ghost_draft";
 /** The open escalation draft: what was intercepted, where. */
 export type Draft = {
@@ -198,6 +224,13 @@ export type Draft = {
   marker?: Point;
   /** missing-element inserted at the wall's blue triangle: the ghost is tied to that spot. */
   spot?: WallSpot;
+  /**
+   * missing-element objects (everything but a wall attached to a spot): each
+   * copy can be dragged and rotated; Duplicate adds one, Delete removes the
+   * active one. `marker` mirrors the first copy's centre.
+   */
+  items?: GhostItem[];
+  activeItem?: string;
   category?: string;
   /** wall-length / missing-element: the reading entered so far. */
   measuredM?: number | null;
@@ -295,6 +328,27 @@ function reducer(state: State, action: Action): State {
       // so the canvas is back in select mode.
       if (state.wallSpot && state.selectedElement?.type === "wall" && state.selectedElement.id === state.wallSpot.wallId) {
         const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
+        // Anything but a wall: a square against the wall at the spot, free to
+        // drag and rotate from there.
+        if (action.category !== "Structural") {
+          const spot = state.wallSpot;
+          const item = newItem(wallSpotInside(spot, ghostItemSize(action.category).depthM));
+          return {
+            ...state,
+            ...NO_DRAFT,
+            ghostCategory: action.category,
+            selectedElement: anchor,
+            draft: {
+              anchor,
+              intent: "missing-element",
+              marker: item.center,
+              spot,
+              category: action.category,
+              items: [item],
+              activeItem: item.id,
+            },
+          };
+        }
         return {
           ...state,
           ...NO_DRAFT,
@@ -322,15 +376,21 @@ function reducer(state: State, action: Action): State {
       }
       // First tap: the proposal now has a place, so the pane opens, and the
       // inserted element is selected.
+      // From here it's dragged and rotated like any object, so the canvas goes
+      // back to select mode (a tap elsewhere asks to discard).
       const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
+      const item = newItem(action.point);
       return {
         ...state,
+        interactionMode: "select",
         selectedElement: anchor,
         draft: {
           anchor,
           intent: "missing-element",
           marker: action.point,
           category: state.ghostCategory ?? undefined,
+          items: [item],
+          activeItem: item.id,
         },
       };
     }
@@ -341,6 +401,58 @@ function reducer(state: State, action: Action): State {
       const spot = { ...d.spot, offsetM: action.offsetM };
       // One drag = one undo step.
       return withHistory(state, { ...d, spot, marker: wallSpotGhost(spot) }, "spot");
+    }
+
+    case "selectItem": {
+      const d = state.draft;
+      if (!d?.items || d.activeItem === action.id) return state;
+      return { ...state, draft: { ...d, activeItem: action.id } };
+    }
+
+    case "moveItem": {
+      const d = state.draft;
+      if (!d?.items) return state;
+      const items = d.items.map((i) => (i.id === action.id ? { ...i, center: clampToRoom(action.center) } : i));
+      // Dragged away from the wall spot: no longer tied to it (the triangle goes).
+      return withItems(state, items, `item-move:${action.id}`, { activeItem: action.id, spot: undefined });
+    }
+
+    case "rotateItem": {
+      const d = state.draft;
+      if (!d?.items) return state;
+      const items = d.items.map((i) => (i.id === action.id ? { ...i, rotation: action.rotation } : i));
+      return withItems(state, items, `item-rot:${action.id}`, { activeItem: action.id });
+    }
+
+    case "duplicateItem": {
+      const d = state.draft;
+      const src = d?.items?.find((i) => i.id === d.activeItem) ?? d?.items?.at(-1);
+      if (!d?.items || !src) return state;
+      // Native Duplicate: a copy beside the original (clear of it), selected.
+      // No room to the east → it goes to the west.
+      const step = ghostItemSize(d.category).widthM + 0.15;
+      const east = src.center.x + step <= ROOM.widthM;
+      const copy = newItem(clampToRoom({ x: src.center.x + (east ? step : -step), y: src.center.y }), src.rotation);
+      return {
+        ...withItems(state, [...d.items, copy], `item-dup:${copy.id}`, { activeItem: copy.id }),
+        toast: toast(`Copy added: ${d.items.length + 1} × ${d.category ?? "element"} in this report.`, "hint"),
+      };
+    }
+
+    case "deleteItem": {
+      const d = state.draft;
+      if (!d || d.anchor.type !== "ghost") return state;
+      const rest = d.items?.filter((i) => i.id !== d.activeItem) ?? [];
+      // The last one (or an inserted wall): nothing left to propose.
+      if (rest.length === 0) {
+        return {
+          ...state,
+          ...NO_DRAFT,
+          selectedElement: selectionAfterDraft(state),
+          toast: toast(`Proposed ${d.category ?? "element"} removed. Nothing was sent.`, "hint"),
+        };
+      }
+      return withItems(state, rest, `item-del:${d.activeItem}`, { activeItem: rest.at(-1)!.id });
     }
 
     case "cancelDraft":
@@ -583,6 +695,11 @@ export function useDeviationState() {
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   /** Slide an inserted element along the wall it's attached to. */
   const moveSpot = useCallback((offsetM: number) => dispatch({ type: "moveSpot", offsetM }), []);
+  const selectItem = useCallback((id: string) => dispatch({ type: "selectItem", id }), []);
+  const moveItem = useCallback((id: string, center: Point) => dispatch({ type: "moveItem", id, center }), []);
+  const rotateItem = useCallback((id: string, rotation: number) => dispatch({ type: "rotateItem", id, rotation }), []);
+  const duplicateItem = useCallback(() => dispatch({ type: "duplicateItem" }), []);
+  const deleteItem = useCallback(() => dispatch({ type: "deleteItem" }), []);
   const cancelDraft = useCallback(() => dispatch({ type: "cancelDraft" }), []);
   const undo = useCallback(() => dispatch({ type: "undo" }), []);
   const redo = useCallback(() => dispatch({ type: "redo" }), []);
@@ -613,6 +730,7 @@ export function useDeviationState() {
         ...draft,
         marker: open.marker,
         markerSpot: open.spot,
+        items: open.items,
         category: open.category,
         id: `esc-${now}`,
         target: anchor,
@@ -755,6 +873,11 @@ export function useDeviationState() {
     startGhostDraft,
     placeGhost,
     moveSpot,
+    selectItem,
+    moveItem,
+    rotateItem,
+    duplicateItem,
+    deleteItem,
     cancelDraft,
     undo,
     redo,

@@ -57,6 +57,14 @@ const ELEMENT_TOOLS: Tool[] = [
   { icon: Trash2, label: "Delete…", danger: true },
 ];
 
+/** Object-level actions (a plan object or an inserted one selected). */
+const OBJECT_TOOLS: Tool[] = [
+  { icon: Plus, label: "Insert", chevron: true, insert: true },
+  { icon: Scaling, label: "Set Size" },
+  { icon: Copy, label: "Duplicate" },
+  { icon: Trash2, label: "Delete…", danger: true },
+];
+
 /**
  * LeftToolbar (organism)
  *
@@ -90,12 +98,14 @@ export function LeftToolbar({
   onInsertOther,
   onLockedTool,
   spotLabel,
+  canDuplicate = false,
+  onDuplicate,
   canAddWall = false,
   addingWall = false,
   onAddWall,
   className,
 }: {
-  mode: "room" | "element";
+  mode: "room" | "element" | "object";
   /** ghost_draft is on, or its draft is open: Insert shows pressed. */
   inserting: boolean;
   /** An escalation draft is open: Insert can't start another (only ✕ / Send close it). */
@@ -111,6 +121,9 @@ export function LeftToolbar({
   /** Note / Photo / Form: not plan edits; explained, not drafted. */
   onInsertOther: (kind: "note" | "photo" | "form") => void;
   onLockedTool?: () => void;
+  /** An inserted object is selected: Duplicate adds a copy to the same report. */
+  canDuplicate?: boolean;
+  onDuplicate?: () => void;
   /** A wall spot is marked: Add Wall inserts a wall there. */
   canAddWall?: boolean;
   /** That wall's draft is open: Add Wall shows pressed. */
@@ -120,7 +133,7 @@ export function LeftToolbar({
   spotLabel?: string | null;
   className?: string;
 }) {
-  const tools = mode === "room" ? ROOM_TOOLS : ELEMENT_TOOLS;
+  const tools = mode === "room" ? ROOM_TOOLS : mode === "object" ? OBJECT_TOOLS : ELEMENT_TOOLS;
   const [menu, setMenu] = useState<null | "root" | "objects">(null);
   const close = () => setMenu(null);
   const navRef = useRef<HTMLElement>(null);
@@ -142,7 +155,7 @@ export function LeftToolbar({
   return (
     <nav
       ref={navRef}
-      aria-label={mode === "room" ? "Room tools" : "Drafting tools"}
+      aria-label={mode === "room" ? "Room tools" : mode === "object" ? "Object tools" : "Drafting tools"}
       className={cn("relative flex flex-col gap-2.5", className)}
     >
       {tools.map((t) =>
@@ -168,6 +181,11 @@ export function LeftToolbar({
             className={cn(addingWall && "border-mp-blue bg-mp-blue-soft/20 text-mp-blue")}
             title="Propose a wall at the marked spot"
           >
+            <t.icon size={20} aria-hidden /> {t.label}
+          </ToolButton>
+        ) : t.label === "Duplicate" && canDuplicate ? (
+          // An inserted object: one more of the same, in the same report.
+          <ToolButton key={t.label} onClick={onDuplicate} title="Duplicate the proposed object">
             <t.icon size={20} aria-hidden /> {t.label}
           </ToolButton>
         ) : t.label === "Delete…" && canDelete ? (

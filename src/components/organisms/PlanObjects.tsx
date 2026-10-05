@@ -88,7 +88,6 @@ function PlanObjectView({
   const current: ObjectState = proposal?.status === "draft" ? proposal.dims : o;
   const c = toPx(current.center);
   const [dragging, setDragging] = useState(false);
-  const drag = useRef<{ start: number; base: number; moved: boolean } | null>(null);
   const move = useRef<{ x: number; y: number; from: Point; moved: boolean } | null>(null);
   const [moving, setMoving] = useState(false);
 
@@ -101,10 +100,6 @@ function PlanObjectView({
   const h = current.depthM * PX_PER_M;
   const snapped = dragging && current.rotation % 45 === 0;
 
-  const angleAt = (e: React.PointerEvent<SVGElement>) => {
-    const p = svgPoint(e);
-    return (Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI;
-  };
   const movedAway = proposal && Math.hypot(proposal.dims.center.x - o.center.x, proposal.dims.center.y - o.center.y) > 0.005;
   const shown = proposal?.dims.center ? toPx(proposal.dims.center) : origin;
 
@@ -229,56 +224,97 @@ function PlanObjectView({
               pointerEvents="none"
             />
             {/* Rotate handle: native curved double arrow, right of the frame. */}
-            <g
-              role="slider"
-              aria-label={`Rotate ${o.label}`}
-              aria-valuenow={current.rotation}
-              aria-valuemin={0}
-              aria-valuemax={359}
-              data-rotate-handle
-              transform={`translate(${w / 2 + 24} 0)`}
-              className="cursor-grab"
-              style={{ touchAction: "none" }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
-                drag.current = { start: angleAt(e), base: current.rotation, moved: false };
-                setDragging(true);
-              }}
-              onPointerMove={(e) => {
-                const d = drag.current;
-                if (!d) return;
-                const delta = angleAt(e) - d.start;
-                if (Math.abs(delta) > 2) d.moved = true;
-                if (!d.moved) return;
-                onRotate(snapRotation(d.base + delta));
-              }}
-              onPointerUp={() => {
-                const d = drag.current;
-                drag.current = null;
-                setDragging(false);
-                // A tap (no drag) turns it by 45°, to the next snapped angle.
-                if (d && !d.moved) onRotate(normalize(Math.floor(d.base / 45) * 45 + 45));
-              }}
-              onPointerCancel={() => {
-                drag.current = null;
-                setDragging(false);
-              }}
-            >
-              <circle r={22} fill="transparent" />
-              <path
-                d="M-4 -18 A 20 20 0 0 1 -4 18"
-                fill="none"
-                stroke={snapped ? SNAP_GREEN : ARROW_BLUE}
-                strokeWidth={6}
-                strokeLinecap="round"
-              />
-              <path d="M-12 -22 L2 -21 L-6 -10 Z" fill={snapped ? SNAP_GREEN : ARROW_BLUE} />
-              <path d="M-12 22 L2 21 L-6 10 Z" fill={snapped ? SNAP_GREEN : ARROW_BLUE} />
-            </g>
+            <RotateHandle
+              x={w / 2 + 24}
+              center={c}
+              rotation={current.rotation}
+              label={`Rotate ${o.label}`}
+              snapped={snapped}
+              onDragging={setDragging}
+              onRotate={onRotate}
+            />
           </g>
         </g>
       )}
+    </g>
+  );
+}
+
+/**
+ * magicplan's rotate arrow, placed `x` px right of the object's centre (in its
+ * rotated frame). Drag: free rotation with a 45° magnetic snap; tap: +45°.
+ */
+export function RotateHandle({
+  x,
+  center,
+  rotation,
+  label,
+  snapped,
+  onDragging,
+  onRotate,
+}: {
+  x: number;
+  /** The object's centre in canvas px (the pivot). */
+  center: Point;
+  rotation: number;
+  label: string;
+  snapped: boolean;
+  onDragging: (dragging: boolean) => void;
+  onRotate: (rotation: number) => void;
+}) {
+  const drag = useRef<{ start: number; base: number; moved: boolean } | null>(null);
+  const angleAt = (e: React.PointerEvent<SVGElement>) => {
+    const svg = (e.currentTarget as SVGElement).ownerSVGElement!;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM()!.inverse());
+    return (Math.atan2(p.y - center.y, p.x - center.x) * 180) / Math.PI;
+  };
+  const end = () => {
+    drag.current = null;
+    onDragging(false);
+  };
+  return (
+    <g
+      role="slider"
+      aria-label={label}
+      aria-valuenow={rotation}
+      aria-valuemin={0}
+      aria-valuemax={359}
+      data-rotate-handle
+      transform={`translate(${x} 0)`}
+      className="cursor-grab"
+      style={{ touchAction: "none" }}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
+        drag.current = { start: angleAt(e), base: rotation, moved: false };
+        onDragging(true);
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (!d) return;
+        const delta = angleAt(e) - d.start;
+        if (Math.abs(delta) > 2) d.moved = true;
+        if (!d.moved) return;
+        onRotate(snapRotation(d.base + delta));
+      }}
+      onPointerUp={() => {
+        const d = drag.current;
+        end();
+        // A tap (no drag) turns it by 45°, to the next snapped angle.
+        if (d && !d.moved) onRotate(normalize(Math.floor(d.base / 45) * 45 + 45));
+      }}
+      onPointerCancel={end}
+    >
+      <circle r={22} fill="transparent" />
+      <path
+        d="M-4 -18 A 20 20 0 0 1 -4 18"
+        fill="none"
+        stroke={snapped ? SNAP_GREEN : ARROW_BLUE}
+        strokeWidth={6}
+        strokeLinecap="round"
+      />
+      <path d="M-12 -22 L2 -21 L-6 -10 Z" fill={snapped ? SNAP_GREEN : ARROW_BLUE} />
+      <path d="M-12 22 L2 21 L-6 10 Z" fill={snapped ? SNAP_GREEN : ARROW_BLUE} />
     </g>
   );
 }

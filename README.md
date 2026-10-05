@@ -122,6 +122,16 @@ of the coordinates.
   the host wall only; the triangle, split dimensions and the pane's
   *"2.86 m from the west end"* follow. One drag = one ⌘Z step. Tapping it does
   nothing; a tap elsewhere asks to discard the draft, like every other draft.
+- **Inserted objects** (every category but Structural) are a **0.6 × 0.6 m
+  red dashed square** labelled with the category. At a spot it lands against
+  the wall; with no spot, the first tap places it. From then on it behaves like
+  the plan's own objects: **drag** to move it (it leaves the spot and the
+  triangle goes), the native **rotate arrow** turns it (45° snap, green when
+  snapped, tap = +45°). The toolbar switches to object tools: **Duplicate**
+  adds a copy beside it in the same report (*Placed on plan · 2 items*), and
+  **Delete…** removes the selected copy; deleting the last one removes the
+  proposal (nothing was sent). Every move, turn, copy and delete is a ⌘Z step.
+  A free Structural element is the same, as a 0.9 m wall segment.
 - **Add Wall** is live while a spot is marked: it's the shortcut for
   Insert → Object → Structural at the spot (pressed while that draft is open;
   tapping it again asks to discard, like Insert).

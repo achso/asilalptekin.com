@@ -82,6 +82,8 @@ export type Escalation = {
   marker?: Point;
   /** The ghost was inserted at a tapped point on a wall (the native blue triangle). */
   markerSpot?: WallSpot;
+  /** Inserted objects (squares; Structural: a wall segment), one per copy. */
+  items?: GhostItem[];
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */
   photoUrls: string[];
@@ -115,3 +117,6 @@ export type ElementMedia = { photos: string[]; note: string };
  * element to this spot.
  */
 export type WallSpot = { wallId: string; offsetM: number };
+
+/** One inserted (proposed) object on the plan: where it is and how it's turned. */
+export type GhostItem = { id: string; center: Point; rotation: number };
