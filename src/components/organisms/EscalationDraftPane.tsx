@@ -57,7 +57,12 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
   const plannedM = isWallLength ? wallById(anchor.id).lengthM : undefined;
   const plan = isObject ? objectDims(objectById(anchor.id)) : null;
   const proposed = draft.proposed;
-  const changed = plan && proposed ? OBJECT_INPUTS.filter((i) => proposed[i.key] !== plan[i.key]) : [];
+  const moved =
+    !!plan && !!proposed && Math.hypot(proposed.center.x - plan.center.x, proposed.center.y - plan.center.y) > 0.005;
+  const changed = [
+    ...(plan && proposed ? OBJECT_INPUTS.filter((i) => proposed[i.key] !== plan[i.key]) : []),
+    ...(moved ? [{ key: "center", label: "Position" }] : []),
+  ];
 
   const measured = draft.measuredM ?? null;
   const setMeasured = (v: number) => onChange({ measuredM: v });
@@ -144,7 +149,8 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
               </span>
             </StepLabel>
             <p className="px-1 text-[12px] leading-snug text-mp-muted">
-              Edit here, tap a value on the plan, or drag the rotate arrow. The plan stays locked.
+              Edit here, tap a value, drag the object to move it or the arrow to rotate it. The plan
+              stays locked.
             </p>
             {/* One grouped card, a compact row per value (like magicplan's Dimensions list). */}
             <div className="divide-y divide-mp-line overflow-hidden rounded-xl bg-white">
@@ -162,6 +168,22 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                 max={i.key === "rotation" ? 360 : i.key === "heightM" ? ROOM.ceilingM : 99.99}
               />
             ))}
+            {/* Position is visual only: no coordinates, just whether it moved. */}
+            <div className="flex min-h-[60px] items-center gap-2 px-3 py-2">
+              <span className="w-[68px] shrink-0 text-[15px] font-medium text-mp-ink">Position</span>
+              <span className={cn("min-w-0 flex-1 text-[13px] leading-snug", moved ? "font-medium text-mp-red" : "text-mp-muted")}>
+                {moved ? "Moved on plan" : "Drag the object on the plan to move it"}
+              </span>
+              {moved && (
+                <button
+                  type="button"
+                  onClick={() => onChange({ proposed: { ...proposed, center: plan.center } })}
+                  className="h-11 shrink-0 rounded-xl bg-mp-panel px-3 text-[14px] font-semibold active:bg-mp-line"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
             </div>
           </section>
         ) : (

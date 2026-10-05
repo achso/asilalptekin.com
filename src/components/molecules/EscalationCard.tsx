@@ -4,7 +4,7 @@ import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, ChevronRight, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
 import { issueLabel } from "@/lib/floorplan";
-import type { Escalation, EscalationStatus, IssueType, ObjectDims } from "@/lib/types";
+import type { Escalation, EscalationStatus, IssueType, ObjectState } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
 
@@ -273,8 +273,8 @@ const clock = (ts: number) =>
 
 // ── Adapter ─────────────────────────────────────────────────────────────────
 
-/** "W 0.95 → 1.10 m · ↻ 0° → 45°": only the values that changed. */
-export function summarizeObjectChange({ from, to }: { from: ObjectDims; to: ObjectDims }) {
+/** "W 0.95 → 1.10 m · ↻ 0° → 45° · Moved": only what changed; a move is visual, no numbers. */
+export function summarizeObjectChange({ from, to }: { from: ObjectState; to: ObjectState }) {
   const parts: string[] = [];
   const m = (k: "widthM" | "depthM" | "heightM", tag: string) =>
     from[k] !== to[k] && parts.push(`${tag} ${from[k].toFixed(2)} → ${to[k].toFixed(2)} m`);
@@ -282,6 +282,7 @@ export function summarizeObjectChange({ from, to }: { from: ObjectDims; to: Obje
   m("depthM", "D");
   m("heightM", "H");
   if (from.rotation !== to.rotation) parts.push(`↻ ${from.rotation}° → ${to.rotation}°`);
+  if (Math.hypot(from.center.x - to.center.x, from.center.y - to.center.y) > 0.005) parts.push("Moved");
   return parts.join(" · ");
 }
 

@@ -51,6 +51,7 @@ type Props = {
   /** Proposed size / rotation per object (open draft or sent report). */
   objectProposals?: Record<string, ObjectProposal | undefined>;
   onRotateObject?: (objectId: string, rotation: number) => void;
+  onMoveObject?: (objectId: string, center: Point) => void;
 };
 
 const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
@@ -75,6 +76,7 @@ export function FloorPlan({
   onDimensionTap,
   objectProposals = {},
   onRotateObject,
+  onMoveObject,
 }: Props) {
   return (
     <svg
@@ -134,6 +136,7 @@ export function FloorPlan({
         proposals={objectProposals}
         onSelect={onSelect}
         onRotate={(id, r) => onRotateObject?.(id, r)}
+        onMove={(id, c) => onMoveObject?.(id, c)}
       />
 
       {WALLS.map((w) => (

@@ -112,7 +112,11 @@ sidebar with the intent already filled in.
    Propose Correction. Or **rotate**: drag the arrow. Rotation is free and
    snaps magnetically to every 45°; on a snapped angle the arrow turns
    **green** (blue otherwise), and a dashed circle shows the rotation path.
-   A plain tap on the arrow turns it to the next 45°.
+   A plain tap on the arrow turns it to the next 45°. Or **move** it: drag the
+   object itself. Position is shown visually only (no coordinates): the faded
+   original stays where the plan has it, the proposal follows your finger, and
+   a dashed arrow links the two. The draft's *Position* row says "Moved on
+   plan" with a Reset; the card adds "Moved".
 3. The plan stays locked: the original stays drawn (faded) and the proposal
    is drawn over it as a **red dashed ghost**. The draft (*Dimension
    Mismatch · Small table (rectangular)*) lists all four values against the

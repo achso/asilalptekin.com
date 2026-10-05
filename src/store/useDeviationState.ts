@@ -8,7 +8,7 @@ import type {
   Escalation,
   EscalationDraft,
   EscalationStatus,
-  ObjectDims,
+  ObjectState,
   Point,
   SelectedElement,
 } from "@/lib/types";
@@ -38,8 +38,8 @@ import {
  *   startDraft(a, i, m)  wall length popover → Propose Correction → open the pane
  *                        (m: the value typed in the popover, prefilled in the draft)
  *   proposeObjectChange(id, patch)
- *                        object popover / rotate handle → open (or extend) the
- *                        object's draft with the proposed size / rotation
+ *                        object popover / rotate handle / drag → open (or extend)
+ *                        the object's draft with the proposed size / rotation / position
  *   updateDraft(patch)   the pane's inputs edit the same draft values
  *   startGhostDraft(c)   Insert → Object → category c → ghost_draft; the pane opens
  *                        on the first canvas tap ("Undocumented Element → c")
@@ -96,7 +96,7 @@ type State = {
 type Action =
   | { type: "select"; element: SelectedElement | null }
   | { type: "startDraft"; anchor: SelectedElement; intent: DraftIntent; measuredM?: number }
-  | { type: "proposeObject"; id: string; patch: Partial<ObjectDims> }
+  | { type: "proposeObject"; id: string; patch: Partial<ObjectState> }
   | { type: "updateDraft"; patch: Partial<Pick<Draft, "measuredM" | "proposed">> }
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
@@ -137,7 +137,7 @@ export type Draft = {
   /** wall-length / missing-element: the reading entered so far. */
   measuredM?: number | null;
   /** object-change: the proposed size and rotation. */
-  proposed?: ObjectDims;
+  proposed?: ObjectState;
 };
 
 /**
@@ -423,7 +423,7 @@ export function useDeviationState() {
     [],
   );
   const proposeObjectChange = useCallback(
-    (id: string, patch: Partial<ObjectDims>) => dispatch({ type: "proposeObject", id, patch }),
+    (id: string, patch: Partial<ObjectState>) => dispatch({ type: "proposeObject", id, patch }),
     [],
   );
   const updateDraft = useCallback(

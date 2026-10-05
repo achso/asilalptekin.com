@@ -1,4 +1,4 @@
-import type { Corner, IssueType, ObjectDims, PlanObject, Point, SelectedElement, Wall } from "./types";
+import type { Corner, IssueType, ObjectState, PlanObject, Point, SelectedElement, Wall } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -120,7 +120,8 @@ export const PLAN_OBJECTS: PlanObject[] = [
 ];
 
 export const objectById = (id: string) => PLAN_OBJECTS.find((o) => o.id === id)!;
-export const objectDims = ({ widthM, depthM, heightM, rotation }: ObjectDims): ObjectDims => ({
+export const objectDims = ({ widthM, depthM, heightM, rotation, center }: ObjectState): ObjectState => ({
+  center,
   widthM,
   depthM,
   heightM,

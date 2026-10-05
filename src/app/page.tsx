@@ -114,6 +114,11 @@ export default function Page() {
       setMeasure({ kind: "object", id, field, at: toPx(objectById(id).center) }),
     [],
   );
+  // 3b. Drag an object → its proposed position (shown visually, no numbers).
+  const onMoveObject = useCallback(
+    (id: string, center: Point) => proposeObjectChange(id, { center }),
+    [proposeObjectChange],
+  );
   const onRotateObject = useCallback(
     (id: string, rotation: number) => proposeObjectChange(id, { rotation }),
     [proposeObjectChange],
@@ -197,6 +202,7 @@ export default function Page() {
               onDimensionTap={onDimensionTap}
               objectProposals={objectProposals}
               onRotateObject={onRotateObject}
+              onMoveObject={onMoveObject}
             />
 
             <LeftToolbar

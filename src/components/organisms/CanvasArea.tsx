@@ -46,6 +46,7 @@ export type CanvasAreaProps = {
   onDimensionTap?: (wallId: string, at: Point) => void;
   objectProposals?: Record<string, ObjectProposal | undefined>;
   onRotateObject?: (objectId: string, rotation: number) => void;
+  onMoveObject?: (objectId: string, center: Point) => void;
   className?: string;
 };
 
@@ -63,6 +64,7 @@ export const CanvasArea = memo(function CanvasArea({
   onDimensionTap,
   objectProposals,
   onRotateObject,
+  onMoveObject,
   className,
 }: CanvasAreaProps) {
   return (
@@ -90,6 +92,7 @@ export const CanvasArea = memo(function CanvasArea({
         onDimensionTap={onDimensionTap}
         objectProposals={objectProposals}
         onRotateObject={onRotateObject}
+        onMoveObject={onMoveObject}
       />
 
       {/* Placement prompt: the canvas is in a different mode, so say so on the canvas. */}

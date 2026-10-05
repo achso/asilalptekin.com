@@ -10,6 +10,9 @@ export type ElementType = "wall" | "corner" | "room" | "ghost" | "object";
 /** Size and orientation of a plan object (metres, degrees clockwise). */
 export type ObjectDims = { widthM: number; depthM: number; heightM: number; rotation: number };
 
+/** Dims + where it stands (centre, plan metres): what an object proposal holds. */
+export type ObjectState = ObjectDims & { center: Point };
+
 /** A piece of furniture / fixture drawn on the plan (selectable, never editable). */
 export type PlanObject = ObjectDims & {
   id: string;
@@ -70,7 +73,7 @@ export type Escalation = {
    */
   measuredM?: number;
   /** Object change: the plan's values and the proposed ones. */
-  objectChange?: { from: ObjectDims; to: ObjectDims };
+  objectChange?: { from: ObjectState; to: ObjectState };
   /** Only for undocumented-element: the category picked in Insert → Object ("Plumbing"). */
   category?: string;
   /** Only for undocumented-element: where the ghost is, in plan metres. */

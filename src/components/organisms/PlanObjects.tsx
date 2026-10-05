@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PLAN_OBJECTS, PX_PER_M, toPx } from "@/lib/floorplan";
-import type { EscalationStatus, ObjectDims, PlanObject, SelectedElement } from "@/lib/types";
+import { PLAN_OBJECTS, PX_PER_M, ROOM, toPx } from "@/lib/floorplan";
+import type { EscalationStatus, ObjectState, PlanObject, Point, SelectedElement } from "@/lib/types";
 
 const SELECT_BLUE = "#64aeea";
 const ARROW_BLUE = "#1a7cf5";
@@ -16,12 +16,14 @@ const STATUS: Record<EscalationStatus, string> = {
 };
 
 /** A proposed size / rotation drawn over the object: the open draft, or a sent report. */
-export type ObjectProposal = { dims: ObjectDims; status: EscalationStatus | "draft" };
+export type ObjectProposal = { dims: ObjectState; status: EscalationStatus | "draft" };
 
 /**
  * PlanObjects: the furniture and fixtures on the plan, magicplan-style.
  *
  * - Tap selects (blue frame + curved rotate arrow on the right, like native).
+ * - Drag the object to move it (position is shown visually only: the faded
+ *   original stays, the ghost follows the finger, a dashed arrow links them).
  * - Drag the arrow to rotate. Rotation is free, with a magnetic snap to every
  *   45°; on a snapped angle the arrow turns green. A dashed circle shows the
  *   rotation path while dragging. A plain tap on the arrow turns it by 45°.
@@ -34,11 +36,13 @@ export function PlanObjects({
   proposals,
   onSelect,
   onRotate,
+  onMove,
 }: {
   selected: SelectedElement | null;
   proposals: Record<string, ObjectProposal | undefined>;
   onSelect: (el: SelectedElement) => void;
   onRotate: (objectId: string, rotation: number) => void;
+  onMove: (objectId: string, center: Point) => void;
 }) {
   return (
     <g>
@@ -50,6 +54,7 @@ export function PlanObjects({
           selected={selected?.type === "object" && selected.id === o.id}
           onSelect={() => onSelect({ type: "object", id: o.id })}
           onRotate={(r) => onRotate(o.id, r)}
+          onMove={(c) => onMove(o.id, c)}
         />
       ))}
     </g>
@@ -62,28 +67,39 @@ function PlanObjectView({
   selected,
   onSelect,
   onRotate,
+  onMove,
 }: {
   object: PlanObject;
   proposal?: ObjectProposal;
   selected: boolean;
   onSelect: () => void;
   onRotate: (rotation: number) => void;
+  onMove: (center: Point) => void;
 }) {
-  const c = toPx(o.center);
+  const origin = toPx(o.center);
   // The frame and handle follow what's being proposed in the open draft.
-  const current: ObjectDims = proposal?.status === "draft" ? proposal.dims : o;
+  const current: ObjectState = proposal?.status === "draft" ? proposal.dims : o;
+  const c = toPx(current.center);
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ start: number; base: number; moved: boolean } | null>(null);
+  const move = useRef<{ x: number; y: number; from: Point; moved: boolean } | null>(null);
+  const [moving, setMoving] = useState(false);
+
+  const svgPoint = (e: React.PointerEvent<SVGElement>) => {
+    const svg = (e.currentTarget as SVGElement).ownerSVGElement!;
+    return new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM()!.inverse());
+  };
 
   const w = current.widthM * PX_PER_M;
   const h = current.depthM * PX_PER_M;
   const snapped = dragging && current.rotation % 45 === 0;
 
   const angleAt = (e: React.PointerEvent<SVGElement>) => {
-    const svg = (e.currentTarget as SVGElement).ownerSVGElement!;
-    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM()!.inverse());
+    const p = svgPoint(e);
     return (Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI;
   };
+  const movedAway = proposal && Math.hypot(proposal.dims.center.x - o.center.x, proposal.dims.center.y - o.center.y) > 0.005;
+  const shown = proposal?.dims.center ? toPx(proposal.dims.center) : origin;
 
   return (
     <g
@@ -92,13 +108,42 @@ function PlanObjectView({
       aria-label={`${o.label}${proposal?.status === "draft" ? ", change proposed" : ""}`}
       aria-pressed={selected}
       data-object={o.id}
-      className="cursor-pointer outline-none"
-      onPointerDown={onSelect}
+      className={moving ? "cursor-grabbing outline-none" : "cursor-pointer outline-none"}
+      style={{ touchAction: "none" }}
+      onPointerDown={(e) => {
+        onSelect();
+        // Press on the object: becomes a move once the finger travels.
+        (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
+        const p = svgPoint(e);
+        move.current = { x: p.x, y: p.y, from: current.center, moved: false };
+      }}
+      onPointerMove={(e) => {
+        const m = move.current;
+        if (!m) return;
+        const p = svgPoint(e);
+        const dx = p.x - m.x;
+        const dy = p.y - m.y;
+        if (!m.moved && Math.hypot(dx, dy) < 6) return; // a tap, not a drag
+        if (!m.moved) setMoving(true);
+        m.moved = true;
+        onMove({
+          x: +Math.min(ROOM.widthM, Math.max(0, m.from.x + dx / PX_PER_M)).toFixed(2),
+          y: +Math.min(ROOM.depthM, Math.max(0, m.from.y + dy / PX_PER_M)).toFixed(2),
+        });
+      }}
+      onPointerUp={() => {
+        move.current = null;
+        setMoving(false);
+      }}
+      onPointerCancel={() => {
+        move.current = null;
+        setMoving(false);
+      }}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onSelect()}
     >
       {/* The plan's object: faded while a change is proposed over it. */}
       <g
-        transform={`translate(${c.x} ${c.y}) rotate(${o.rotation})`}
+        transform={`translate(${origin.x} ${origin.y}) rotate(${o.rotation})`}
         opacity={proposal ? 0.35 : 1}
         stroke="#111"
         strokeWidth={1.5}
@@ -107,16 +152,24 @@ function PlanObjectView({
         <ObjectShape kind={o.kind} w={o.widthM * PX_PER_M} h={o.depthM * PX_PER_M} />
       </g>
 
+      {/* Moved: a dashed arrow from where the plan has it to the proposal. */}
+      {proposal && movedAway && (
+        <MoveArrow
+          from={origin}
+          to={shown}
+          color={proposal.status === "draft" ? GHOST_RED : STATUS[proposal.status]}
+        />
+      )}
+
       {/* The proposal: red dashed while drafting, status colour once sent. */}
       {proposal && (
         <g
           data-proposal={proposal.status}
-          transform={`translate(${c.x} ${c.y}) rotate(${proposal.dims.rotation})`}
+          transform={`translate(${shown.x} ${shown.y}) rotate(${proposal.dims.rotation})`}
           stroke={proposal.status === "draft" ? GHOST_RED : STATUS[proposal.status]}
           strokeDasharray="4 4"
           strokeWidth={2}
           fill={proposal.status === "draft" ? "rgba(239, 68, 68, 0.1)" : "transparent"}
-          pointerEvents="none"
         >
           <ObjectShape kind={o.kind} w={proposal.dims.widthM * PX_PER_M} h={proposal.dims.depthM * PX_PER_M} />
         </g>
@@ -196,6 +249,23 @@ function PlanObjectView({
           </g>
         </g>
       )}
+    </g>
+  );
+}
+
+/** Dashed line with an arrowhead, from the plan's position to the proposed one. */
+function MoveArrow({ from, to, color }: { from: Point; to: Point; color: string }) {
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  if (len < 12) return null;
+  const ux = (to.x - from.x) / len;
+  const uy = (to.y - from.y) / len;
+  const tip = { x: to.x - ux * 10, y: to.y - uy * 10 };
+  const head = `M${tip.x} ${tip.y} L${tip.x - ux * 10 - uy * 6} ${tip.y - uy * 10 + ux * 6} L${tip.x - ux * 10 + uy * 6} ${tip.y - uy * 10 - ux * 6} Z`;
+  return (
+    <g pointerEvents="none" data-move-arrow>
+      <circle cx={from.x} cy={from.y} r={3.5} fill={color} />
+      <line x1={from.x} y1={from.y} x2={tip.x} y2={tip.y} stroke={color} strokeWidth={2} strokeDasharray="6 5" />
+      <path d={head} fill={color} />
     </g>
   );
 }
