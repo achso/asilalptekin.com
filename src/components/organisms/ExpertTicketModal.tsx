@@ -101,10 +101,9 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
             {review ? "Not sent yet · this is what the expert will receive" : "Read-only"} · {name} report
             {!review && <> · {STATUS_META[e.status].label}</>}
           </p>
-          {/* Who, which job, when: the job before the room (UX audit r2). */}
+          {/* Which job, where, when: the job before the room (UX audit r2). */}
           <p data-ticket-context className="text-[15px] text-mp-ink">
-            {PROJECT.reporter} · {PROJECT.name}, {PROJECT.address} · {PROJECT.floor}, {PROJECT.room} ·{" "}
-            {munichDateTime(e.createdAt)}
+            {PROJECT.name}, {PROJECT.address} · {PROJECT.floor}, {PROJECT.room} · {munichDateTime(e.createdAt)}
           </p>
         </div>
         <button
@@ -138,6 +137,7 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
               {/* Name what it's about: "Dimension Mismatch · North wall". */}
               {e.category ? ` · ${e.category}` : e.target.type !== "ghost" && e.target.type !== "room" ? ` · ${e.targetLabel}` : ""}
             </Row>
+            <Row label="Reported by">{PROJECT.reporter}</Row>
             <Row label="Measured">
               <MeasuredValues e={e} drawnM={drawnM} />
             </Row>

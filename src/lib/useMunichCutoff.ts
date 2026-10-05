@@ -41,7 +41,7 @@ export type ExpertAvailability = {
   pill: string;
   /** Form, under the priority choice. */
   formLine: string;
-  /** Sent card, under the status: when the expert will see it. */
+  /** Sent card, under the status: when the expert is available. */
   seenLine: string;
   /**
    * What the contractor can expect, from their priority. States only what is
@@ -88,23 +88,23 @@ export function expertAvailability(now = new Date()): ExpertAvailability {
   };
   const back = workday && t < start ? "today" : nextWorkday(wd);
   const backAt = `08:00 ${back}`;
-  const morning = back === "today" ? "this morning" : `${back} morning`;
   return {
     online,
     minutesLeft,
-    pill: online ? `Remote expert · available for ${duration(minutesLeft)}` : `Remote expert · back at ${backAt}`,
-    formLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert is back at ${backAt}`,
-    seenLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert sees it at ${backAt}`,
+    // Availability only: when the expert is in, never when they will look at
+    // a report (no one can promise that).
+    pill: online ? `Remote expert · available for ${duration(minutesLeft)}` : `Remote expert · available from ${backAt}`,
+    formLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert available from ${backAt}`,
+    seenLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert available from ${backAt}`,
     priorityLine: (blocked) =>
       !blocked
         ? "No rush · work continues"
         : online
           ? minutesLeft > 30
             ? "Asking for an answer today · expert is in until 15:00"
-            : `Expert leaves in ${minutesLeft} min · may be answered ${nextWorkday(wd)} from 08:00`
-          : `Expert sees this first at ${backAt} · work is stopped`,
-    leaveNote: (blocked) =>
-      blocked && !online ? `You can leave. The answer comes to this iPad ${morning}.` : null,
+            : `Expert leaves in ${minutesLeft} min · available again ${nextWorkday(wd)} from 08:00`
+          : `Expert available from ${backAt} · work is stopped`,
+    leaveNote: (blocked) => (blocked && !online ? "You can leave. The answer will come to this iPad." : null),
     urgency: (blocked, since) => {
       if (!blocked) return "Not blocking";
       const s = new Date(since);

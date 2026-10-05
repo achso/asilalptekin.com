@@ -14,7 +14,6 @@ import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
-import { VoiceMemoToggle } from "@/components/molecules/VoiceMemoToggle";
 import { RoomDefaultSidebar } from "@/components/organisms/RoomDefaultSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
@@ -130,7 +129,7 @@ export default function SandboxPage() {
               </Labeled>
               <Labeled label="StepLabel optional">
                 <StepLabel n={3} done={false} optional>
-                  Voice memo
+                  Note
                 </StepLabel>
               </Labeled>
             </div>
@@ -176,16 +175,9 @@ export default function SandboxPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Specimen
               title="PhotoEvidenceCapture"
-              note="magicplan's Photos & Notes layout: add tile (blue border until the first photo) + 7 slots, then a note. Camera on iPad; demo photo on desktop."
+              note="magicplan's Photos & Notes layout: add tile (blue border until the first photo) + 7 slots, then a Smart Note (type, or tap the mic: simulated speech-to-text). Camera on iPad; demo photo on desktop."
             >
               <PhotoEvidenceDemo onPhotoAdded={(n) => record(`PhotoEvidenceCapture onPhotoAdded → ${n} photo(s)`)} />
-            </Specimen>
-            <Specimen title="VoiceMemoToggle" note="Tap to talk, tap to stop. Simulated if the mic is blocked.">
-              <div style={{ width: CARD_W }}>
-                <VoiceMemoToggle
-                  onChange={(m) => m && record(`VoiceMemoToggle → ${m.durationS}s memo`)}
-                />
-              </div>
             </Specimen>
           </div>
         </Section>

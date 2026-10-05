@@ -3,7 +3,7 @@
 import { useExpertAvailability } from "@/lib/useMunichCutoff";
 import { cn } from "@/lib/utils";
 
-/** "Remote expert · available for 40 more minutes" / "· back at 08:00 tomorrow". */
+/** "Remote expert · available for 40 more minutes" / "· available from 08:00 tomorrow". */
 export function ExpertAvailability() {
   const a = useExpertAvailability();
   if (!a) return null;

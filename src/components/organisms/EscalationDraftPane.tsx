@@ -6,8 +6,7 @@ import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
-import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
-import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
+import { DEFAULT_DICTATION, PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import {
   ASKS,
   ISSUE_TYPES,
@@ -43,6 +42,15 @@ import { type Draft, draftLabel } from "@/store/useDeviationState";
  * (default) or Blocked. The permit date and dimensions are attached
  * automatically. Text is 15 px minimum; one decimal separator (".").
  */
+
+/** What the simulated speech-to-text "hears" on each golden path (MVP). */
+const DICTATION: Record<"wall-length" | "missing-element" | "object-change" | "remove", string> = {
+  "wall-length": DEFAULT_DICTATION,
+  "missing-element":
+    "There is a wall on site that is not on the locked plan. Requesting a plan update before we build against it.",
+  "object-change": "The fixture on site is a different size than the locked plan shows. Requesting confirmation before we install.",
+  remove: "This element is drawn on the locked plan but is not on site. Requesting confirmation that it can be removed.",
+};
 
 /** Below this a reading isn't plausible for a wall or element (UX audit: step 1 check). */
 export const MIN_LENGTH_M = 0.5;
@@ -104,8 +112,6 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
   const setMeasured = (v: number) => onChange({ measuredM: v });
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState("");
-  const [voiceMemo, setVoiceMemo] = useState<VoiceMemo | undefined>();
-  const [recording, setRecording] = useState(false);
   // Priority: an explicit choice, defaulting to "Can continue" (UX audit #5).
   const [blocking, setBlocking] = useState(false);
   const [ask, setAsk] = useState<AskId | null>(null);
@@ -125,14 +131,12 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
       (isObject ? "change" : sameAsPlan ? "new length" : tooShort ? `length ≥ ${MIN_LENGTH_M.toFixed(2)} m` : "length"),
     !hasPhoto && "photo",
   ].filter(Boolean) as string[];
-  const canSend = missing.length === 0 && !!ask && !recording;
+  const canSend = missing.length === 0 && !!ask;
   const sendLabel = canSend
     ? onReview
       ? "Review and send"
       : "Send to review"
-    : recording
-      ? "Stop recording first"
-      : missing.length
+    : missing.length
         ? `Add ${missing.join(" + ")}${ask ? "" : " · pick the ask"}`
         : "Pick what you need back";
 
@@ -148,7 +152,6 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
       objectChange: keep && isObject && plan && proposed ? { from: plan, to: proposed } : undefined,
       photoUrls: photos,
       note: note.trim() || undefined,
-      voiceMemo,
       blocking,
       ask: ask ?? undefined,
       lengthEstimated: keep && intent === "missing-element" && estimated ? true : undefined,
@@ -386,20 +389,14 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
             onPhotosChange={setPhotos}
             note={note}
             onNoteChange={setNote}
+            dictation={DICTATION[isRemove ? "remove" : isWallLength ? "wall-length" : isObject ? "object-change" : "missing-element"]}
           />
-        </section>
-
-        <section className="flex flex-col gap-2.5">
-          <StepLabel n={isRemove ? 2 : 3} done={!!voiceMemo} optional>
-            Voice memo
-          </StepLabel>
-          <VoiceMemoToggle onChange={setVoiceMemo} onRecordingChange={setRecording} />
         </section>
 
         {/* The Ask + priority, right above Send: Send stays disabled until
             the ask is picked, so neither can be skipped below the fold. */}
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={isRemove ? 3 : 4} done={!!ask}>
+          <StepLabel n={isRemove ? 2 : 3} done={!!ask}>
             What do you need back? <span className="text-mp-red">*</span>
           </StepLabel>
           <div role="radiogroup" aria-label="The ask" className="flex flex-wrap gap-2">

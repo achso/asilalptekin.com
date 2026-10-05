@@ -49,9 +49,8 @@ Wi-Fi and hold it in landscape. For a full-screen, app-like view, tap
 On a desktop browser the app renders inside an iPad frame (1180 × 820,
 iPad Air / Pro 11" landscape) and scales to fit the window.
 
-> **Note:** browsers only allow microphone access on `https` or `localhost`.
-> Over a plain-http LAN address the voice memo falls back to a simulated
-> recording. The flow still works the same way.
+> **Note:** dictation in the Smart Note is simulated (no microphone access
+> needed), so it works the same over a plain-http LAN address.
 
 ---
 
@@ -168,7 +167,13 @@ reviews it.
     a plausible minimum of **0.50 m** is required (*"At least 0.50 m"*).
   - **Evidence**: the same photo grid as the native *Photos & Notes* tab
     (the + tile opens the rear camera; on a laptop use *"No camera? Use demo
-    photo"*), at least one photo. Voice memo is optional.
+    photo"*), at least one photo. Under it, one **Smart Note** replaces the
+    separate Notes box and voice memo: type, or tap the **mic** in the
+    field's bottom-right corner. It turns red and pulses, the placeholder
+    reads *Listening...*, and after 2.5 s a transcript for the current path
+    lands in the note (simulated speech-to-text, e.g. *"The physical wall is
+    20cm shorter than the locked plan indicates. Requesting permission to
+    proceed."*). The same note field is in every Photos & Notes tab.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
   - **Priority** (UX audit #5, renamed in round 2): what the contractor is
@@ -211,18 +216,21 @@ disagree. "Tomorrow" skips the weekend: Friday after 15:00 reads *08:00 Monday*.
 
 | | Expert in (> 30 min left) | Expert in (≤ 30 min left) | After 15:00 / weekend |
 |---|---|---|---|
-| Top bar | *Remote expert · available for 3 more hours* | *… available for 12 more minutes* | *Remote expert · back at 08:00 tomorrow* (or *Monday*) |
+| Top bar | *Remote expert · available for 3 more hours* | *… available for 12 more minutes* | *Remote expert · available from 08:00 tomorrow* (or *Monday*) |
 | Form, I'm carrying on | *No rush · work continues* + availability | same | same |
-| Form, I've stopped | *Asking for an answer today · expert is in until 15:00* | *Expert leaves in 12 min · may be answered tomorrow from 08:00* | *Expert sees this first at 08:00 tomorrow · work is stopped* + *You can leave. The answer comes to this iPad tomorrow morning.* |
-| Sent card | *Queued* / *Delivered* + availability | same | *Queued* + *Expert sees it at 08:00 tomorrow* |
+| Form, I've stopped | *Asking for an answer today · expert is in until 15:00* | *Expert leaves in 12 min · available again tomorrow from 08:00* | *Expert available from 08:00 tomorrow · work is stopped* + *You can leave. The answer will come to this iPad.* |
+| Sent card | *Queued* / *Delivered* + availability | same | *Queued* + *Expert available from 08:00 tomorrow* |
 | Expert's ticket, Urgency | *Not blocking*, or *Work stopped since 13:10* (+ *yesterday* / weekday when older) | | |
 | Clocks (status bar, card, ticket) | Munich time | | |
 
+The copy only says when the expert is **available**, never when a report will
+be looked at: nobody can promise that.
+
 **What the expert receives** (UX audit #3): the **chevron** on a sent card
 opens a read-only ticket:
-- **who, which job, when** under the title (*M. Weber, site lead · Music Room
-  Renovation, Lindenstraße 14, Augsburg · 5th Floor, Music Room · Mon, 5 Oct,
-  18:56*; the reporter is fictional);
+- **which job, where, when** under the title (*Music Room Renovation,
+  Lindenstraße 14, Augsburg · 5th Floor, Music Room · Mon, 5 Oct, 18:56*), and
+  **Reported by** as a row in the table (*M. Weber, site lead*, fictional);
 - the plan snapshot with doors and windows and the proposal in red (length
   label, north arrow, room size). On a disputed wall the red *4.20 m (plan
   4.55)* replaces that wall's size label instead of printing over it;
@@ -269,7 +277,7 @@ idle ─submit─▶ queued ─▶ sending ─▶ delivered ─▶ in_review ─
 
 | State | Canvas | Escalation card |
 |---|---|---|
-| Queued | Hatched wall, gray cloud-off pin | Gray **Queued** pill + *"Expert sees it at 08:00 tomorrow"* after hours; cascades to sending → delivered by itself; Revoke available |
+| Queued | Hatched wall, gray cloud-off pin | Gray **Queued** pill + *"Expert available from 08:00 tomorrow"* after hours; cascades to sending → delivered by itself; Revoke available |
 | Idle (locked plan) | Black wall, toolbar tools disabled | — |
 | Delivered | Red hatched wall, red lock pin | **Revoke Escalation** available |
 | In Review | Hatched wall framed in amber with a pulse, amber eye pin | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |

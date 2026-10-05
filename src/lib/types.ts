@@ -93,7 +93,6 @@ export type Escalation = {
   photoUrls: string[];
   /** Optional free-text note from the evidence step. */
   note?: string;
-  voiceMemo?: { url: string; durationS: number };
   blocking: boolean; // "work is stopped until resolved"
   /** The Ask: what the contractor needs back (required). */
   ask?: AskId;
