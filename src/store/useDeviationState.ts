@@ -277,7 +277,7 @@ export const draftLabel = (anchor: SelectedElement) =>
 const toast = (text: string, tone: ToastTone) => ({ id: Date.now() + Math.random(), text, tone });
 
 /** Key for per-element maps. The room panel and the floor share the room's key. */
-export const elementKey = (el: SelectedElement) => `${el.type}:${el.id}`;
+const elementKey = (el: SelectedElement) => `${el.type}:${el.id}`;
 const EMPTY_MEDIA: ElementMedia = { photos: [], note: "" };
 
 export const sameElement = (a: SelectedElement | null, b: SelectedElement | null) =>

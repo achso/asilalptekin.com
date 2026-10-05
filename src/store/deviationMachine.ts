@@ -33,12 +33,12 @@ export const isLockedState = (s: DeviationState) =>
   s === "queued" || s === "sending" || s === "delivered" || s === "in_review";
 
 /** The full lifecycle, in order (the card's double-tap cheat steps through it). */
-export const LIFECYCLE: EscalationStatus[] = ["queued", "sending", "delivered", "in_review", "resolved"];
+const LIFECYCLE: EscalationStatus[] = ["queued", "sending", "delivered", "in_review", "resolved"];
 export const nextStatus = (s: EscalationStatus): EscalationStatus | null =>
   LIFECYCLE[LIFECYCLE.indexOf(s) + 1] ?? null;
 
 /** Forward-only transitions the "server" (Munich) may make. */
-export const TRANSITIONS: Record<EscalationStatus, EscalationStatus[]> = {
+const TRANSITIONS: Record<EscalationStatus, EscalationStatus[]> = {
   queued: ["sending"],
   sending: ["delivered"],
   delivered: ["in_review"],

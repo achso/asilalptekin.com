@@ -16,10 +16,8 @@ are intercepted and turned into proposals.
 **Requirements:** Node.js 18.18 or newer (20 LTS recommended) and npm.
 
 ```bash
-# 1. Clone only this prototype branch
-git clone --branch claude/pensive-gauss-tldayl --single-branch \
-  https://github.com/achso/asilalptekin.com.git magicplan-escalation
-cd magicplan-escalation
+# 1. Unzip, then open a terminal in the project folder
+cd magicplan-field-escalation
 
 # 2. Install dependencies
 npm install

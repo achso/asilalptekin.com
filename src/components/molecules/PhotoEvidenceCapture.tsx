@@ -22,7 +22,7 @@ import { NotesAndAudioInput, type VoiceMemoValue } from "./NotesAndAudioInput";
  * "Use demo photo" link stands in for the camera.
  */
 
-export const MAX_PHOTOS = 7;
+const MAX_PHOTOS = 7;
 
 export type PhotoEvidenceCaptureProps = {
   photos: string[];

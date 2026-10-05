@@ -20,7 +20,7 @@ import { StatusToast } from "@/components/organisms/StatusToast";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { WALL_THICKNESS, wallById, wallGeometry } from "@/lib/floorplan";
 import { CANVAS_W, PANEL_W } from "@/lib/layout";
-import type { EscalationStatus, IssueType, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, SelectedElement } from "@/lib/types";
 import type { DeviationState } from "@/store/deviationMachine";
 
 /**

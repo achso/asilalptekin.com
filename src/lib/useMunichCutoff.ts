@@ -9,7 +9,7 @@ import { useSyncExternalStore } from "react";
  * clock, so the header, the form and a sent card can never disagree
  * (UX audit #4).
  */
-export const EXPERT_HOURS = { start: 8, end: 15 } as const;
+const EXPERT_HOURS = { start: 8, end: 15 } as const;
 
 /** Wall-clock time in Munich (Europe/Berlin), as minutes since midnight. */
 function munichMinutes(now: Date) {
@@ -67,7 +67,7 @@ function munichWeekday(now: Date) {
 const munichDay = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
-export function expertAvailability(now = new Date()): ExpertAvailability {
+function expertAvailability(now = new Date()): ExpertAvailability {
   const t = munichMinutes(now);
   const wd = munichWeekday(now);
   const workday = wd >= 1 && wd <= 5;

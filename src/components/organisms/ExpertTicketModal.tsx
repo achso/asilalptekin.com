@@ -388,9 +388,6 @@ function PlanSnapshot({ e }: { e: Escalation }) {
           strokeDasharray="0.08 0.06"
         />
       ))}
-      {!e.line && !e.items && e.marker && (
-        <rect x={e.marker.x - 0.45} y={e.marker.y - 0.05} width={0.9} height={0.1} fill="rgba(239,68,68,0.12)" stroke={RED} strokeWidth={0.03} />
-      )}
       {target.type === "object" &&
         (() => {
           const o = objectById(target.id);

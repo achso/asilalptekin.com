@@ -99,7 +99,7 @@ export const issueLabel = (id: IssueType) =>
  * Furniture and fixtures on the plan: selectable (inspector, rotate handle),
  * but locked like the rest of the plan; changes become proposals.
  */
-export const PLAN_OBJECTS: PlanObject[] = [
+const PLAN_OBJECTS: PlanObject[] = [
   {
     id: "o-counter",
     label: "Kitchen Counter",
@@ -189,7 +189,7 @@ export const wallById = (id: string): Wall => {
 
 /** Canvas transform: metres → px inside the canvas SVG. */
 export const PX_PER_M = 110;
-export const ORIGIN: Point = { x: 245, y: 175 };
+const ORIGIN: Point = { x: 245, y: 175 };
 export const WALL_THICKNESS = 14;
 
 /** Inverse of toPx: canvas px → plan metres. */

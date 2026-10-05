@@ -356,7 +356,7 @@ const clock = munichClock;
 // ── Adapter ─────────────────────────────────────────────────────────────────
 
 /** "W 0.95 → 1.10 m · ↻ 0° → 45° · Moved": only what changed; a move is visual, no numbers. */
-export function summarizeObjectChange({ from, to }: { from: ObjectState; to: ObjectState }) {
+function summarizeObjectChange({ from, to }: { from: ObjectState; to: ObjectState }) {
   const parts: string[] = [];
   const m = (k: "widthM" | "depthM" | "heightM", tag: string) =>
     from[k] !== to[k] && parts.push(`${tag} ${from[k].toFixed(2)} → ${to[k].toFixed(2)} m`);

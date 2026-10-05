@@ -54,7 +54,7 @@ const DICTATION: Record<"wall-length" | "missing-element" | "object-change" | "r
 };
 
 /** Below this a reading isn't plausible for a wall or element (UX audit: step 1 check). */
-export const MIN_LENGTH_M = 0.5;
+const MIN_LENGTH_M = 0.5;
 export type EscalationDraftPaneProps = {
   draft: Draft;
   /** Close (✕): discard the draft, keep the selection. */

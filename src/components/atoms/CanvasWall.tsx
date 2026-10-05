@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
  * Requires <CanvasWallDefs /> once inside the parent <svg>'s <defs>.
  */
 
-export const HATCH_PATTERN_ID = "canvas-wall-hatch";
+const HATCH_PATTERN_ID = "canvas-wall-hatch";
 
 /** Outer body of the wall. Thickness is set via `style` (it's geometry, not a variant). */
 const wallBody = cva("fill-none transition-[stroke] duration-300 ease-out", {

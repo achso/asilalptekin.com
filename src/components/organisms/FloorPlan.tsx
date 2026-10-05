@@ -308,11 +308,7 @@ export function FloorPlan({
             color={STATUS_STROKE[m.status]}
           />
         ) : (
-          m.line ? (
-            <GhostLine key={m.id} line={m.line} color={STATUS_STROKE[m.status]} />
-          ) : (
-            <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
-          )
+          m.line ? <GhostLine key={m.id} line={m.line} color={STATUS_STROKE[m.status]} /> : null
         ),
       )}
       {draftGhost?.items ? (
@@ -447,8 +443,7 @@ function OpeningShape({ wall, opening }: { wall: Wall; opening: NonNullable<Wall
 /**
  * Where and how a proposed element is drawn:
  * - a missing wall: a line from start to end, at true length (two taps);
- * - inserted objects: squares, drawn by GhostItems;
- * - older free markers (no line, no items): a 100 × 10 px rect at the point.
+ * - inserted objects: squares, drawn by GhostItems.
  */
 export type GhostSpec = {
   point: Point;
@@ -465,26 +460,6 @@ export type GhostSpec = {
  * filled, never solid black. Submitted ones keep the dash in their status colour.
  */
 const GHOST_RED = "#EF4444";
-function GhostWall({ ghost, color }: { ghost: GhostSpec; color: string }) {
-  const at = toPx(ghost.point);
-  return (
-    <rect
-      pointerEvents="none"
-      data-ghost="submitted"
-      data-ghost-kind="free"
-      x={at.x - 50}
-      y={at.y - 5}
-      width={100}
-      height={10}
-      stroke={color}
-      strokeDasharray="4 4"
-      strokeWidth={2}
-      fill={color}
-      fillOpacity={0.12}
-    />
-  );
-}
-
 /**
  * A missing wall as drawn: a red dashed line at true length (status colour
  * once sent), round end points, and its length on a tag beside the middle.
