@@ -285,7 +285,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                       At the marked spot · {wallById(draft.spot.wallId).label}
                     </span>
                     <span className="block text-[12px] leading-snug text-mp-muted">
-                      {wallSpotText(draft.spot)} · tap the plan to move
+                      {wallSpotText(draft.spot)} · drag it along the wall
                     </span>
                   </>
                 ) : (

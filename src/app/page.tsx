@@ -280,6 +280,7 @@ export default function Page() {
               draftMarker={draft?.marker ?? null}
               draftGhost={draftGhost}
               ghostSelected={selectedElement?.type === "ghost"}
+              onMoveSpot={store.moveSpot}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}

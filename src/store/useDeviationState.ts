@@ -114,6 +114,7 @@ type Action =
   | { type: "updateDraft"; patch: Partial<Pick<Draft, "measuredM" | "proposed">> }
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
+  | { type: "moveSpot"; offsetM: number }
   | { type: "cancelDraft" }
   | { type: "undo" }
   | { type: "redo" }
@@ -288,14 +289,15 @@ function reducer(state: State, action: Action): State {
     case "startGhost":
       if (state.draft) return askDiscard(state, action);
       // A wall spot is marked (blue triangle): the insertion is tied to it, so
-      // the ghost lands there at once and the pane opens. No second tap needed;
-      // a tap on the plan still moves it.
+      // the ghost lands there at once and the pane opens. No second tap needed.
+      // It stays attached to that wall: dragging slides it along the wall
+      // (moveSpot), and a tap elsewhere asks to discard like any other draft,
+      // so the canvas is back in select mode.
       if (state.wallSpot && state.selectedElement?.type === "wall" && state.selectedElement.id === state.wallSpot.wallId) {
         const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
         return {
           ...state,
           ...NO_DRAFT,
-          interactionMode: "ghost_draft",
           ghostCategory: action.category,
           // Like magicplan: the inserted element is what's selected now.
           selectedElement: anchor,
@@ -331,6 +333,14 @@ function reducer(state: State, action: Action): State {
           category: state.ghostCategory ?? undefined,
         },
       };
+    }
+
+    case "moveSpot": {
+      const d = state.draft;
+      if (!d?.spot || d.spot.offsetM === action.offsetM) return state;
+      const spot = { ...d.spot, offsetM: action.offsetM };
+      // One drag = one undo step.
+      return withHistory(state, { ...d, spot, marker: wallSpotGhost(spot) }, "spot");
     }
 
     case "cancelDraft":
@@ -571,6 +581,8 @@ export function useDeviationState() {
     [],
   );
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
+  /** Slide an inserted element along the wall it's attached to. */
+  const moveSpot = useCallback((offsetM: number) => dispatch({ type: "moveSpot", offsetM }), []);
   const cancelDraft = useCallback(() => dispatch({ type: "cancelDraft" }), []);
   const undo = useCallback(() => dispatch({ type: "undo" }), []);
   const redo = useCallback(() => dispatch({ type: "redo" }), []);
@@ -742,6 +754,7 @@ export function useDeviationState() {
     updateDraft,
     startGhostDraft,
     placeGhost,
+    moveSpot,
     cancelDraft,
     undo,
     redo,

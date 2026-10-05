@@ -117,8 +117,11 @@ of the coordinates.
   as long as the Measured Length typed (live). The host wall's dimension is
   split at the spot (e.g. 4.14 | 0.41) and the length is labelled.
 - **Any other category** sits against the wall, parallel to it.
-- Tapping the plan moves the ghost off the spot (it's then a free ghost and
-  the triangle goes); ⌘Z puts it back on the spot.
+- It stays **attached to that wall**. Drag it (magicplan's ring handle with
+  two arrows shows on the selected element) and it slides left / right along
+  the host wall only; the triangle, split dimensions and the pane's
+  *"2.86 m from the west end"* follow. One drag = one ⌘Z step. Tapping it does
+  nothing; a tap elsewhere asks to discard the draft, like every other draft.
 - **Add Wall** is live while a spot is marked: it's the shortcut for
   Insert → Object → Structural at the spot (pressed while that draft is open;
   tapping it again asks to discard, like Insert).

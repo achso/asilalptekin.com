@@ -54,6 +54,8 @@ type Props = {
   draftGhost?: GhostSpec | null;
   /** The draft ghost is selected: magicplan's blue selection around it. */
   ghostSelected?: boolean;
+  /** Drag an inserted element along the wall it's attached to (new offset, metres). */
+  onMoveSpot?: (offsetM: number) => void;
   onPlace?: (p: Point) => void;
   /** Ghost walls of submitted proposals, drawn in their status colour. */
   markers?: (GhostSpec & { id: string; status: EscalationStatus })[];
@@ -87,6 +89,7 @@ export function FloorPlan({
   placing,
   draftGhost,
   ghostSelected = false,
+  onMoveSpot,
   onPlace,
   markers,
   onDimensionTap,
@@ -260,7 +263,7 @@ export function FloorPlan({
       {markers?.map((m) => (
         <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
       ))}
-      {draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft selected={ghostSelected} />}
+      {draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft selected={ghostSelected} onSlide={onMoveSpot} />}
     </svg>
   );
 }
@@ -401,18 +404,44 @@ function GhostWall({
   color,
   draft = false,
   selected = false,
+  onSlide,
 }: {
   ghost: GhostSpec;
   color: string;
   draft?: boolean;
   selected?: boolean;
+  /** Attached to a wall: drag slides it along that wall. */
+  onSlide?: (offsetM: number) => void;
 }) {
+  const slidable = !!(draft && ghost.spot && onSlide);
+  const host = ghost.spot && wallById(ghost.spot.wallId);
+  // Drag: project the pointer onto the host wall; it never leaves the wall.
+  const slide = (e: React.PointerEvent<SVGGElement>) => {
+    const ctm = e.currentTarget.ownerSVGElement?.getScreenCTM();
+    if (!ctm || !host) return;
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+    onSlide?.(wallSpotAt(host, { x: pt.x, y: pt.y }).offsetM);
+  };
   const fill = color === GHOST_RED ? "rgba(239, 68, 68, 0.1)" : color;
   const fillOpacity = color === GHOST_RED ? 1 : 0.12;
   const box = ghostBox(ghost);
   const sp = ghost.spot && wallSpotPx(ghost.spot);
   return (
-    <g pointerEvents="none" data-ghost={draft ? "draft" : "submitted"} data-selected={selected || undefined} data-ghost-kind={ghost.perpendicular ? "wall" : ghost.spot ? "spot" : "free"}>
+    <g
+      pointerEvents={slidable ? "auto" : "none"}
+      className={slidable ? "cursor-grab touch-none active:cursor-grabbing" : undefined}
+      onPointerDown={
+        slidable
+          ? (e) => {
+              // Its own gesture: no deselect, no discard prompt.
+              e.stopPropagation();
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }
+          : undefined
+      }
+      onPointerMove={slidable ? (e) => e.currentTarget.hasPointerCapture(e.pointerId) && slide(e) : undefined}
+      data-ghost={draft ? "draft" : "submitted"}
+      data-selected={selected || undefined} data-ghost-kind={ghost.perpendicular ? "wall" : ghost.spot ? "spot" : "free"}>
       {/* Selected (just inserted): magicplan's blue selection, under the red proposal dash. */}
       {selected && (
         <motion.rect
@@ -437,6 +466,9 @@ function GhostWall({
         fill={fill}
         fillOpacity={fillOpacity}
       />
+      {/* Fat-finger hit area for the drag */}
+      {slidable && <rect x={box.x - 14} y={box.y - 14} width={box.width + 28} height={box.height + 28} fill="transparent" />}
+      {slidable && selected && sp && <SlideHandle box={box} ux={sp.ux} uy={sp.uy} />}
       {ghost.perpendicular && sp && (
         <>
           <SpotSplit spot={ghost.spot!} color={color} />
@@ -450,6 +482,28 @@ function GhostWall({
           ) : null}
         </>
       )}
+    </g>
+  );
+}
+
+/**
+ * magicplan's move handle on a selected inserted wall: a ring with two
+ * triangles pointing along the host wall, the only way it can move.
+ */
+function SlideHandle({ box, ux, uy }: { box: { x: number; y: number; width: number; height: number }; ux: number; uy: number }) {
+  const c = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const tri = (dir: 1 | -1) => {
+    const t = { x: c.x + ux * dir * 15, y: c.y + uy * dir * 15 };
+    const b = { x: c.x + ux * dir * 4, y: c.y + uy * dir * 4 };
+    const px = -uy * 9;
+    const py = ux * 9;
+    return `${t.x},${t.y} ${b.x + px},${b.y + py} ${b.x - px},${b.y - py}`;
+  };
+  return (
+    <g data-slide-handle pointerEvents="none">
+      <circle cx={c.x} cy={c.y} r={22} fill="rgba(107, 107, 214, 0.12)" stroke="#6b6bd6" strokeWidth={1.25} />
+      <polygon points={tri(1)} fill="#6b6bd6" />
+      <polygon points={tri(-1)} fill="#6b6bd6" />
     </g>
   );
 }
