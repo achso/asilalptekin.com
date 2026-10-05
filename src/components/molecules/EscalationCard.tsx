@@ -274,8 +274,8 @@ export function toEscalationCardProps(
     issueType: e.issueType,
     timestamp: e.createdAt,
     statusChangedAt: e.statusChangedAt,
-    // A proposed wall rides on the anchor line: "Music Room · Wall".
-    targetLabel: e.target.type === "ghost" ? `${e.targetLabel} · Wall` : e.targetLabel,
+    // A proposed element rides on the anchor line: "Music Room · Plumbing".
+    targetLabel: e.target.type === "ghost" ? `${e.targetLabel} · ${e.category ?? "Element"}` : e.targetLabel,
     photoUrl: e.photoUrls[0],
     photoCount: e.photoUrls.length,
     note: e.note,

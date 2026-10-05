@@ -247,7 +247,7 @@ export default function SandboxPage() {
 
           <Specimen
             title="Ghost wall"
-            note="The proposed missing wall: a 100 × 10 px rect, red dashed with a faint fill while drafting; submitted ones keep the dash in their status colour."
+            note="The proposed missing element (any Insert category): a 100 × 10 px rect, red dashed with a faint fill while drafting; submitted ones keep the dash in their status colour."
           >
             <svg width={300} height={110} className="rounded-xl bg-white">
               {[

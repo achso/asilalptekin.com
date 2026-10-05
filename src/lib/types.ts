@@ -2,7 +2,7 @@ export type Point = { x: number; y: number };
 
 /**
  * The plan element a deviation is anchored to: what the contractor tapped.
- * "ghost" is the proposed wall that isn't on the locked plan (placed with
+ * "ghost" is the proposed element that isn't on the locked plan (placed with
  * Insert): it has no plan geometry, only its ghost position.
  */
 export type ElementType = "wall" | "corner" | "room" | "ghost";
@@ -39,10 +39,11 @@ export type IssueType =
  * The two hardcoded "Intercept and Propose" paths (Wizard of Oz prototype):
  *   wall-length  → tap the North wall's 4.55 dimension → Propose Correction
  *                  → Dimension Mismatch
- *   missing-wall → Insert → tap the plan → red dashed ghost wall
- *                  → Undocumented Element → Wall
+ *   missing-element → Insert → Object → any category → tap the plan → red
+ *                     dashed ghost → Undocumented Element → <category>
+ *                     (every category is the same trapdoor; only its name travels)
  */
-export type DraftIntent = "wall-length" | "missing-wall";
+export type DraftIntent = "wall-length" | "missing-element";
 
 export type Escalation = {
   id: string;
@@ -51,10 +52,12 @@ export type Escalation = {
   issueType: IssueType;
   /**
    * What the contractor measured on site: the wall length (dimension-mismatch)
-   * or the length of the physical wall that isn't on the plan (undocumented).
+   * or the length of the physical element that isn't on the plan (undocumented).
    */
   measuredM?: number;
-  /** Only for undocumented-element: where the ghost wall is, in plan metres. */
+  /** Only for undocumented-element: the category picked in Insert → Object ("Plumbing"). */
+  category?: string;
+  /** Only for undocumented-element: where the ghost is, in plan metres. */
   marker?: Point;
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */

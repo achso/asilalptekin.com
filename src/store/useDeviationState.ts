@@ -35,8 +35,9 @@ import {
  *   draft                { anchor, intent, marker? } | null: the open EscalationDraftPane
  *   interactionMode      "select" | "ghost_draft" (canvas taps place / move the ghost wall)
  *   startDraft(a, i)     4.55 popover → Propose Correction → open the pane
- *   startGhostDraft()    Insert → ghost_draft; the pane opens on the first canvas tap
- *   placeGhost(p)        drop (first tap) or move the ghost wall at p (plan metres)
+ *   startGhostDraft(c)   Insert → Object → category c → ghost_draft; the pane opens
+ *                        on the first canvas tap ("Undocumented Element → c")
+ *   placeGhost(p)        drop (first tap) or move the ghost at p (plan metres)
  *   cancelDraft()        discard the draft (and leave ghost_draft), keep the selection
  *   submitEscalation(d)  fire-and-forget: closes the pane, uploads in background
  *   revokeEscalation()   optimistic; FAILS while in_review (race guard, see below)
@@ -74,8 +75,10 @@ type State = {
   selectedElement: SelectedElement | null;
   /** The open escalation draft (null = pane closed). */
   draft: Draft | null;
-  /** ghost_draft: canvas taps place / move the ghost wall instead of selecting. */
+  /** ghost_draft: canvas taps place / move the ghost instead of selecting. */
   interactionMode: InteractionMode;
+  /** Category picked in Insert → Object, waiting for the canvas tap. */
+  ghostCategory: string | null;
   escalations: Escalation[];
   /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
   media: Record<string, ElementMedia>;
@@ -87,7 +90,7 @@ type State = {
 type Action =
   | { type: "select"; element: SelectedElement | null }
   | { type: "startDraft"; anchor: SelectedElement; intent: DraftIntent }
-  | { type: "startGhost" }
+  | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
   | { type: "cancelDraft" }
   | { type: "submit"; escalation: Escalation }
@@ -105,6 +108,7 @@ const initialState: State = {
   selectedElement: null,
   draft: null,
   interactionMode: "select",
+  ghostCategory: null,
   escalations: [],
   media: {},
   pendingRevokes: {},
@@ -113,11 +117,11 @@ const initialState: State = {
 };
 
 /** Closing the pane also ends ghost drafting. */
-const NO_DRAFT = { draft: null, interactionMode: "select" } as const;
+const NO_DRAFT = { draft: null, interactionMode: "select", ghostCategory: null } as const;
 
 export type InteractionMode = "select" | "ghost_draft";
 /** The open escalation draft: what was intercepted, where. */
-export type Draft = { anchor: SelectedElement; intent: DraftIntent; marker?: Point };
+export type Draft = { anchor: SelectedElement; intent: DraftIntent; marker?: Point; category?: string };
 
 /**
  * Label for a draft's target. A ghost is "in the Music Room", not an element;
@@ -171,7 +175,7 @@ function reducer(state: State, action: Action): State {
 
     case "startGhost":
       // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
-      return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft" };
+      return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft", ghostCategory: action.category };
 
     case "placeGhost": {
       if (state.interactionMode !== "ghost_draft") return state;
@@ -179,13 +183,14 @@ function reducer(state: State, action: Action): State {
       if (state.draft?.anchor.type === "ghost") {
         return { ...state, draft: { ...state.draft, marker: action.point } };
       }
-      // First tap: the proposed wall now has a place, so the pane opens.
+      // First tap: the proposal now has a place, so the pane opens.
       return {
         ...state,
         draft: {
           anchor: { type: "ghost", id: `ghost-${Date.now()}` },
-          intent: "missing-wall",
+          intent: "missing-element",
           marker: action.point,
+          category: state.ghostCategory ?? undefined,
         },
       };
     }
@@ -376,7 +381,10 @@ export function useDeviationState() {
     (anchor: SelectedElement, intent: DraftIntent) => dispatch({ type: "startDraft", anchor, intent }),
     [],
   );
-  const startGhostDraft = useCallback(() => dispatch({ type: "startGhost" }), []);
+  const startGhostDraft = useCallback(
+    (category: string) => dispatch({ type: "startGhost", category }),
+    [],
+  );
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   const cancelDraft = useCallback(() => dispatch({ type: "cancelDraft" }), []);
 
@@ -389,6 +397,7 @@ export function useDeviationState() {
       const escalation: Escalation = {
         ...draft,
         marker: open.marker,
+        category: open.category,
         id: `esc-${now}`,
         target: anchor,
         targetLabel: draftLabel(anchor),
@@ -482,6 +491,7 @@ export function useDeviationState() {
     selectedElement: state.selectedElement,
     draft: state.draft,
     interactionMode: state.interactionMode,
+    ghostCategory: state.ghostCategory,
     escalations: state.escalations,
     pendingRevokes: state.pendingRevokes,
     demo: state.demo,

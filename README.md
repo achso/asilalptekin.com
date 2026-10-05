@@ -79,16 +79,25 @@ sidebar with the intent already filled in.
    Length** (numpad, or − / + in 5 cm steps); the line below shows the
    difference ("−20 cm vs plan").
 
-### Path 2: "There's a wall that isn't on the plan"
+### Path 2: "There's something on site that isn't on the plan"
 
-1. Tap **+ Insert** in the left toolbar. It shows pressed, and a red prompt
-   on the canvas says *Tap where the missing wall is* (✕ or Insert again
-   cancels).
-2. Tap inside the room: a **red dashed ghost wall** (100 × 10 px, faint red
-   fill, never solid black) appears centred on the tap, and the draft opens:
-   *Proposing · Undocumented Element → Wall*. Tap the plan again to move it;
-   the pane shows its distance from the west and north walls.
-3. Enter the wall's **Measured Length** (*Length of physical wall*).
+1. Tap **+ Insert** in the left toolbar. magicplan's Insert popover opens:
+   **Room** (locked), **Object**, **Note**, **Photo**, **Form**. Note, Photo
+   and Form point to the sidebar's Photos & Notes / Forms tabs (they never
+   change the plan).
+2. Tap **Object**: the popover turns into the **All Objects** grid
+   (Structural, Doors, Windows, Plumbing, Appliances, Electrical, HVAC,
+   Furniture), with ‹ back and ✕.
+3. Tap **any** category. They all lead through the same trapdoor: the menu
+   closes and a red banner on the canvas says *Tap where the missing element
+   is* with the category as a chip (✕ or Insert again cancels).
+4. Tap inside the room: a **red dashed ghost** (100 × 10 px, faint red fill,
+   never solid black) appears centred on the tap, and the draft opens:
+   *Proposing · Undocumented Element → Plumbing* (whatever was picked). Tap
+   the plan again to move it; the pane shows its distance from the west and
+   north walls.
+5. Enter its **Measured Length** (*Length of physical wall* for Structural,
+   *Length of element* otherwise).
 
 ### Both paths
 
@@ -100,8 +109,8 @@ sidebar with the intent already filled in.
   (€40k), permit status and a plan snapshot are attached automatically and
   shown above it.
 - After sending, the pane closes **right away**. The North wall locks in a
-  **red hatched pattern** with a status pin; the ghost wall stays on the plan
-  in its status colour. Both appear in **Active Escalations** on the room
+  **red hatched pattern** with a status pin; the ghost stays on the plan in
+  its status colour. Both appear in **Active Escalations** on the room
   panel, and the contractor moves on.
 - While a draft is open, tapping another element on the canvas discards it
   (a toast says so) and selects that element instead.

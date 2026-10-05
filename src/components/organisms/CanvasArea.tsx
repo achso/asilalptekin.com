@@ -24,8 +24,8 @@ import { FloorPlan } from "./FloorPlan";
  * The canvas handles selection and status, plus the two hardcoded intercepts:
  *  - tapping the North wall's 4.55 dimension opens the Change Measurement
  *    popover; Propose Correction hands the wall to onProposeWallLength
- *  - in ghost_draft (after Insert) a tap inside the room drops the red dashed
- *    ghost wall, and an on-canvas prompt says so until it's placed
+ *  - in ghost_draft (after Insert → Object → a category) a tap inside the room
+ *    drops the red dashed ghost, and an on-canvas banner says so until placed
  */
 export type CanvasAreaProps = {
   selectedElement: SelectedElement | null;
@@ -39,6 +39,8 @@ export type CanvasAreaProps = {
   onPlace?: (p: Point) => void;
   /** Leave ghost_draft before anything was placed. */
   onCancelPlacing?: () => void;
+  /** Category picked in Insert → Object, shown in the placement banner. */
+  ghostCategory?: string | null;
   markers?: { id: string; point: Point; status: EscalationStatus }[];
   /** Change Measurement popover → Propose Correction. */
   onProposeWallLength?: (wallId: string) => void;
@@ -54,6 +56,7 @@ export const CanvasArea = memo(function CanvasArea({
   draftMarker,
   onPlace,
   onCancelPlacing,
+  ghostCategory,
   markers,
   onProposeWallLength,
   className,
@@ -116,7 +119,10 @@ export const CanvasArea = memo(function CanvasArea({
             className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-mp-red py-1.5 pl-4 pr-1.5 text-[15px] font-semibold text-white shadow-lg"
           >
             <Crosshair size={18} aria-hidden />
-            Tap where the missing wall is
+            Tap where the missing element is
+            {ghostCategory && (
+              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-semibold">{ghostCategory}</span>
+            )}
             <button
               type="button"
               onClick={onCancelPlacing}

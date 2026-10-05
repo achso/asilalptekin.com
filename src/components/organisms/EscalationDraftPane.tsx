@@ -23,8 +23,8 @@ import { type Draft, draftLabel } from "@/store/useDeviationState";
  *
  *   wall-length  (4.55 popover → Propose Correction)
  *                Dimension Mismatch: Measured Length vs the plan's 4.55 m
- *   missing-wall (Insert → tap the plan)
- *                Undocumented Element → Wall: where it is + its length
+ *   missing-element (Insert → Object → a category → tap the plan)
+ *                Undocumented Element → <category>: where it is + its length
  *
  * Both need a reading > 0 and at least one photo. Budget, permit status and a
  * plan snapshot are attached automatically and shown above Send.
@@ -37,7 +37,7 @@ export type EscalationDraftPaneProps = {
 };
 
 export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDraftPaneProps) {
-  const { anchor, intent, marker } = draft;
+  const { anchor, intent, marker, category } = draft;
   const label = draftLabel(anchor);
   const isWallLength = intent === "wall-length";
   const plannedM = isWallLength ? wallById(anchor.id).lengthM : undefined;
@@ -60,6 +60,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDra
       issueType: isWallLength ? "dimension-mismatch" : "undocumented-element",
       plannedM,
       measuredM: measured,
+      category: isWallLength ? undefined : category,
       photoUrls: photos,
       note: note.trim() || undefined,
       voiceMemo,
@@ -97,7 +98,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDra
               {isWallLength ? "Dimension Mismatch" : "Undocumented Element"}
             </span>
             <span className="block text-[12px] leading-snug text-mp-muted">
-              {isWallLength ? `${label} · plan ${plannedM!.toFixed(2)} m` : "→ Wall (not on the plan)"}
+              {isWallLength ? `${label} · plan ${plannedM!.toFixed(2)} m` : `→ ${category ?? "Element"} (not on the plan)`}
             </span>
           </span>
         </div>
@@ -119,7 +120,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDra
           )}
           <NumericStepper
             label="Measured Length"
-            hint={isWallLength ? undefined : "Length of physical wall"}
+            hint={isWallLength ? undefined : category === "Structural" ? "Length of physical wall" : "Length of element"}
             value={measured}
             onChange={setMeasured}
             reference={plannedM}

@@ -60,16 +60,16 @@ export default function Page() {
 
   // ── Intercept and Propose: two hardcoded paths ──────────────────────────
   // 1. 4.55 popover → Propose Correction → Dimension Mismatch (North wall)
-  // 2. Insert → ghost_draft → tap the plan → Undocumented Element → Wall
+  // 2. Insert → Object → any category → ghost_draft → tap the plan
+  //    → Undocumented Element → <category>
   const placing = store.interactionMode === "ghost_draft";
-  const inserting = placing || draft?.intent === "missing-wall";
+  const inserting = placing || draft?.intent === "missing-element";
   const { startDraft, startGhostDraft, cancelDraft, notify } = store;
   const onProposeWallLength = useCallback(
     (wallId: string) => startDraft({ type: "wall", id: wallId }, "wall-length"),
     [startDraft],
   );
-  // Tapping the pressed Insert again leaves ghost drafting.
-  const onInsert = () => (inserting ? cancelDraft() : startGhostDraft());
+
 
   const breadcrumbs = [
     PROJECT.floor,
@@ -108,6 +108,7 @@ export default function Page() {
               draftMarker={draft?.marker ?? null}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
+              ghostCategory={store.ghostCategory}
               markers={markers}
               onProposeWallLength={onProposeWallLength}
             />
@@ -119,7 +120,16 @@ export default function Page() {
               mode={selectedElement && selectedElement.type !== "room" ? "element" : "room"}
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
               inserting={inserting}
-              onInsert={onInsert}
+              onInsertCategory={startGhostDraft}
+              onCancelInsert={cancelDraft}
+              onInsertOther={(kind) =>
+                notify(
+                  kind === "form"
+                    ? "Forms stay open while the plan is locked: use the Forms tab on the right."
+                    : "Photos and notes stay open while the plan is locked: use the Photos & Notes tab on the right.",
+                  "hint",
+                )
+              }
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />
 
