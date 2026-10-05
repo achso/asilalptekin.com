@@ -83,12 +83,13 @@ sidebar with the intent already filled in.
 ### Path 2: "There's a wall on site that isn't on the plan" (and objects)
 
 1. Tap **+ Insert** in the left toolbar. magicplan's Insert popover opens:
-   **Room** (locked), **Wall**, **Object**, **Note**, **Photo**, **Form**.
-   *Wall* was *Structural* inside the object grid; it's renamed and moved up
-   because a wall is the case we support (UX audit #6). Note, Photo and Form
+   **Room** (locked), **Partition wall**, **Object**, **Note**, **Photo**,
+   **Form**. *Partition wall* was *Structural* inside the object grid; it's
+   renamed and moved up because a partition wall is the case we support
+   (UX audit #6). Note, Photo and Form
    never change the plan, so they're allowed: the sidebar jumps to the
    matching tab and an alert says why.
-2. Tap **Wall**: the canvas enters `ghost_draft`. The *Tap any dimension* hint
+2. Tap **Partition wall**: the canvas enters `ghost_draft`. The *Tap any dimension* hint
    pill hides; a red banner says *Tap where the wall starts* (✕ cancels).
 3. **Two taps draw the wall** (UX audit #1). Tap 1 drops the start; the banner
    turns into *Tap where the wall ends* and a rubber band with a live length
@@ -98,7 +99,7 @@ sidebar with the intent already filled in.
    magicplan, no angle to set, only the length follows the pointer); a wall
    started free in the room is horizontal or vertical.
 4. The wall is drawn as a **red dashed line at true length**, with its length
-   beside it, and is selected (title *New wall (proposed)*). The
+   beside it, and is selected (title *New partition wall (proposed)*). The
    `EscalationDraftPane` opens with the **length prefilled** from the drawing
    and the location in words: *Drawn on plan · runs north–south · From North
    wall, 1.40 m from west to 1.40 m from west, 2.40 m from north*. The
@@ -107,14 +108,18 @@ sidebar with the intent already filled in.
    are one value**: type a length or tap − / + and the wall redraws; drag its
    **end handle** to resize and the field follows. Drag the wall (the ring
    with two arrows) to **move it left / right**: anchored, it slides along
-   its host wall only and stays attached and perpendicular; free, it moves
-   both ways. Every drag is one ⌘Z step.
+   its host wall only and stays attached; free, it moves both ways. The
+   native **rotate arrow** past its free end turns it (45° magnetic snap,
+   green when snapped, tap = +45°): an attached wall pivots on its anchor and
+   only turns into the room, a free one pivots on its middle; resizing then
+   follows the new angle, and the sentence reads e.g. *Runs 1.60 m
+   south-west*. Every drag or turn is one ⌘Z step.
 6. Delete… removes the drawn wall (nothing was sent).
 
 **From a spot on a wall.** Tap a wall first: as in magicplan, the exact spot
 gets a **blue triangle** with a white notch through the wall, and the toolbar
 switches to the element tools. **Add Wall** is then live: the spot is the
-start, so a single tap draws the wall (Insert → Wall does the same while the
+start, so a single tap draws the wall (Insert → Partition wall does the same while the
 triangle shows). Tapping the wall again moves the spot.
 
 **Objects** (Insert → Object → Doors, Windows, Plumbing, …) are a
@@ -199,7 +204,7 @@ reviews it.
     expert**.
   - **Footer**: *Auto-attached: plan dimensions · Permit approved last
     Tuesday*. Nothing else (no budget, no site history).
-- On send the toast names what was sent: **"Wall report sent"** (or
+- On send the toast names what was sent: **"Partition wall report sent"** (or
   *Plumbing / Dimension / Removal report sent*).
 - After sending, the pane closes **right away**. The North wall locks in a
   **red hatched pattern** with a status pin; the ghost stays on the plan in
@@ -227,7 +232,7 @@ disagree. "Tomorrow" skips the weekend: Friday after 15:00 reads *08:00 Monday*.
 
 | | Expert in (> 30 min left) | Expert in (≤ 30 min left) | After 15:00 / weekend |
 |---|---|---|---|
-| Top bar | *Remote expert · available for 3 more hours* | *… available for 12 more minutes* | *Remote expert · available from 08:00 tomorrow* (or *Monday*) |
+| Top bar | *Expert available between 08:00 – 15:00*, green dot | same, amber dot | same, gray dot |
 | Form, I'm carrying on | *No rush · work continues* + availability | same | same |
 | Form, I've stopped | *Asking for an answer today · expert is in until 15:00* | *Expert leaves in 12 min · available again tomorrow from 08:00* | *Expert available from 08:00 tomorrow · work is stopped* + *You can leave. The answer will come to this iPad.* |
 | Sent card | *Queued* / *Delivered* + availability | same | *Queued* + *Expert available from 08:00 tomorrow* |

@@ -11,9 +11,9 @@ import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCaptur
 import {
   ASKS,
   ISSUE_TYPES,
-  PROJECT,
   PERMIT_TEXT,
   ROOM,
+  WALL_CATEGORY,
   describeLine,
   issueLabel,
   objectById,
@@ -371,7 +371,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
                   ? `At least ${MIN_LENGTH_M.toFixed(2)} m`
                   : estimated
                     ? "Estimated from drawing · correct it after measuring"
-                  : category === "Wall"
+                  : category === WALL_CATEGORY
                     ? "Length of physical wall"
                     : "Length of element"
             }

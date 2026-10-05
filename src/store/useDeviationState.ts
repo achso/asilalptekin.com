@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
   PROJECT,
   ROOM,
+  WALL_CATEGORY,
   clampToRoom,
   elementById,
   elementInfo,
@@ -19,8 +20,7 @@ import {
   wallSpotPoint,
 } from "@/lib/floorplan";
 
-/** Insert → Wall (renamed from "Structural": walls are the case we support). */
-export const WALL_CATEGORY = "Wall";
+export { WALL_CATEGORY };
 import type {
   DraftIntent,
   ElementMedia,
@@ -137,7 +137,7 @@ type Action =
   | { type: "updateDraft"; patch: Partial<Pick<Draft, "measuredM" | "proposed">> }
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
-  | { type: "setLine"; line: WallLine; key: "end" | "move" }
+  | { type: "setLine"; line: WallLine; key: "end" | "move" | "rotate" }
   | { type: "selectItem"; id: string }
   | { type: "moveItem"; id: string; center: Point }
   | { type: "rotateItem"; id: string; rotation: number }
@@ -744,9 +744,9 @@ export function useDeviationState() {
   );
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   /** Slide an inserted element along the wall it's attached to. */
-  /** Resize (drag the end) or move (drag the body) the drawn wall. */
+  /** Resize (drag the end), move (drag the body) or rotate the drawn wall. */
   const setLine = useCallback(
-    (line: WallLine, key: "end" | "move") => dispatch({ type: "setLine", line, key }),
+    (line: WallLine, key: "end" | "move" | "rotate") => dispatch({ type: "setLine", line, key }),
     [],
   );
   const selectItem = useCallback((id: string) => dispatch({ type: "selectItem", id }), []);

@@ -13,8 +13,11 @@ import {
   toPx,
   wallGeometry,
   GHOST_ITEM_SIZE,
+  lineAngle,
   lineHost,
   lineLength,
+  resizeLine,
+  rotateLine,
   snapWallEnd,
   snapWallPoint,
   translateLine,
@@ -27,7 +30,7 @@ import type { EscalationStatus, GhostItem, Point, SelectedElement, Wall, WallLin
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
 import { GhostItems } from "./GhostItems";
-import { type ObjectProposal, PlanObjects } from "./PlanObjects";
+import { type ObjectProposal, PlanObjects, RotateHandle } from "./PlanObjects";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
@@ -66,7 +69,7 @@ type Props = {
   wallStart?: Point | null;
   drawingWall?: boolean;
   /** The drawn wall: resized (end) or moved (body) on the canvas. */
-  onLineChange?: (line: WallLine, key: "end" | "move") => void;
+  onLineChange?: (line: WallLine, key: "end" | "move" | "rotate") => void;
   /** Inserted objects: select / drag / rotate a copy. */
   onSelectItem?: (id: string) => void;
   onMoveItem?: (id: string, center: Point) => void;
@@ -491,7 +494,7 @@ function GhostLine({
   draft?: boolean;
   selected?: boolean;
   /** Draft only: drag the end handle to resize, the body to move (left / right when anchored). */
-  onChange?: (line: WallLine, key: "end" | "move") => void;
+  onChange?: (line: WallLine, key: "end" | "move" | "rotate") => void;
 }) {
   const a = toPx(line.a);
   const b = toPx(line.b);
@@ -522,7 +525,7 @@ function GhostLine({
     const p = d && toM(e);
     if (!d || !p) return;
     onChange!(
-      d.mode === "end" ? { a: d.line0.a, b: snapWallEnd(d.line0.a, p) } : translateLine(d.line0, p.x - d.p0.x, p.y - d.p0.y),
+      d.mode === "end" ? resizeLine(d.line0, p) : translateLine(d.line0, p.x - d.p0.x, p.y - d.p0.y),
       d.mode,
     );
   };
@@ -572,6 +575,11 @@ function GhostLine({
           </g>
         )}
       </g>
+      {/* Rotate: the native arrow past the free end; pivot = the anchor
+          (attached wall) or the middle (free wall), 45° magnetic snap. */}
+      {editable && selected && (
+        <RotateLineHandle line={line} onRotate={(l) => onChange!(l, "rotate")} />
+      )}
       {/* End: drag to resize (the length field follows). */}
       <g data-line-end className={editable ? "cursor-grab" : undefined} style={{ touchAction: "none" }} {...gesture("end")}>
         {editable && <circle cx={b.x} cy={b.y} r={22} fill="transparent" />}
@@ -579,6 +587,37 @@ function GhostLine({
       </g>
       <g pointerEvents="none">
         <LengthTag x={mid.x} y={mid.y} text={`${lineLength(line).toFixed(2)} m`} color={color} vertical={vertical} />
+      </g>
+    </g>
+  );
+}
+
+function RotateLineHandle({ line, onRotate }: { line: WallLine; onRotate: (l: WallLine) => void }) {
+  const [turning, setTurning] = useState(false);
+  const host = lineHost(line.a);
+  const a = toPx(line.a);
+  const b = toPx(line.b);
+  const pivot = host ? a : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  const angle = lineAngle(line);
+  const reach = Math.hypot(b.x - pivot.x, b.y - pivot.y) + 34;
+  return (
+    <g data-line-rotate transform={`translate(${pivot.x} ${pivot.y})`}>
+      {turning && (
+        <circle r={reach - 10} fill="none" stroke="#9ca3af" strokeWidth={1.5} strokeDasharray="5 5" pointerEvents="none" />
+      )}
+      <g transform={`rotate(${angle})`}>
+        <RotateHandle
+          x={reach}
+          center={pivot}
+          rotation={angle}
+          label="Rotate proposed partition wall"
+          snapped={turning && angle % 45 === 0}
+          onDragging={setTurning}
+          onRotate={(deg) => {
+            const next = rotateLine(line, deg);
+            if (next) onRotate(next);
+          }}
+        />
       </g>
     </g>
   );

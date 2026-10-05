@@ -290,6 +290,48 @@ export function translateLine(l: WallLine, dx: number, dy: number): WallLine {
   return { a: { x: r(l.a.x + mx), y: r(l.a.y + my) }, b: { x: r(l.b.x + mx), y: r(l.b.y + my) } };
 }
 
+/** A drawn wall's direction in degrees (0 = east, 90 = south; canvas y points south). */
+export const lineAngle = (l: WallLine) => {
+  const d = (Math.atan2(l.b.y - l.a.y, l.b.x - l.a.x) * 180) / Math.PI;
+  return Math.round(((d % 360) + 360) % 360);
+};
+
+/**
+ * Resize along the wall's current direction (it keeps its angle, rotated or
+ * not): the end follows the pointer's projection, on a 5 cm grid, ≥ 20 cm.
+ */
+export function resizeLine(l: WallLine, p: Point): WallLine {
+  const len = Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y) || 1;
+  const ux = (l.b.x - l.a.x) / len;
+  const uy = (l.b.y - l.a.y) / len;
+  const t = Math.max(MIN_DRAWN_M, snapGrid((p.x - l.a.x) * ux + (p.y - l.a.y) * uy));
+  return lineWithLength(l, t);
+}
+
+/**
+ * Turn a drawn wall to `deg`. Anchored to an existing wall it pivots on its
+ * start, so it stays attached, and only turns into the room; free, it pivots
+ * on its middle. Length kept (shortened only if the room is too small).
+ * null when the angle would point out of the room.
+ */
+export function rotateLine(l: WallLine, deg: number): WallLine | null {
+  const len = Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y);
+  const r = (deg * Math.PI) / 180;
+  const ux = +Math.cos(r).toFixed(6);
+  const uy = +Math.sin(r).toFixed(6);
+  const host = lineHost(l.a);
+  const q = (v: number) => +v.toFixed(2);
+  if (host) {
+    if (ux * host.inward.x + uy * host.inward.y < 0.05) return null;
+    const b = clampToRoom({ x: l.a.x + ux * len, y: l.a.y + uy * len });
+    return { a: l.a, b: { x: q(b.x), y: q(b.y) } };
+  }
+  const m = { x: (l.a.x + l.b.x) / 2, y: (l.a.y + l.b.y) / 2 };
+  const a = clampToRoom({ x: m.x - (ux * len) / 2, y: m.y - (uy * len) / 2 });
+  const b = clampToRoom({ x: m.x + (ux * len) / 2, y: m.y + (uy * len) / 2 });
+  return { a: { x: q(a.x), y: q(a.y) }, b: { x: q(b.x), y: q(b.y) } };
+}
+
 export const lineLength = (l: WallLine) => +Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y).toFixed(2);
 
 /** The existing wall a point sits on (inner face), if any. */
@@ -317,8 +359,8 @@ export function describeLine(l: WallLine) {
       : host
         ? `Starts on the ${host} wall, ${l.a.y.toFixed(2)} m from the north corner.`
         : `Starts ${l.a.x.toFixed(2)} m from the west wall and ${l.a.y.toFixed(2)} m from the north wall.`;
-  const dir =
-    runs === "diagonally" ? "diagonally" : runs === "east–west" ? (dx > 0 ? "east" : "west") : dy > 0 ? "south" : "north";
+  const COMPASS = ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"];
+  const dir = COMPASS[Math.round(lineAngle(l) / 45) % 8];
   const endWall = wallAt(l.b);
   const end = endWall && endWall !== host ? ` Ends at the ${endWall} wall.` : "";
   return { runs, sentence: `${start} Runs ${lineLength(l).toFixed(2)} m ${dir}.${end}` };
@@ -449,6 +491,12 @@ export function elementById(id: string): SelectedElement | null {
   if (PLAN_OBJECTS.some((o) => o.id === id)) return { type: "object", id };
   return null;
 }
+
+/**
+ * Insert → Partition wall: the one structural case we support, named for what
+ * it is (UX audit #6: "Structural" → "Wall" → "Partition wall").
+ */
+export const WALL_CATEGORY = "Partition wall";
 
 /** The Ask: one required tap, phrased as what the contractor needs back. */
 export const ASKS: { id: AskId; label: string }[] = [

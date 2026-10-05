@@ -93,7 +93,8 @@ export function expertAvailability(now = new Date()): ExpertAvailability {
     minutesLeft,
     // Availability only: when the expert is in, never when they will look at
     // a report (no one can promise that).
-    pill: online ? `Remote expert · available for ${duration(minutesLeft)}` : `Remote expert · available from ${backAt}`,
+    // The top bar states the hours themselves; the dot shows whether it's now.
+    pill: "Expert available between 08:00 – 15:00",
     formLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert available from ${backAt}`,
     seenLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert available from ${backAt}`,
     priorityLine: (blocked) =>

@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ToolButton } from "@/components/atoms/ToolButton";
+import { WALL_CATEGORY } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
 
 export const LOCKED_MESSAGE =
@@ -74,8 +75,8 @@ const OBJECT_TOOLS: Tool[] = [
  *   Delete… (a wall / corner / object selected) → "Element Not on Site" draft;
  *     nothing is deleted, the remote expert reviews the removal.
  *
- *   + Insert → native popover (Room · Wall · Object · Note · Photo · Form)
- *     Wall → ghost_draft: two taps draw the missing wall (start, end)
+ *   + Insert → native popover (Room · Partition wall · Object · Note · Photo · Form)
+ *     Partition wall → ghost_draft: two taps draw the missing wall (start, end)
  *     Object → category grid (Doors, Plumbing, …)
  *       any category → the same trapdoor: ghost_draft. The next canvas tap
  *       drops the red dashed ghost and opens the EscalationDraftPane as
@@ -230,7 +231,7 @@ export function LeftToolbar({
               <InsertRootMenu
                 onWall={() => {
                   close();
-                  onInsertCategory("Wall");
+                  onInsertCategory(WALL_CATEGORY);
                 }}
                 onObject={() => setMenu("objects")}
                 onRoom={() => {
@@ -274,8 +275,8 @@ function InsertRootMenu({
 }) {
   const rows: { label: string; icon: LucideIcon; onClick: () => void; locked?: boolean; more?: boolean }[] = [
     { label: "Room", icon: SquareDashed, onClick: onRoom, locked: true },
-    // Renamed from "Structural": a wall is the case we support, so say so.
-    { label: "Wall", icon: BrickWall, onClick: onWall },
+    // Renamed from "Structural": a partition wall is the case we support, so say so.
+    { label: WALL_CATEGORY, icon: BrickWall, onClick: onWall },
     { label: "Object", icon: Armchair, onClick: onObject, more: true },
     { label: "Note", icon: StickyNote, onClick: () => onOther("note") },
     { label: "Photo", icon: Camera, onClick: () => onOther("photo") },

@@ -274,7 +274,7 @@ export default function Page() {
           // The inserted element is selected: name it, like magicplan's "Wall".
           selectedElement.type === "ghost"
             ? draft?.category === WALL_CATEGORY
-              ? "New wall (proposed)"
+              ? "New partition wall (proposed)"
               : `${draft?.category ?? "Element"} (proposed)`
             : elementInfo(selectedElement).label,
         ]

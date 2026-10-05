@@ -7,6 +7,7 @@ import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import type { EscalationStatus, Point, SelectedElement, WallLine, WallSpot } from "@/lib/types";
+import { WALL_CATEGORY } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
 import { FloorPlan, type GhostSpec } from "./FloorPlan";
 import type { ObjectProposal } from "./PlanObjects";
@@ -48,7 +49,7 @@ export type CanvasAreaProps = {
   onSelectItem?: (id: string) => void;
   onMoveItem?: (id: string, center: Point) => void;
   onRotateItem?: (id: string, rotation: number) => void;
-  onLineChange?: (line: WallLine, key: "end" | "move") => void;
+  onLineChange?: (line: WallLine, key: "end" | "move" | "rotate") => void;
   onPlace?: (p: Point) => void;
   /** Leave ghost_draft before anything was placed. */
   onCancelPlacing?: () => void;
@@ -117,7 +118,7 @@ export const CanvasArea = memo(function CanvasArea({
         draftGhost={draftGhost}
         ghostSelected={ghostSelected}
         wallStart={wallStart}
-        drawingWall={placing && ghostCategory === "Wall"}
+        drawingWall={placing && ghostCategory === WALL_CATEGORY}
         onSelectItem={onSelectItem}
         onMoveItem={onMoveItem}
         onRotateItem={onRotateItem}
@@ -144,12 +145,12 @@ export const CanvasArea = memo(function CanvasArea({
             className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-black/80 py-1.5 pl-4 pr-1.5 text-[15px] font-semibold text-white shadow-lg"
           >
             <Crosshair size={18} aria-hidden />
-            {ghostCategory === "Wall"
+            {ghostCategory === WALL_CATEGORY
               ? wallStart
                 ? "Tap where the wall ends"
                 : "Tap where the wall starts"
               : "Tap where the missing element is"}
-            {ghostCategory && ghostCategory !== "Wall" && (
+            {ghostCategory && ghostCategory !== WALL_CATEGORY && (
               <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-semibold">{ghostCategory}</span>
             )}
             <button
