@@ -24,13 +24,14 @@ const FIELD = "w-full rounded-xl bg-gray-100";
 
 /**
  * NotesAndAudioInput (molecule): the Notes field and the voice memo in ONE
- * footprint (mocked audio, WhatsApp-style), so the form needs no separate
- * Voice memo section.
+ * footprint (mocked audio; a WhatsApp-like pattern in magicplan's own colours:
+ * blue for play, progress and Transcribe, red only while recording), so the
+ * form needs no separate Voice memo section.
  *
  *   text       the note's text area, gray mic button in its bottom-right corner
  *   recording  the text area gives way to a pill: pulsing red dot · timer · Stop
- *   recorded   a compact WhatsApp bubble (play · waveform · duration · green
- *              Transcribe · trash, which deletes the audio) with a compact
+ *   recorded   a compact voice card (play · waveform · duration · Transcribe ·
+ *              trash, which deletes the audio) with a compact
  *              note field below it for typing
  *   Transcribe the transcript appears inside the bubble; the note is untouched
  */
@@ -163,7 +164,7 @@ export function NotesAndAudioInput({
     );
   }
 
-  // ── recorded: a compact WhatsApp bubble (+ its transcript), the note below ──
+  // ── recorded: a compact voice card (+ its transcript), the note below ──
   const played = Math.round(progress * BARS.length);
   return (
     <div data-notes-mode={transcribed ? "transcribed" : "recorded"} className="flex flex-col gap-2">
@@ -173,7 +174,7 @@ export function NotesAndAudioInput({
             type="button"
             onClick={() => setPlaying((p) => !p)}
             aria-label={playing ? "Pause voice memo" : "Play voice memo"}
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-mp-ink shadow-sm active:bg-gray-50"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-mp-blue text-white active:opacity-90"
           >
             {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
           </button>
@@ -187,7 +188,7 @@ export function NotesAndAudioInput({
                 width={BAR_W}
                 height={h}
                 rx={1.5}
-                className={i < played ? "fill-mp-ink" : "fill-gray-400"}
+                className={i < played ? "fill-mp-blue" : "fill-gray-300"}
               />
             ))}
           </svg>
@@ -198,7 +199,7 @@ export function NotesAndAudioInput({
             <button
               type="button"
               onClick={transcribe}
-              className="shrink-0 px-1 py-2 text-[15px] font-semibold text-emerald-600 active:text-emerald-700"
+              className="shrink-0 px-1 py-2 text-[15px] font-semibold text-mp-blue active:opacity-70"
             >
               Transcribe
             </button>

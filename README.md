@@ -178,8 +178,9 @@ reviews it.
     - **text**: the note, with a gray **mic** button in its bottom-right corner;
     - **recording**: the text area gives way to a compact pill with a pulsing
       red dot, a live timer and **Stop**;
-    - **recorded**: a compact WhatsApp-style card (play with mock playback,
-      waveform, duration, green **Transcribe**, trash to delete the audio)
+    - **recorded**: a compact voice card in magicplan blue (blue play with
+      mock playback, waveform filling blue, duration, blue **Transcribe**,
+      trash to delete the audio; red is kept for recording only)
       with a compact note field below it for typing;
     - **Transcribe**: the transcript appears **inside the voice card** (e.g.
       *"The physical wall is 20cm shorter than the locked plan indicates.
