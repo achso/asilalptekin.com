@@ -373,7 +373,6 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
             <span className="ml-1.5 text-[15px] font-normal text-mp-muted">at least 1 photo</span>
           </StepLabel>
           <PhotoEvidenceCapture
-            variant="single"
             photos={photos}
             onPhotosChange={setPhotos}
             note={note}

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Eye, Send, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   CORNERS,
   GHOST_ITEM_SIZE,
@@ -128,15 +128,7 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
         </section>
 
         <section className="flex flex-col gap-3">
-          <div>
-            <h3 className="mb-2 text-[15px] font-semibold text-mp-muted">Photo</h3>
-            {e.photoUrls[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={e.photoUrls[0]} alt="Evidence photo" className="aspect-[4/3] w-full rounded-2xl object-cover" />
-            ) : (
-              <p className="text-[15px] text-mp-muted">No photo</p>
-            )}
-          </div>
+          <Photos urls={e.photoUrls} />
 
           <dl className="divide-y divide-mp-line overflow-hidden rounded-2xl bg-white text-[15px]">
             <Row label="Issue">
@@ -176,6 +168,51 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
         </footer>
       )}
     </>
+  );
+}
+
+/** Every photo: the selected one large, all of them as thumbnails below (tap to view). */
+function Photos({ urls }: { urls: string[] }) {
+  const [shown, setShown] = useState(0);
+  const current = urls[Math.min(shown, urls.length - 1)];
+  return (
+    <div>
+      <h3 className="mb-2 text-[15px] font-semibold text-mp-muted">
+        {urls.length > 1 ? `Photos (${urls.length})` : "Photo"}
+      </h3>
+      {current ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={current}
+          alt={`Evidence photo ${shown + 1} of ${urls.length}`}
+          className="aspect-[4/3] w-full rounded-2xl object-cover"
+        />
+      ) : (
+        <p className="text-[15px] text-mp-muted">No photo</p>
+      )}
+      {urls.length > 1 && (
+        <ul aria-label="All photos" className="mt-2 grid grid-cols-5 gap-2">
+          {urls.map((u, i) => (
+            <li key={u + i}>
+              <button
+                type="button"
+                onClick={() => setShown(i)}
+                aria-label={`Show photo ${i + 1}`}
+                aria-pressed={i === shown}
+                className={
+                  i === shown
+                    ? "block w-full overflow-hidden rounded-xl ring-2 ring-mp-blue ring-offset-2"
+                    : "block w-full overflow-hidden rounded-xl opacity-80 active:opacity-100"
+                }
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u} alt="" className="aspect-square w-full object-cover" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

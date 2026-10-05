@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useId, useRef } from "react";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { cn } from "@/lib/utils";
@@ -32,12 +32,6 @@ export type PhotoEvidenceCaptureProps = {
   onPhotoAdded?: (url: string) => void;
   /** Offer a demo image when there is no camera (desktop review). */
   allowDemo?: boolean;
-  /**
-   * "grid": the native Photos & Notes tab (add tile + slots).
-   * "single": evidence in the escalation form: one large photo slot plus an
-   * add button, no empty slots (UX audit #7).
-   */
-  variant?: "grid" | "single";
   className?: string;
 };
 
@@ -48,7 +42,6 @@ export function PhotoEvidenceCapture({
   onNoteChange,
   onPhotoAdded,
   allowDemo = true,
-  variant = "grid",
   className,
 }: PhotoEvidenceCaptureProps) {
   const input = useRef<HTMLInputElement>(null);
@@ -84,14 +77,6 @@ export function PhotoEvidenceCapture({
         }}
       />
 
-      {variant === "single" ? (
-        <SinglePhoto
-          photos={photos}
-          full={full}
-          onAdd={() => input.current?.click()}
-          onRemove={() => remove(0)}
-        />
-      ) : (
       <div className="rounded-2xl bg-white p-2.5">
         <ul className="grid grid-cols-4 gap-2" aria-label="Photos">
           {/* Add tile */}
@@ -153,7 +138,6 @@ export function PhotoEvidenceCapture({
           ))}
         </ul>
       </div>
-      )}
 
       {allowDemo && !full && (
         <button
@@ -182,63 +166,6 @@ export function PhotoEvidenceCapture({
           maxLength={500}
           className="block w-full resize-y rounded-xl border-0 bg-gray-100 px-3 py-2.5 text-[15px] leading-snug outline-none placeholder:text-[#a1a1a6] focus:ring-2 focus:ring-mp-blue/40"
         />
-      </div>
-    </div>
-  );
-}
-
-/** One large slot (the first photo, or a big "Take photo" target) plus an add button. */
-function SinglePhoto({
-  photos,
-  full,
-  onAdd,
-  onRemove,
-}: {
-  photos: string[];
-  full: boolean;
-  onAdd: () => void;
-  onRemove: () => void;
-}) {
-  const first = photos[0];
-  if (!first) {
-    return (
-      <button
-        type="button"
-        onClick={onAdd}
-        aria-label="Take photo (required)"
-        className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-mp-blue bg-white text-[15px] font-semibold text-mp-blue active:bg-blue-50"
-      >
-        <Camera size={34} strokeWidth={1.75} aria-hidden />
-        Take photo
-      </button>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-2" aria-label="Photos">
-      <div className="relative overflow-hidden rounded-2xl bg-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={first} alt="Evidence photo 1" className="aspect-[4/3] w-full object-cover" />
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="Remove photo 1"
-          className="absolute right-2 top-2 grid size-11 place-items-center rounded-full bg-black/60 text-white"
-        >
-          <X size={18} strokeWidth={2.5} />
-        </button>
-      </div>
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={full}
-          className="flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-[15px] font-semibold text-mp-blue active:bg-blue-50 disabled:opacity-40"
-        >
-          <Plus size={18} aria-hidden /> Add photo
-        </button>
-        {photos.length > 1 && (
-          <span className="text-[15px] text-mp-muted">{photos.length} photos attached</span>
-        )}
       </div>
     </div>
   );

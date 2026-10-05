@@ -166,9 +166,9 @@ reviews it.
   becomes a period, so it's always *2.40*.
   - **Measured length**: prefilled from the drawn wall (or the popover);
     a plausible minimum of **0.50 m** is required (*"At least 0.50 m"*).
-  - **Evidence** (UX audit #7): **one large photo slot** (*Take photo* opens
-    the rear camera; on a laptop use *"No camera? Use demo photo"*) plus an
-    **Add photo** button. No empty slots. Voice memo is optional.
+  - **Evidence**: the same photo grid as the native *Photos & Notes* tab
+    (the + tile opens the rear camera; on a laptop use *"No camera? Use demo
+    photo"*), at least one photo. Voice memo is optional.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
   - **Priority** (UX audit #5): an explicit choice, **Can continue work**
@@ -219,7 +219,8 @@ so the top bar, the form, the cards and the ticket never disagree.
 **What the expert receives** (UX audit #3): the **chevron** on a sent card
 opens a read-only ticket: the plan snapshot with the drawn wall in red
 (length label, north arrow, room size), *Runs north–south · From … to …*,
-the photo, the measured value against the drawing or the plan, **The Ask**,
+**every photo** (the selected one large, all of them as thumbnails; tap one
+to view it), the measured value against the drawing or the plan, **The Ask**,
 and the **deadline**. Esc, ✕ or a tap outside closes it. The same view is the
 review step before Send.
 
