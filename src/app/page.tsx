@@ -319,6 +319,7 @@ export default function Page() {
               onMoveItem={store.moveItem}
               onRotateItem={store.rotateItem}
               onLineChange={store.setLine}
+              plan={store.plan}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
@@ -441,6 +442,7 @@ export default function Page() {
             onRevoke={(id) => store.revokeEscalation(id)}
             onAdvance={store.advanceEscalation}
             onOpenTicket={setTicketId}
+            onAccept={store.acknowledgeResolution}
             mediaFor={store.mediaFor}
             onMediaChange={store.setMediaFor}
           />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PLAN_OBJECTS, PX_PER_M, ROOM, toPx } from "@/lib/floorplan";
+import { PX_PER_M, ROOM, currentPlanObjects, toPx } from "@/lib/floorplan";
 import type { EscalationStatus, ObjectState, PlanObject, Point, SelectedElement } from "@/lib/types";
 
 const SELECT_BLUE = "#64aeea";
@@ -50,7 +50,8 @@ export function PlanObjects({
 }) {
   return (
     <g>
-      {PLAN_OBJECTS.map((o) => (
+      {/* The plan as it stands: accepted corrections in, accepted removals out. */}
+      {currentPlanObjects().map((o) => (
         <PlanObjectView
           key={o.id}
           object={o}

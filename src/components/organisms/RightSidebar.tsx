@@ -48,6 +48,8 @@ type Props = {
   onAdvance?: (id: string) => void;
   /** Card chevron: open the ticket as the remote expert receives it. */
   onOpenTicket?: (id: string) => void;
+  /** Resolved card: Accept Update (merge into the plan, clear the card). */
+  onAccept?: (id: string) => void;
   /** Standard Photos & Notes per element (store-owned, drives the canvas paperclip). */
   mediaFor: (el: SelectedElement) => ElementMedia;
   onMediaChange: (el: SelectedElement, m: ElementMedia) => void;
@@ -117,6 +119,7 @@ export function RightSidebar(props: Props) {
               onRevoke={props.onRevoke}
               onAdvance={props.onAdvance}
               onOpenTicket={props.onOpenTicket}
+              onAccept={props.onAccept}
               media={mediaFor(selected)}
               onMediaChange={setMediaFor(selected)}
             />
@@ -136,6 +139,7 @@ export function RightSidebar(props: Props) {
                 onRevoke: () => props.onRevoke(e.id),
                 onAdvance: props.onAdvance && (() => props.onAdvance!(e.id)),
                 onOpen: props.onOpenTicket && (() => props.onOpenTicket!(e.id)),
+                onAccept: props.onAccept && (() => props.onAccept!(e.id)),
               }))}
             />
           )}
@@ -157,6 +161,7 @@ function Inspector({
   onRevoke,
   onAdvance,
   onOpenTicket,
+  onAccept,
   media,
   onMediaChange,
   tabRequest,
@@ -171,6 +176,7 @@ function Inspector({
   onRevoke: (id: string) => void;
   onAdvance?: (id: string) => void;
   onOpenTicket?: (id: string) => void;
+  onAccept?: (id: string) => void;
   media: ElementMedia;
   onMediaChange: (m: ElementMedia) => void;
   tabRequest?: TabRequest | null;
@@ -217,6 +223,7 @@ function Inspector({
               onRevoke={() => onRevoke(escalation.id)}
               onAdvance={onAdvance && (() => onAdvance(escalation.id))}
               onOpen={onOpenTicket && (() => onOpenTicket(escalation.id))}
+              onAccept={onAccept && (() => onAccept(escalation.id))}
             />
             <p className="mt-2 px-1 text-[12px] text-mp-muted">{INSPECTOR_HINT[escalation.status]}</p>
           </div>
@@ -378,7 +385,7 @@ const INSPECTOR_HINT: Record<EscalationStatus, string> = {
   sending: "Uploading in the background. You can keep working.",
   delivered: "No reply needed. The expert will update the plan. Carry on with other work.",
   in_review: "The remote expert has this open. Leave this wall as it is for now.",
-  resolved: "Plan updated by the expert. This wall is unblocked. Report again if it still doesn't match.",
+  resolved: "The expert's update is shown in green on the plan. Accept it to merge it into the plan.",
 };
 
 /** Shown while an optimistic revoke waits for the server to confirm. */

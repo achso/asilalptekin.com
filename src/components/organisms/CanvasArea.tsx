@@ -7,7 +7,7 @@ import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import type { EscalationStatus, Point, SelectedElement, WallLine, WallSpot } from "@/lib/types";
-import { WALL_CATEGORY } from "@/lib/floorplan";
+import { type PlanRevision, WALL_CATEGORY } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
 import { FloorPlan, type GhostSpec } from "./FloorPlan";
 import type { ObjectProposal } from "./PlanObjects";
@@ -50,6 +50,8 @@ export type CanvasAreaProps = {
   onMoveItem?: (id: string, center: Point) => void;
   onRotateItem?: (id: string, rotation: number) => void;
   onLineChange?: (line: WallLine, key: "end" | "move" | "rotate") => void;
+  /** Accepted expert updates merged into the plan. */
+  plan?: PlanRevision;
   onPlace?: (p: Point) => void;
   /** Leave ghost_draft before anything was placed. */
   onCancelPlacing?: () => void;
@@ -82,6 +84,7 @@ export const CanvasArea = memo(function CanvasArea({
   onMoveItem,
   onRotateItem,
   onLineChange,
+  plan,
   onPlace,
   onCancelPlacing,
   ghostCategory,
@@ -123,6 +126,7 @@ export const CanvasArea = memo(function CanvasArea({
         onMoveItem={onMoveItem}
         onRotateItem={onRotateItem}
         onLineChange={onLineChange}
+        plan={plan}
         onPlace={onPlace}
         markers={markers}
         onDimensionTap={onDimensionTap}

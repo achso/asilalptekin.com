@@ -1,6 +1,7 @@
 import type {
   AskId,
   Corner,
+  GhostItem,
   IssueType,
   ObjectState,
   PlanObject,
@@ -132,7 +133,44 @@ export const PLAN_OBJECTS: PlanObject[] = [
   },
 ];
 
-export const objectById = (id: string) => PLAN_OBJECTS.find((o) => o.id === id)!;
+// ── Plan revisions (accepted expert updates) ────────────────────────────────
+
+/**
+ * What accepted reports changed in the plan ("Accept Update" on a resolved
+ * card). The locked plan above stays the baseline; this layer is merged on
+ * top, so every reader (canvas, inspector, popover, ticket snapshot) sees the
+ * corrected plan as standard geometry.
+ */
+export type PlanRevision = {
+  /** Corrected size / rotation / position per object. */
+  objects: Record<string, ObjectState>;
+  /** Objects confirmed as not on site (removed from the plan). */
+  removedObjects: string[];
+  /** Corrected wall lengths (dimension labels). */
+  wallLengths: Record<string, number>;
+  /** Partition walls added to the plan. */
+  walls: WallLine[];
+  /** Objects added to the plan (squares), with their category. */
+  items: (GhostItem & { category?: string })[];
+};
+export const EMPTY_REVISION: PlanRevision = { objects: {}, removedObjects: [], wallLengths: {}, walls: [], items: [] };
+
+let revision: PlanRevision = EMPTY_REVISION;
+/** The store hands its revision over on every render (idempotent). */
+export const applyPlanRevision = (r: PlanRevision) => {
+  revision = r;
+};
+export const planRevision = () => revision;
+
+/** An object as the plan has it now (baseline + accepted corrections). */
+export const objectById = (id: string): PlanObject => {
+  const base = PLAN_OBJECTS.find((o) => o.id === id)!;
+  const fix = revision.objects[id];
+  return fix ? { ...base, ...fix } : base;
+};
+/** The plan's objects as they stand (accepted removals left out, corrections in). */
+export const currentPlanObjects = () =>
+  PLAN_OBJECTS.filter((o) => !revision.removedObjects.includes(o.id)).map((o) => objectById(o.id));
 export const objectDims = ({ widthM, depthM, heightM, rotation, center }: ObjectState): ObjectState => ({
   center,
   widthM,
@@ -142,7 +180,12 @@ export const objectDims = ({ widthM, depthM, heightM, rotation, center }: Object
 });
 
 export const cornerById = (id: string) => CORNERS.find((c) => c.id === id)!;
-export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;
+/** A wall as the plan has it now (an accepted length correction updates its label). */
+export const wallById = (id: string): Wall => {
+  const w = WALLS.find((x) => x.id === id)!;
+  const len = revision.wallLengths[id];
+  return len !== undefined ? { ...w, lengthM: len } : w;
+};
 
 /** Canvas transform: metres → px inside the canvas SVG. */
 export const PX_PER_M = 110;

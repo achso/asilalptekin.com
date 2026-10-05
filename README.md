@@ -271,8 +271,8 @@ moves on by itself: **sending** after 1 s (or as soon as the iPad is back
 online), **delivered** 1.5 s later, then **in review** 3 s later if the remote
 expert is online (08:00–15:00 Munich). **Cheat for reviewers:** double-tap a
 card's header to force the next state (queued → sending → delivered → in
-review → resolved) without waiting. Resolved reports leave *Active
-Escalations*; select the element to see its resolved card.
+review → resolved) without waiting. Resolved reports stay in *Active
+Escalations* until accepted (below).
 
 **Report Deviation pane.** The intercepted action preselects the issue type;
 *Change type* lists all four with their one-line definitions (Dimension
@@ -280,6 +280,16 @@ Mismatch, Undocumented Element, Element Not on Site, Site Condition Hazard).
 Picking another type keeps the photo and note but drops the intercept's
 values. Under the send button: *Auto-attached: plan dimensions · Permit
 approved last Tuesday.*
+
+**Acknowledge and merge.** A resolved report shows the expert's update as a
+green preview on the plan and a blue **Accept Update** button on its card.
+Accepting (`acknowledgeResolution`) merges it into the plan's geometry (a
+plan-revision layer over the locked baseline, so every reader sees it): a
+moved / turned / resized object is drawn solid black at its corrected
+values, a partition wall or inserted object becomes standard plan geometry,
+an object confirmed missing disappears, and a corrected wall length updates
+its dimension label (the room outline itself isn't redrawn). The preview
+and the card are removed, and the sidebar returns to the room panel.
 
 Each report moves through an explicit state machine (`lib/deviationMachine.ts`):
 
@@ -296,7 +306,8 @@ idle ─submit─▶ queued ─▶ sending ─▶ delivered ─▶ in_review ─
 | Idle (locked plan) | Black wall, toolbar tools disabled | — |
 | Delivered | Red hatched wall, red lock pin | **Revoke Escalation** available |
 | In Review | Hatched wall framed in amber with a pulse, amber eye pin | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |
-| Resolved | Green wall, green check pin | Contractor unblocked; the wall can be reported again |
+| Resolved | Green preview (wall, proposal, pin) | Green **Resolved** badge + blue **Accept Update** |
+| Accepted | Standard plan geometry, solid black | Card removed; sidebar back to the room panel |
 
 **Open the hidden Dev Tools:** press **Shift + D**, **triple-tap the clock** in
 the status bar (works on the iPad), or load **`/?dev=1`**. The panel flips the

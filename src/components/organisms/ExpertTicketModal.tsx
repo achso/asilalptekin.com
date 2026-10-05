@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import {
   CORNERS,
   GHOST_ITEM_SIZE,
-  PLAN_OBJECTS,
+  currentPlanObjects,
+  planRevision,
   PROJECT,
   PERMIT_TEXT,
   ROOM,
@@ -290,7 +291,7 @@ function PlanSnapshot({ e }: { e: Escalation }) {
     >
       <rect x={0} y={0} width={W} height={D} fill="#fff" />
       {/* plan objects */}
-      {PLAN_OBJECTS.map((o) => (
+      {currentPlanObjects().map((o) => (
         <rect
           key={o.id}
           x={-o.widthM / 2}
@@ -298,6 +299,23 @@ function PlanSnapshot({ e }: { e: Escalation }) {
           width={o.widthM}
           height={o.depthM}
           transform={`translate(${o.center.x} ${o.center.y}) rotate(${o.rotation})`}
+          fill="none"
+          stroke="#9ca3af"
+          strokeWidth={0.02}
+        />
+      ))}
+      {/* accepted additions: standard plan geometry */}
+      {planRevision().walls.map((l, i) => (
+        <line key={`pw-${i}`} x1={l.a.x} y1={l.a.y} x2={l.b.x} y2={l.b.y} stroke="#111" strokeWidth={0.09} />
+      ))}
+      {planRevision().items.map((it) => (
+        <rect
+          key={it.id}
+          x={-GHOST_ITEM_SIZE.widthM / 2}
+          y={-GHOST_ITEM_SIZE.depthM / 2}
+          width={GHOST_ITEM_SIZE.widthM}
+          height={GHOST_ITEM_SIZE.depthM}
+          transform={`translate(${it.center.x} ${it.center.y}) rotate(${it.rotation})`}
           fill="none"
           stroke="#9ca3af"
           strokeWidth={0.02}

@@ -21,12 +21,14 @@ import {
   snapWallEnd,
   snapWallPoint,
   translateLine,
+  wallById,
   wallSpotAt,
   wallSpotPx,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 import type { EscalationStatus, GhostItem, Point, SelectedElement, Wall, WallLine, WallSpot } from "@/lib/types";
+import type { PlanRevision } from "@/lib/floorplan";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
 import { GhostItems } from "./GhostItems";
@@ -68,6 +70,8 @@ type Props = {
   /** Drawing a wall (two taps): the first tap, once made. */
   wallStart?: Point | null;
   drawingWall?: boolean;
+  /** Accepted expert updates (also re-renders the memoised canvas when the plan changes). */
+  plan?: PlanRevision;
   /** The drawn wall: resized (end) or moved (body) on the canvas. */
   onLineChange?: (line: WallLine, key: "end" | "move" | "rotate") => void;
   /** Inserted objects: select / drag / rotate a copy. */
@@ -113,6 +117,7 @@ export function FloorPlan({
   onMoveItem,
   onRotateItem,
   onLineChange,
+  plan,
   onPlace,
   markers,
   onDimensionTap,
@@ -195,7 +200,7 @@ export function FloorPlan({
       {WALLS.map((w) => (
         <DimensionLine
           key={`dim-${w.id}`}
-          wall={w}
+          wall={wallById(w.id)}
           onTap={!placing ? onDimensionTap : undefined}
         />
       ))}
@@ -289,6 +294,9 @@ export function FloorPlan({
           />
         );
       })}
+
+      {/* Accepted updates: merged into the plan, drawn as standard geometry. */}
+      {plan && <MergedGeometry plan={plan} />}
 
       {markers?.map((m) =>
         m.items ? (
@@ -619,6 +627,45 @@ function RotateLineHandle({ line, onRotate }: { line: WallLine; onRotate: (l: Wa
           }}
         />
       </g>
+    </g>
+  );
+}
+
+/** Partition walls and objects added by accepted reports: solid black, like the rest of the plan. */
+function MergedGeometry({ plan }: { plan: PlanRevision }) {
+  return (
+    <g pointerEvents="none" data-merged>
+      {plan.walls.map((l, i) => {
+        const a = toPx(l.a);
+        const b = toPx(l.b);
+        return (
+          <line
+            key={`mw-${i}`}
+            data-merged-wall
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
+            stroke="#111"
+            strokeWidth={WALL_THICKNESS - 4}
+          />
+        );
+      })}
+      {plan.items.map((it) => {
+        const c = toPx(it.center);
+        const w = GHOST_ITEM_SIZE.widthM * PX_PER_M;
+        const h = GHOST_ITEM_SIZE.depthM * PX_PER_M;
+        return (
+          <g key={it.id} data-merged-item transform={`translate(${c.x} ${c.y}) rotate(${it.rotation})`}>
+            <rect x={-w / 2} y={-h / 2} width={w} height={h} fill="#fff" stroke="#111" strokeWidth={1.5} />
+            {it.category && (
+              <text fontSize={10} fontWeight={600} fill="#111" textAnchor="middle" dominantBaseline="central">
+                {it.category.length > 9 ? `${it.category.slice(0, 8)}…` : it.category}
+              </text>
+            )}
+          </g>
+        );
+      })}
     </g>
   );
 }

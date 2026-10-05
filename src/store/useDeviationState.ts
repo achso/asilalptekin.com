@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
+  EMPTY_REVISION,
+  type PlanRevision,
   PROJECT,
   ROOM,
+  applyPlanRevision,
   WALL_CATEGORY,
   clampToRoom,
   elementById,
@@ -114,6 +117,8 @@ type State = {
   wallSpot: WallSpot | null;
   /** Drawing a wall (ghost_draft, category Wall): the first tap, waiting for the end. */
   wallStart: Point | null;
+  /** Accepted expert updates, merged into the plan's geometry (see PlanRevision). */
+  plan: PlanRevision;
   escalations: Escalation[];
   /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
   media: Record<string, ElementMedia>;
@@ -156,6 +161,7 @@ type Action =
   | { type: "revokeSettled"; id: string }
   | { type: "setMedia"; key: string; media: ElementMedia }
   | { type: "setDemo"; patch: Partial<DemoSettings> }
+  | { type: "acknowledge"; id: string }
   | { type: "reset" }
   | { type: "notify"; text: string; tone: ToastTone }
   | { type: "dismissToast" };
@@ -167,6 +173,7 @@ const initialState: State = {
   ghostCategory: null,
   wallSpot: null,
   wallStart: null,
+  plan: EMPTY_REVISION,
   escalations: [],
   media: {},
   pendingRevokes: {},
@@ -278,7 +285,7 @@ export const sameElement = (a: SelectedElement | null, b: SelectedElement | null
 
 const SERVER_TOASTS: Partial<Record<EscalationStatus, (label: string) => [string, ToastTone]>> = {
   in_review: (l) => [`The expert opened your ${l} report.`, "hint"],
-  resolved: (l) => [`The expert updated the plan. ${l} resolved. You're unblocked.`, "success"],
+  resolved: (l) => [`The expert resolved ${l}. Review the green preview, then Accept Update.`, "success"],
 };
 
 function reducer(state: State, action: Action): State {
@@ -646,6 +653,23 @@ function reducer(state: State, action: Action): State {
     case "setDemo":
       return { ...state, demo: { ...state.demo, ...action.patch } };
 
+    case "acknowledge": {
+      // "Accept Update" on a resolved card: the expert's correction becomes
+      // plan geometry (solid black, standard), the preview and the card go.
+      const e = state.escalations.find((x) => x.id === action.id);
+      if (!e || e.status !== "resolved") return state;
+      const plan = mergeIntoPlan(state.plan, e);
+      return {
+        ...state,
+        plan,
+        escalations: state.escalations.filter((x) => x.id !== e.id),
+        // Back to the calm default: the room panel, nothing selected.
+        selectedElement: null,
+        wallSpot: null,
+        toast: toast(`Plan updated: ${reportName(e)} merged.`, "success"),
+      };
+    }
+
     case "reset":
       return { ...initialState, demo: state.demo, toast: toast("Demo reset.", "hint") };
 
@@ -657,8 +681,30 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+/** Fold one resolved report into the plan revision. */
+function mergeIntoPlan(plan: PlanRevision, e: Escalation): PlanRevision {
+  const t = e.target;
+  if (e.objectChange && t.type === "object") {
+    return { ...plan, objects: { ...plan.objects, [t.id]: e.objectChange.to } };
+  }
+  if (e.issueType === "element-not-on-site" && t.type === "object") {
+    return { ...plan, removedObjects: [...plan.removedObjects, t.id] };
+  }
+  if (e.issueType === "dimension-mismatch" && t.type === "wall" && e.measuredM !== undefined) {
+    return { ...plan, wallLengths: { ...plan.wallLengths, [t.id]: e.measuredM } };
+  }
+  if (e.issueType === "undocumented-element") {
+    if (e.line) return { ...plan, walls: [...plan.walls, e.line] };
+    if (e.items) return { ...plan, items: [...plan.items, ...e.items.map((i) => ({ ...i, category: e.category }))] };
+  }
+  // Hazards, removed walls / corners: nothing to redraw, the report just closes.
+  return plan;
+}
+
 export function useDeviationState() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  // The plan geometry readers (objectById, wallById…) see the merged plan.
+  applyPlanRevision(state.plan);
 
   // Timers outlive renders: keep handles for cleanup and read fresh state via refs.
   const timers = useRef<number[]>([]);
@@ -871,6 +917,8 @@ export function useDeviationState() {
     [],
   );
   const reset = useCallback(() => dispatch({ type: "reset" }), []);
+  /** "Accept Update" on a resolved card: merge it into the plan, remove the card. */
+  const acknowledgeResolution = useCallback((id: string) => dispatch({ type: "acknowledge", id }), []);
   const notify = useCallback(
     (text: string, tone: ToastTone = "hint") => dispatch({ type: "notify", text, tone }),
     [],
@@ -923,6 +971,8 @@ export function useDeviationState() {
     selectWallAt,
     wallSpot: state.wallSpot,
     wallStart: state.wallStart,
+    plan: state.plan,
+    acknowledgeResolution,
     startDraft,
     proposeObjectChange,
     updateDraft,

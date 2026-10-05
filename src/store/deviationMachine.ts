@@ -53,7 +53,11 @@ export const canTransition = (from: EscalationStatus, to: EscalationStatus) =>
 export const canRevoke = (s: EscalationStatus) => s === "queued" || s === "sending" || s === "delivered";
 
 /** Active = the wall is still locked/blocked on site. */
-export const isActive = (e: Escalation | undefined) => !!e && e.status !== "resolved";
+/**
+ * Still on the sidebar: every report until the contractor accepts its
+ * resolution ("Accept Update" merges it into the plan and removes it).
+ */
+export const isActive = (e: Escalation | undefined) => !!e;
 
 export const REVOKE_DISABLED_MESSAGE = "The expert is actively reviewing. Revocation disabled.";
 

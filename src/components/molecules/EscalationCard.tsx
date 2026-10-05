@@ -105,6 +105,8 @@ export type EscalationCardProps = {
   onOpen?: () => void;
   /** The Ask: what the contractor needs back. */
   ask?: AskId;
+  /** Resolved: accept the expert's update (merge it into the plan, clear the card). */
+  onAccept?: () => void;
   /**
    * Reviewer cheat: a double-tap on the card's header forces the next
    * lifecycle state (queued → sending → delivered → in review → resolved),
@@ -133,6 +135,7 @@ export function EscalationCard({
   onPress,
   onOpen,
   ask,
+  onAccept,
   voiceMemoSeconds,
   onAdvance,
   className,
@@ -271,6 +274,23 @@ export function EscalationCard({
         </AnimatePresence>
       </div>
 
+      {/* Resolved: the green preview is on the plan; accepting merges it into
+          the plan's geometry and clears this card. */}
+      {status === "resolved" && onAccept && (
+        <div className="px-3 pb-3">
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onAccept}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-mp-blue text-[15px] font-semibold text-white active:opacity-90"
+          >
+            <CheckCheck size={18} aria-hidden /> Accept Update
+          </motion.button>
+        </div>
+      )}
+
       {/* In review: Revoke is gone; say why (race-condition guard, visible on touch) */}
       {status === "in_review" && (
         <motion.p
@@ -349,7 +369,7 @@ export function summarizeObjectChange({ from, to }: { from: ObjectState; to: Obj
 /** Map a store `Escalation` onto the card's presentational props. */
 export function toEscalationCardProps(
   e: Escalation,
-): Omit<EscalationCardProps, "onPress" | "onOpen" | "onRevoke" | "className"> {
+): Omit<EscalationCardProps, "onPress" | "onOpen" | "onRevoke" | "onAccept" | "className"> {
   return {
     status: e.status,
     issueType: e.issueType,
