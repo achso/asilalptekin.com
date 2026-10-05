@@ -23,6 +23,8 @@ export const PROJECT = {
   budgetEur: 40000,
   permit: "Approved last Tuesday",
   previousVisit: "2 years ago (different floor plan)",
+  /** Who reports from site (shown on the expert's ticket). Fictional. */
+  reporter: "M. Weber, site lead",
   expert: { name: "Remote Expert", city: "Munich", cutoffHourCET: 15 },
 };
 
@@ -290,24 +292,36 @@ export function translateLine(l: WallLine, dx: number, dy: number): WallLine {
 
 export const lineLength = (l: WallLine) => +Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y).toFixed(2);
 
-/** Where a drawn wall's end sits, in words: on which wall, or how far into the room. */
-function pointText(p: Point) {
-  const W = ROOM.widthM;
-  const D = ROOM.depthM;
+/** The existing wall a point sits on (inner face), if any. */
+function wallAt(p: Point) {
   const e = 0.01;
-  if (p.y < e) return `North wall, ${p.x.toFixed(2)} m from west`;
-  if (p.y > D - e) return `South wall, ${p.x.toFixed(2)} m from west`;
-  if (p.x < e) return `West wall, ${p.y.toFixed(2)} m from north`;
-  if (p.x > W - e) return `East wall, ${p.y.toFixed(2)} m from north`;
-  return `${p.x.toFixed(2)} m from west, ${p.y.toFixed(2)} m from north`;
+  if (p.y < e) return "north";
+  if (p.y > ROOM.depthM - e) return "south";
+  if (p.x < e) return "west";
+  if (p.x > ROOM.widthM - e) return "east";
+  return null;
 }
 
-/** "Runs north–south", start and end in words: what the expert needs to see the wall. */
+/**
+ * A drawn wall in words, as the expert needs it: "Starts on the north wall,
+ * 1.80 m from the west corner. Runs 1.95 m south." (+ where it ends, if on a wall).
+ */
 export function describeLine(l: WallLine) {
-  const dx = Math.abs(l.b.x - l.a.x);
-  const dy = Math.abs(l.b.y - l.a.y);
-  const runs = dy < 0.01 ? "east–west" : dx < 0.01 ? "north–south" : "diagonally";
-  return { runs, from: pointText(l.a), to: pointText(l.b) };
+  const dx = l.b.x - l.a.x;
+  const dy = l.b.y - l.a.y;
+  const runs = Math.abs(dy) < 0.01 ? "east–west" : Math.abs(dx) < 0.01 ? "north–south" : "diagonally";
+  const host = wallAt(l.a);
+  const start =
+    host === "north" || host === "south"
+      ? `Starts on the ${host} wall, ${l.a.x.toFixed(2)} m from the west corner.`
+      : host
+        ? `Starts on the ${host} wall, ${l.a.y.toFixed(2)} m from the north corner.`
+        : `Starts ${l.a.x.toFixed(2)} m from the west wall and ${l.a.y.toFixed(2)} m from the north wall.`;
+  const dir =
+    runs === "diagonally" ? "diagonally" : runs === "east–west" ? (dx > 0 ? "east" : "west") : dy > 0 ? "south" : "north";
+  const endWall = wallAt(l.b);
+  const end = endWall && endWall !== host ? ` Ends at the ${endWall} wall.` : "";
+  return { runs, sentence: `${start} Runs ${lineLength(l).toFixed(2)} m ${dir}.${end}` };
 }
 
 /** Centre for an object inserted at a spot: against the wall, inside the room. */

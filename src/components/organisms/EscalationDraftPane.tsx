@@ -111,12 +111,18 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
   const [ask, setAsk] = useState<AskId | null>(null);
   const availability = useExpertAvailability();
 
-  const hasLength = measured !== null && measured >= MIN_LENGTH_M;
+  // A correction equal to the plan isn't a mismatch yet (e.g. Propose
+  // Correction pressed with 4.55 unchanged): step 1 stays open.
+  const sameAsPlan =
+    isWallLength && measured !== null && plannedM !== undefined && Math.abs(measured - plannedM) < 0.005;
+  const hasLength = measured !== null && measured >= MIN_LENGTH_M && !sameAsPlan;
   const tooShort = measured !== null && measured > 0 && measured < MIN_LENGTH_M;
+  const estimated = !!draft.lengthFromDrawing;
   const hasPhoto = photos.length > 0;
   const structuredDone = overridden || isRemove || (isObject ? changed.length > 0 : hasLength);
   const missing = [
-    !structuredDone && (isObject ? "change" : tooShort ? `length ≥ ${MIN_LENGTH_M.toFixed(2)} m` : "length"),
+    !structuredDone &&
+      (isObject ? "change" : sameAsPlan ? "new length" : tooShort ? `length ≥ ${MIN_LENGTH_M.toFixed(2)} m` : "length"),
     !hasPhoto && "photo",
   ].filter(Boolean) as string[];
   const canSend = missing.length === 0 && !!ask && !recording;
@@ -145,6 +151,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
       voiceMemo,
       blocking,
       ask: ask ?? undefined,
+      lengthEstimated: keep && intent === "missing-element" && estimated ? true : undefined,
     });
   };
 
@@ -309,7 +316,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
           </section>
         ) : (
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={1} done={hasLength}>
+          <StepLabel n={1} done={hasLength && !estimated}>
             Measured on site <span className="text-mp-red">*</span>
           </StepLabel>
           {!isWallLength && marker && (
@@ -322,7 +329,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
                       Drawn on plan · runs {describeLine(draft.line).runs}
                     </span>
                     <span className="block text-[15px] leading-snug text-mp-muted">
-                      From {describeLine(draft.line).from} to {describeLine(draft.line).to}
+                      {describeLine(draft.line).sentence}
                     </span>
                   </>
                 ) : draft.spot ? (
@@ -356,6 +363,8 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
                 ? undefined
                 : tooShort
                   ? `At least ${MIN_LENGTH_M.toFixed(2)} m`
+                  : estimated
+                    ? "Estimated from drawing · correct it after measuring"
                   : category === "Wall"
                     ? "Length of physical wall"
                     : "Length of element"
@@ -415,8 +424,10 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
           </div>
           <div role="radiogroup" aria-label="Priority" className="grid grid-cols-2 gap-1 rounded-xl bg-mp-line/70 p-1">
             {[
-              { v: false, label: "Can continue work" },
-              { v: true, label: "Blocked" },
+              // What the contractor is doing, so it can't contradict the ask
+              // ("Tell me whether I can continue" + "Can continue work").
+              { v: false, label: "I'm carrying on" },
+              { v: true, label: "I've stopped" },
             ].map((o) => {
               const active = blocking === o.v;
               return (
@@ -444,8 +455,8 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
             <p role="status" className="flex items-start gap-2 px-1 text-[15px] leading-snug text-mp-muted">
               <Clock size={18} className="mt-0.5 shrink-0" aria-hidden />
               <span>
-                {availability.formLine}
-                <span className="block font-medium text-mp-ink">Deadline: {availability.deadline(blocking)}</span>
+                <span className="block font-medium text-mp-ink">{availability.priorityLine(blocking)}</span>
+                {blocking ? availability.leaveNote(true) : availability.formLine}
               </span>
             </p>
           )}

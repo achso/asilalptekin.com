@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 /**
  * Expert availability: the ONE source for every time string in the app
  * (top bar, form, cards, the expert's ticket). The remote expert in Munich
- * works 08:00–15:00 Europe/Berlin. Everything is derived from one shared
+ * works 08:00–15:00 Europe/Berlin, Monday to Friday. Everything is derived from one shared
  * clock, so the header, the form and a sent card can never disagree
  * (UX audit #4).
  */
@@ -39,35 +39,79 @@ export type ExpertAvailability = {
   minutesLeft: number;
   /** Top bar pill. */
   pill: string;
-  /** Form, next to the priority choice. */
+  /** Form, under the priority choice. */
   formLine: string;
   /** Sent card, under the status: when the expert will see it. */
   seenLine: string;
-  /** The ticket's deadline, from the contractor's priority. */
-  deadline: (blocked: boolean) => string;
+  /**
+   * What the contractor can expect, from their priority. States only what is
+   * known (the expert's hours), never a promised response time (UX audit r2).
+   */
+  priorityLine: (blocked: boolean) => string;
+  /** Blocked after hours: they don't need to wait on site. */
+  leaveNote: (blocked: boolean) => string | null;
+  /** The expert's ticket row: how urgent, true whenever it's opened. */
+  urgency: (blocked: boolean, since: number) => string;
 };
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const FULL_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** Day of week in Munich, 0 = Sunday. */
+function munichWeekday(now: Date) {
+  const w = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short" }).format(now);
+  return Math.max(0, WEEKDAYS.indexOf(w));
+}
+
+/** Munich calendar date as YYYY-MM-DD (to compare days). */
+const munichDay = (d: Date) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
 export function expertAvailability(now = new Date()): ExpertAvailability {
   const t = munichMinutes(now);
+  const wd = munichWeekday(now);
+  const workday = wd >= 1 && wd <= 5;
   const start = EXPERT_HOURS.start * 60;
   const end = EXPERT_HOURS.end * 60;
-  const online = t >= start && t < end;
+  const online = workday && t >= start && t < end;
   const minutesLeft = online ? end - t : 0;
-  // Before 08:00 the expert is back today; after 15:00, tomorrow.
-  const day = t < start ? "today" : "tomorrow";
-  const Day = day === "today" ? "Today" : "Tomorrow";
+  // The next 08:00 the expert works: today (a weekday before 08:00), else the
+  // next working day: "tomorrow" (Mon–Thu evening) or "Monday" (weekend).
+  const nextWorkday = (from: number) => {
+    let d = (from + 1) % 7;
+    let n = 1;
+    while (d === 0 || d === 6) {
+      d = (d + 1) % 7;
+      n++;
+    }
+    return n === 1 ? "tomorrow" : FULL_DAYS[d];
+  };
+  const back = workday && t < start ? "today" : nextWorkday(wd);
+  const backAt = `08:00 ${back}`;
+  const morning = back === "today" ? "this morning" : `${back} morning`;
   return {
     online,
     minutesLeft,
-    pill: online ? `Remote expert · available for ${duration(minutesLeft)}` : `Remote expert · back at 08:00 ${day}`,
-    formLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert is back at 08:00 ${day}`,
-    seenLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert sees it at 08:00 ${day}`,
-    deadline: (blocked) =>
-      blocked
-        ? online
-          ? "Today before 15:00 · work is stopped"
-          : `${Day} by 10:00 · work is stopped`
-        : "Within 2 working days · work continues",
+    pill: online ? `Remote expert · available for ${duration(minutesLeft)}` : `Remote expert · back at ${backAt}`,
+    formLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert is back at ${backAt}`,
+    seenLine: online ? `Expert available for ${duration(minutesLeft)}` : `Expert sees it at ${backAt}`,
+    priorityLine: (blocked) =>
+      !blocked
+        ? "No rush · work continues"
+        : online
+          ? minutesLeft > 30
+            ? "Asking for an answer today · expert is in until 15:00"
+            : `Expert leaves in ${minutesLeft} min · may be answered ${nextWorkday(wd)} from 08:00`
+          : `Expert sees this first at ${backAt} · work is stopped`,
+    leaveNote: (blocked) =>
+      blocked && !online ? `You can leave. The answer comes to this iPad ${morning}.` : null,
+    urgency: (blocked, since) => {
+      if (!blocked) return "Not blocking";
+      const s = new Date(since);
+      const days = Math.round((Date.parse(munichDay(now)) - Date.parse(munichDay(s))) / 86_400_000);
+      const when = days <= 0 ? "" : days === 1 ? " yesterday" : ` ${FULL_DAYS[munichWeekday(s)]}`;
+      return `Work stopped since ${munichClock(s)}${when}`;
+    },
   };
 }
 

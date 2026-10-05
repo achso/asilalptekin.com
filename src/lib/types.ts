@@ -86,6 +86,8 @@ export type Escalation = {
   items?: GhostItem[];
   /** Missing wall: drawn with two taps (start → end), at true length, in plan metres. */
   line?: WallLine;
+  /** The length was estimated from the drawing, not measured on site. */
+  lengthEstimated?: boolean;
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */
   photoUrls: string[];

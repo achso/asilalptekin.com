@@ -141,7 +141,7 @@ export const CanvasArea = memo(function CanvasArea({
             exit={{ opacity: 0, y: -8 }}
             transition={{ type: "tween", duration: 0.18 }}
             role="status"
-            className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-mp-red py-1.5 pl-4 pr-1.5 text-[15px] font-semibold text-white shadow-lg"
+            className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-black/80 py-1.5 pl-4 pr-1.5 text-[15px] font-semibold text-white shadow-lg"
           >
             <Crosshair size={18} aria-hidden />
             {ghostCategory === "Wall"

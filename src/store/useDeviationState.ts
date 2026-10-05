@@ -244,6 +244,8 @@ export type Draft = {
   spot?: WallSpot;
   /** Missing wall: drawn start → end (true length, direction). */
   line?: WallLine;
+  /** The length still comes from the drawing (not typed from a tape measure yet). */
+  lengthFromDrawing?: boolean;
   /**
    * missing-element objects (everything but walls): each
    * copy can be dragged and rotated; Duplicate adds one, Delete removes the
@@ -339,6 +341,8 @@ function reducer(state: State, action: Action): State {
       const d = state.draft;
       if (!d) return state;
       const next = { ...d, ...action.patch };
+      // Typed (or stepped) by the contractor: a measurement, not an estimate.
+      if (action.patch.measuredM !== undefined) next.lengthFromDrawing = false;
       // A drawn wall and its length are one value: typing a length redraws it.
       if (d.line && action.patch.measuredM != null && action.patch.measuredM >= 0.05) {
         next.line = lineWithLength(d.line, action.patch.measuredM);
@@ -354,7 +358,7 @@ function reducer(state: State, action: Action): State {
       if (!d?.line) return state;
       return withHistory(
         state,
-        { ...d, line: action.line, marker: lineMid(action.line), measuredM: lineLength(action.line) },
+        { ...d, line: action.line, marker: lineMid(action.line), measuredM: lineLength(action.line), lengthFromDrawing: true },
         `line:${action.key}`,
       );
     }
@@ -425,6 +429,7 @@ function reducer(state: State, action: Action): State {
             line,
             marker: lineMid(line),
             measuredM: length,
+            lengthFromDrawing: true,
           },
         };
       }

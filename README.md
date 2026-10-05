@@ -171,10 +171,11 @@ reviews it.
     photo"*), at least one photo. Voice memo is optional.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
-  - **Priority** (UX audit #5): an explicit choice, **Can continue work**
-    (default) or **Blocked**, with the expert's availability and the
-    resulting **deadline** under it (*"Expert is back at 08:00 tomorrow ·
-    Deadline: Tomorrow by 10:00 · work is stopped"*).
+  - **Priority** (UX audit #5, renamed in round 2): what the contractor is
+    doing, **I'm carrying on** (default) or **I've stopped**, so it can't
+    contradict *"Tell me whether I can continue"*. Under it, what to expect,
+    stated from the expert's hours only, with no promised response time
+    (table below).
   - **Review and send** is solid primary blue and names what's missing
     (*"Add photo · pick the ask"*, *"Pick what you need back"*). It opens
     **Check before sending**: the exact ticket the expert will receive (see
@@ -204,25 +205,39 @@ yellow paperclip. If it's also escalated, only the escalation pin shows (red,
 amber or green): the blocker always wins.
 
 **One time source** (UX audit #4, `lib/useMunichCutoff.ts`): the expert works
-08:00–15:00 Europe/Berlin, and every time string comes from one shared clock,
-so the top bar, the form, the cards and the ticket never disagree.
+08:00–15:00 Europe/Berlin, Monday to Friday, and every time string comes from
+one shared clock, so the top bar, the form, the cards and the ticket never
+disagree. "Tomorrow" skips the weekend: Friday after 15:00 reads *08:00 Monday*.
 
-| | Before 15:00 | After 15:00 |
-|---|---|---|
-| Top bar | *Remote expert · available for 40 more minutes* | *Remote expert · back at 08:00 tomorrow* |
-| Form (priority) | *Expert available for 40 more minutes* | *Expert is back at 08:00 tomorrow* |
-| Sent card | *Queued* / *Delivered* + *Expert available for …* | *Queued* + *Expert sees it at 08:00 tomorrow* |
-| Deadline (Blocked) | *Today before 15:00 · work is stopped* | *Tomorrow by 10:00 · work is stopped* |
-| Deadline (Can continue) | *Within 2 working days · work continues* | same |
-| Clocks (status bar, card times) | Munich time | Munich time |
+| | Expert in (> 30 min left) | Expert in (≤ 30 min left) | After 15:00 / weekend |
+|---|---|---|---|
+| Top bar | *Remote expert · available for 3 more hours* | *… available for 12 more minutes* | *Remote expert · back at 08:00 tomorrow* (or *Monday*) |
+| Form, I'm carrying on | *No rush · work continues* + availability | same | same |
+| Form, I've stopped | *Asking for an answer today · expert is in until 15:00* | *Expert leaves in 12 min · may be answered tomorrow from 08:00* | *Expert sees this first at 08:00 tomorrow · work is stopped* + *You can leave. The answer comes to this iPad tomorrow morning.* |
+| Sent card | *Queued* / *Delivered* + availability | same | *Queued* + *Expert sees it at 08:00 tomorrow* |
+| Expert's ticket, Urgency | *Not blocking*, or *Work stopped since 13:10* (+ *yesterday* / weekday when older) | | |
+| Clocks (status bar, card, ticket) | Munich time | | |
 
 **What the expert receives** (UX audit #3): the **chevron** on a sent card
-opens a read-only ticket: the plan snapshot with the drawn wall in red
-(length label, north arrow, room size), *Runs north–south · From … to …*,
-**every photo** (the selected one large, all of them as thumbnails; tap one
-to view it), the measured value against the drawing or the plan, **The Ask**,
-and the **deadline**. Esc, ✕ or a tap outside closes it. The same view is the
-review step before Send.
+opens a read-only ticket:
+- **who, which job, when** under the title (*M. Weber, site lead · Music Room
+  Renovation, Lindenstraße 14, Augsburg · 5th Floor, Music Room · Mon, 5 Oct,
+  18:56*; the reporter is fictional);
+- the plan snapshot with doors and windows and the proposal in red (length
+  label, north arrow, room size). On a disputed wall the red *4.20 m (plan
+  4.55)* replaces that wall's size label instead of printing over it;
+- the wall in one sentence: *Starts on the north wall, 1.80 m from the west
+  corner. Runs 1.95 m south.*;
+- **every photo** (the selected one large, all of them as thumbnails; tap one
+  to view it);
+- *Issue* naming what it's about (*Dimension Mismatch · North wall*);
+  *Measured* against the plan, or *estimated from the drawing, not
+  measured* until the contractor types a reading (the form says so too and
+  keeps step 1 open); **The Ask**; and **Urgency**.
+
+Esc, ✕ or a tap outside closes it. The same view is the review step before
+Send. A correction equal to the plan (Propose Correction with 4.55 unchanged)
+isn't sendable: the button reads *Add new length*.
 
 ---
 

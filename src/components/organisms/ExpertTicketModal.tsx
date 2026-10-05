@@ -20,7 +20,7 @@ import {
   reportName,
 } from "@/lib/floorplan";
 import type { Escalation, Point } from "@/lib/types";
-import { useExpertAvailability } from "@/lib/useMunichCutoff";
+import { munichDateTime, useExpertAvailability } from "@/lib/useMunichCutoff";
 import { STATUS_META } from "@/store/deviationMachine";
 
 const RED = "#EF4444";
@@ -29,7 +29,7 @@ const RED = "#EF4444";
  * ExpertTicketModal (organism): the card's chevron opens the ticket as the
  * remote expert receives it, read-only (UX audit #3). Plan snapshot with the
  * proposal drawn in red, the photo, the measured values, The Ask and the
- * deadline: everything someone who has never seen the room needs, without a call.
+ * urgency: everything someone who has never seen the room needs, without a call.
  */
 export function ExpertTicketModal({
   escalation,
@@ -98,9 +98,13 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
             {review ? "Check before sending" : "What the expert receives"}
           </h2>
           <p className="text-[15px] text-mp-muted">
-            {review ? "Not sent yet · this is what the expert will receive" : "Read-only"} · {name} report ·{" "}
-            {PROJECT.floor}, {PROJECT.room}
+            {review ? "Not sent yet · this is what the expert will receive" : "Read-only"} · {name} report
             {!review && <> · {STATUS_META[e.status].label}</>}
+          </p>
+          {/* Who, which job, when: the job before the room (UX audit r2). */}
+          <p data-ticket-context className="text-[15px] text-mp-ink">
+            {PROJECT.reporter} · {PROJECT.name}, {PROJECT.address} · {PROJECT.floor}, {PROJECT.room} ·{" "}
+            {munichDateTime(e.createdAt)}
           </p>
         </div>
         <button
@@ -121,9 +125,7 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
             <PlanSnapshot e={e} />
           </div>
           {where && (
-            <p className="text-[15px] leading-snug text-mp-ink">
-              <span className="font-semibold">Runs {where.runs}.</span> From {where.from} to {where.to}.
-            </p>
+            <p className="text-[15px] leading-snug text-mp-ink">{where.sentence}</p>
           )}
         </section>
 
@@ -133,7 +135,8 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
           <dl className="divide-y divide-mp-line overflow-hidden rounded-2xl bg-white text-[15px]">
             <Row label="Issue">
               {issueLabel(e.issueType)}
-              {e.category && ` · ${e.category}`}
+              {/* Name what it's about: "Dimension Mismatch · North wall". */}
+              {e.category ? ` · ${e.category}` : e.target.type !== "ghost" && e.target.type !== "room" ? ` · ${e.targetLabel}` : ""}
             </Row>
             <Row label="Measured">
               <MeasuredValues e={e} drawnM={drawnM} />
@@ -141,8 +144,9 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
             <Row label="The ask" strong>
               {askLabel(e.ask) ?? "—"}
             </Row>
-            <Row label="Deadline" strong={e.blocking}>
-              {availability ? availability.deadline(e.blocking) : e.blocking ? "Work is stopped" : "Work continues"}
+            {/* How urgent, stated as a fact that stays true whenever it's opened. */}
+            <Row label="Urgency" strong={e.blocking}>
+              {availability ? availability.urgency(e.blocking, e.createdAt) : e.blocking ? "Work stopped" : "Not blocking"}
             </Row>
             {e.note && <Row label="Note">“{e.note}”</Row>}
             <Row label="Attached">Plan dimensions · Permit {PERMIT_TEXT}</Row>
@@ -240,9 +244,11 @@ function MeasuredValues({ e, drawnM }: { e: Escalation; drawnM?: number }) {
   const ref =
     e.plannedM !== undefined
       ? ` · plan ${e.plannedM.toFixed(2)} m (${signedCm(e.measuredM - e.plannedM)})`
-      : drawnM !== undefined
-        ? ` · drawn ${drawnM.toFixed(2)} m`
-        : "";
+      : e.lengthEstimated
+        ? " · estimated from the drawing, not measured"
+        : drawnM !== undefined
+          ? " · measured on site"
+          : "";
   return (
     <>
       <span className="font-semibold">{e.measuredM.toFixed(2)} m</span>
@@ -309,12 +315,11 @@ function PlanSnapshot({ e }: { e: Escalation }) {
                 strokeDasharray={hit === "remove" ? "0.12 0.08" : undefined}
               />
             )}
-            {hit === "dimension" && e.measuredM !== undefined && (
-              <Label at={mid(a, b, w.id === "w-north" ? -0.28 : 0.28)} text={`${e.measuredM.toFixed(2)} m (plan ${w.lengthM.toFixed(2)})`} />
-            )}
           </g>
         );
       })}
+      {/* doors and windows, so the expert can tell the ends of a wall apart */}
+      {WALLS.flatMap((w) => (w.openings ?? []).map((o, i) => <Opening key={`${w.id}-${i}`} wallId={w.id} o={o} />))}
       {CORNERS.map((c) =>
         target.type === "corner" && target.id === c.id ? (
           <circle key={c.id} cx={c.p.x} cy={c.p.y} r={0.16} fill="none" stroke={RED} strokeWidth={0.04} strokeDasharray="0.08 0.05" />
@@ -390,18 +395,75 @@ function PlanSnapshot({ e }: { e: Escalation }) {
           N
         </text>
       </g>
-      {/* plan size, for scale */}
-      <text x={W / 2} y={-0.22} fontSize={0.15} textAnchor="middle" fill="#6b6b70">
-        {W.toFixed(2)} m
-      </text>
-      <text x={-0.22} y={D / 2} fontSize={0.15} textAnchor="middle" fill="#6b6b70" transform={`rotate(-90 ${-0.22} ${D / 2})`}>
-        {D.toFixed(2)} m
-      </text>
+      {/* Plan sizes, for scale. On the disputed wall the red measured label
+          takes the plan label's place instead of printing over it. */}
+      {(["w-north", "w-west", "w-south", "w-east"] as const).map((id) => {
+        const at = SIZE_LABEL_AT[id];
+        const disputed = target.type === "wall" && target.id === id && e.issueType === "dimension-mismatch";
+        const vertical = id === "w-west" || id === "w-east";
+        if (disputed && e.measuredM !== undefined) {
+          const plan = id === "w-north" || id === "w-south" ? W : D;
+          return <Label key={id} at={at} vertical={vertical} text={`${e.measuredM.toFixed(2)} m (plan ${plan.toFixed(2)})`} />;
+        }
+        if (id === "w-south" || id === "w-east") return null; // one label per axis is enough
+        return (
+          <text
+            key={id}
+            x={at.x}
+            y={at.y}
+            fontSize={0.15}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="#6b6b70"
+            transform={vertical ? `rotate(-90 ${at.x} ${at.y})` : undefined}
+          >
+            {(vertical ? D : W).toFixed(2)} m
+          </text>
+        );
+      })}
     </svg>
   );
 }
 
-const mid = (a: Point, b: Point, off: number) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + off });
+/** Where each wall's size label sits, just outside the room. */
+const SIZE_LABEL_AT: Record<"w-north" | "w-west" | "w-south" | "w-east", Point> = {
+  "w-north": { x: ROOM.widthM / 2, y: -0.25 },
+  "w-south": { x: ROOM.widthM / 2, y: ROOM.depthM + 0.25 },
+  "w-west": { x: -0.25, y: ROOM.depthM / 2 },
+  "w-east": { x: ROOM.widthM + 0.25, y: ROOM.depthM / 2 },
+};
+
+/** A door (gap + leaf + swing) or window (gap + glazing lines) on a wall, in metres. */
+function Opening({ wallId, o }: { wallId: string; o: NonNullable<(typeof WALLS)[number]["openings"]>[number] }) {
+  const w = WALLS.find((x) => x.id === wallId)!;
+  const a = cornerById(w.from).p;
+  const b = cornerById(w.to).p;
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  const ux = (b.x - a.x) / len;
+  const uy = (b.y - a.y) / len;
+  const nx = -uy; // inward for a clockwise room
+  const ny = ux;
+  const p1 = { x: a.x + ux * o.offsetM, y: a.y + uy * o.offsetM };
+  const p2 = { x: p1.x + ux * o.widthM, y: p1.y + uy * o.widthM };
+  const gap = <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#fff" strokeWidth={T + 0.02} />;
+  if (o.kind === "window") {
+    return (
+      <g>
+        {gap}
+        <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#111" strokeWidth={0.02} />
+        <line x1={p1.x - nx * 0.04} y1={p1.y - ny * 0.04} x2={p2.x - nx * 0.04} y2={p2.y - ny * 0.04} stroke="#111" strokeWidth={0.015} />
+      </g>
+    );
+  }
+  const leaf = { x: p2.x + nx * o.widthM, y: p2.y + ny * o.widthM };
+  return (
+    <g>
+      {gap}
+      <line x1={p2.x} y1={p2.y} x2={leaf.x} y2={leaf.y} stroke="#111" strokeWidth={0.02} />
+      <path d={`M ${leaf.x} ${leaf.y} A ${o.widthM} ${o.widthM} 0 0 1 ${p1.x} ${p1.y}`} fill="none" stroke="#111" strokeWidth={0.015} />
+    </g>
+  );
+}
 
 function lineLabelAt(a: Point, b: Point) {
   const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
@@ -410,10 +472,10 @@ function lineLabelAt(a: Point, b: Point) {
   return { x: (a.x + b.x) / 2 + nx * 0.3, y: (a.y + b.y) / 2 + ny * 0.3 };
 }
 
-function Label({ at, text }: { at: Point; text: string }) {
+function Label({ at, text, vertical }: { at: Point; text: string; vertical?: boolean }) {
   const w = text.length * 0.085 + 0.12;
   return (
-    <g>
+    <g transform={vertical ? `rotate(-90 ${at.x} ${at.y})` : undefined}>
       <rect x={at.x - w / 2} y={at.y - 0.11} width={w} height={0.22} rx={0.04} fill="#fff" stroke={RED} strokeWidth={0.015} />
       <text x={at.x} y={at.y} fontSize={0.14} fontWeight={600} fill={RED} textAnchor="middle" dominantBaseline="central">
         {text}

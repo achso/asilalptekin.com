@@ -195,7 +195,7 @@ export function EscalationCard({
             <span className="max-w-full truncate whitespace-nowrap text-[15px] font-semibold leading-tight">{title}</span>
           </div>
           {targetLabel && <div className="truncate text-[13px] text-mp-muted">{targetLabel}</div>}
-          {ask && <div className="truncate text-[13px] font-medium text-mp-ink">Ask: {askLabel(ask)}</div>}
+          {ask && <div className="line-clamp-2 text-[13px] font-medium leading-snug text-mp-ink">Ask: {askLabel(ask)}</div>}
           {note && <div className="line-clamp-2 text-[12px] italic text-mp-muted">“{note}”</div>}
 
           {changeSummary && (
