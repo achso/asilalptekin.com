@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
 import type { ObjectProposal } from "@/components/organisms/PlanObjects";
 import { CanvasArea } from "@/components/organisms/CanvasArea";
@@ -17,7 +17,8 @@ import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
 import type { ObjectDims, Point, SelectedElement } from "@/lib/types";
 import type { TabRequest } from "@/lib/useTabRequest";
-import { DRAFT_OPEN_MESSAGE, useDeviationState } from "@/store/useDeviationState";
+import { useDeviationState } from "@/store/useDeviationState";
+import { DiscardDraftDialog } from "@/components/molecules/DiscardDraftDialog";
 
 /**
  * Main iPad layout shell (landscape). Owns the store and composes organisms:
@@ -91,29 +92,32 @@ export default function Page() {
   //    → Object change, drawn as a red dashed ghost over the original
   const placing = store.interactionMode === "ghost_draft";
   const inserting = placing || draft?.intent === "missing-element";
-  const { startDraft, startGhostDraft, cancelDraft, notify, proposeObjectChange, updateDraft } = store;
+  const { startDraft, startGhostDraft, cancelDraft, notify, proposeObjectChange, updateDraft, requestDiscard } =
+    store;
   // Insert → Note / Photo / Form: these never change the plan, so they're
   // allowed. Open the matching sidebar tab and say so.
   const [tabRequest, setTabRequest] = useState<TabRequest | null>(null);
   const clearTabRequest = useCallback(() => setTabRequest(null), []);
-  const onInsertOther = (kind: "note" | "photo" | "form") => {
-    if (draft) return notify(DRAFT_OPEN_MESSAGE, "hint"); // only ✕ / Send close a draft
+  const openTabFor = (kind: "note" | "photo" | "form") => {
     setTabRequest(kind === "form" ? { tab: "Forms" } : { tab: "Photos & Notes", focusNote: kind === "note" });
     notify(INSERT_OTHER_ALERT[kind], "hint");
   };
+  // A draft open: ask before discarding it (only ✕ / Send close it silently).
+  const onInsertOther = (kind: "note" | "photo" | "form") =>
+    draft ? requestDiscard(() => openTabFor(kind)) : openTabFor(kind);
   // One popover for every locked value; Propose Correction writes into the draft.
   const [measure, setMeasure] = useState<MeasureTarget | null>(null);
   const closeMeasure = useCallback(() => setMeasure(null), []);
-  // While a draft is open, only its own element's values can be changed
-  // (it closes only via ✕ / Send), so other popovers explain instead of opening.
+  // While a draft is open, only its own element's values open directly; another
+  // element's popover asks to discard the draft first.
   const draftAnchorId = draft?.anchor.id;
   const openMeasure = useCallback(
     (m: MeasureTarget) => {
       const id = m.kind === "wall" ? m.wallId : m.id;
-      if (draftAnchorId && draftAnchorId !== id) return notify(DRAFT_OPEN_MESSAGE, "hint");
+      if (draftAnchorId && draftAnchorId !== id) return requestDiscard(() => setMeasure(m));
       setMeasure(m);
     },
-    [draftAnchorId, notify],
+    [draftAnchorId, requestDiscard],
   );
   const onDimensionTap = useCallback(
     (wallId: string, at: Point) => openMeasure({ kind: "wall", wallId, at }),
@@ -174,6 +178,20 @@ export default function Page() {
   }, [store.escalations, draft]);
 
 
+  // ⌘Z / ⇧⌘Z (Ctrl on other keyboards) step through the draft, except in a text field.
+  const { undo, redo } = store;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      e.preventDefault();
+      (e.shiftKey ? redo : undo)();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
+
   const breadcrumbs = [
     PROJECT.floor,
     PROJECT.room,
@@ -213,6 +231,7 @@ export default function Page() {
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
               markers={markers}
+              undo={{ canUndo: store.canUndo, canRedo: store.canRedo, onUndo: store.undo, onRedo: store.redo }}
               onDimensionTap={onDimensionTap}
               objectProposals={objectProposals}
               onRotateObject={onRotateObject}
@@ -229,7 +248,7 @@ export default function Page() {
               draftOpen={!!draft}
               onInsertCategory={startGhostDraft}
               // Insert again stops placing; an open draft stays (only ✕ / Send close it).
-              onCancelInsert={() => (draft ? notify(DRAFT_OPEN_MESSAGE, "hint") : cancelDraft())}
+              onCancelInsert={() => (draft ? requestDiscard() : cancelDraft())}
               onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />
@@ -296,6 +315,12 @@ export default function Page() {
           />
         </div>
       </div>
+      {/* Stray tap while drafting → confirm before throwing the draft away. */}
+      <DiscardDraftDialog
+        open={store.discardPrompt}
+        onKeep={store.keepDraftOpen}
+        onDiscard={store.confirmDiscard}
+      />
     </IPadFrame>
   );
 }

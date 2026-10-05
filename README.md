@@ -139,10 +139,16 @@ sidebar with the intent already filled in.
   **red hatched pattern** with a status pin; the ghost stays on the plan in
   its status colour. Both appear in **Active Escalations** on the room
   panel, and the contractor moves on.
-- A draft closes **only** with its round **✕** (or by sending it). Stray taps
-  on the canvas, another element, a pin, another dimension or Insert never
-  throw it away; a hint says "Draft open: send it, or close it with ✕
-  first." Its own element stays editable (move, rotate, its values).
+- A draft closes **only** with its round **✕** (or by sending it). A tap
+  elsewhere (canvas, another element, a pin, another dimension, Insert)
+  shows a **"Discard this escalation draft?"** alert: *Keep Editing* (also
+  Esc or a tap on the backdrop) or *Discard Draft*, which then carries out
+  what you tapped. The draft's own element stays editable.
+- **Undo / redo** (top right, or ⌘Z / ⇧⌘Z) step through the open draft:
+  moves, rotations, value changes and ghost placement. A whole drag or
+  rotation is one step; the first undo returns to "no changes" without
+  closing the draft. With no draft open there's nothing to undo on the
+  locked plan, so they show disabled.
 
 **Canvas badges:** an element with standard Photos & Notes shows magicplan's
 yellow paperclip. If it's also escalated, only the escalation pin shows (red,

@@ -92,7 +92,15 @@ type State = {
   pendingRevokes: Record<string, PendingRevoke>;
   demo: DemoSettings;
   toast: { id: number; text: string; tone: ToastTone } | null;
+  /** Undo / redo for the open draft (moves, rotations, values, ghost placement). */
+  history: History;
+  /** "Discard this draft?" is showing; `next` is what the stray tap wanted to do. */
+  discardPrompt: { next?: Action } | null;
 };
+
+/** Snapshots of the open draft. One drag / rotation gesture = one step. */
+type History = { past: Draft[]; future: Draft[]; lastKey: string | null; lastAt: number };
+const EMPTY_HISTORY: History = { past: [], future: [], lastKey: null, lastAt: 0 };
 
 type Action =
   | { type: "select"; element: SelectedElement | null }
@@ -102,6 +110,11 @@ type Action =
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
   | { type: "cancelDraft" }
+  | { type: "undo" }
+  | { type: "redo" }
+  | { type: "askDiscard" }
+  | { type: "confirmDiscard" }
+  | { type: "keepDraft" }
   | { type: "submit"; escalation: Escalation }
   /** Munich / server side. `force` = dev-tools override that ignores the transition table. */
   | { type: "serverStatus"; id: string; status: EscalationStatus; force?: boolean }
@@ -123,23 +136,40 @@ const initialState: State = {
   pendingRevokes: {},
   demo: { autoAdvance: false, slowNetwork: true },
   toast: null,
+  history: EMPTY_HISTORY,
+  discardPrompt: null,
 };
 
-/** Shown when something would replace or close an open draft (only ✕ / Send may). */
-export const DRAFT_OPEN_MESSAGE = "Draft open: send it, or close it with ✕ first.";
+/**
+ * Something tapped elsewhere would replace or close the open draft. It never
+ * happens silently: the "Discard this draft?" dialog asks first, and on
+ * Discard the remembered action runs. Repeats while it shows are ignored
+ * (e.g. the pointer moves of a drag).
+ */
+const askDiscard = (state: State, next?: Action): State =>
+  state.discardPrompt ? state : { ...state, discardPrompt: { next } };
 
 /**
- * Keep the open draft and say why. A hint shown in the last 1.5 s isn't
- * re-triggered (no flicker while dragging); an older one is renewed, so
- * repeated attempts always get an answer before it times out.
+ * Apply a change to the open draft and record the previous version for undo.
+ * Changes with the same key within 600 ms (one drag or rotation, a run of
+ * stepper taps) collapse into one undo step.
  */
-const keepDraft = (state: State): State =>
-  state.toast?.text === DRAFT_OPEN_MESSAGE && Date.now() - state.toast.id < 1500
-    ? state
-    : { ...state, toast: toast(DRAFT_OPEN_MESSAGE, "hint") };
+function withHistory(state: State, draft: Draft, key: string): State {
+  const now = Date.now();
+  const h = state.history;
+  const same = h.lastKey === key && now - h.lastAt < 600;
+  const past = same || !state.draft ? h.past : [...h.past, state.draft].slice(-50);
+  return { ...state, draft, history: { past, future: [], lastKey: key, lastAt: now } };
+}
 
-/** Closing the pane also ends ghost drafting. */
-const NO_DRAFT = { draft: null, interactionMode: "select", ghostCategory: null } as const;
+/** Closing the pane also ends ghost drafting, its history and any prompt. */
+const NO_DRAFT = {
+  draft: null,
+  interactionMode: "select",
+  ghostCategory: null,
+  history: EMPTY_HISTORY,
+  discardPrompt: null,
+} as const;
 
 export type InteractionMode = "select" | "ghost_draft";
 /** The open escalation draft: what was intercepted, where. */
@@ -182,46 +212,55 @@ function reducer(state: State, action: Action): State {
       // tap on the canvas, another element or a pin must never throw away
       // the contractor's work. Taps on the draft's own element are fine.
       const anchor = state.draft?.anchor;
-      if (anchor) return sameElement(anchor, action.element) ? state : keepDraft(state);
+      if (anchor) return sameElement(anchor, action.element) ? state : askDiscard(state, action);
       return { ...state, ...NO_DRAFT, selectedElement: action.element };
     }
 
     case "startDraft":
-      if (state.draft && !sameElement(state.draft.anchor, action.anchor)) return keepDraft(state);
-      // Keep selection in sync with the anchor so the canvas highlights it.
-      return {
-        ...state,
-        ...NO_DRAFT,
-        draft: { anchor: action.anchor, intent: action.intent, measuredM: action.measuredM ?? null },
-        selectedElement: action.anchor,
-      };
+      if (state.draft && !sameElement(state.draft.anchor, action.anchor)) return askDiscard(state, action);
+      {
+        // Keep selection in sync with the anchor so the canvas highlights it.
+        const draft: Draft = { anchor: action.anchor, intent: action.intent, measuredM: action.measuredM ?? null };
+        return {
+          ...state,
+          ...NO_DRAFT,
+          draft,
+          selectedElement: action.anchor,
+          // A prefilled reading can be undone back to an empty one.
+          history:
+            action.measuredM != null
+              ? { ...EMPTY_HISTORY, past: [{ ...draft, measuredM: null }] }
+              : EMPTY_HISTORY,
+        };
+      }
 
     case "proposeObject": {
       const anchor: SelectedElement = { type: "object", id: action.id };
       const open = state.draft;
       // Same object's draft open: keep collecting changes in it.
+      const key = `object:${Object.keys(action.patch).sort().join(",")}`;
       if (open && open.intent === "object-change" && sameElement(open.anchor, anchor)) {
-        return { ...state, draft: { ...open, proposed: { ...open.proposed!, ...action.patch } } };
+        return withHistory(state, { ...open, proposed: { ...open.proposed!, ...action.patch } }, key);
       }
-      if (open) return keepDraft(state); // another draft is open: it stays
+      if (open) return askDiscard(state, action); // another draft is open: ask first
+      const plan = objectDims(objectById(action.id));
+      const base: Draft = { anchor, intent: "object-change", proposed: plan };
       return {
         ...state,
         ...NO_DRAFT,
         selectedElement: anchor,
-        draft: {
-          anchor,
-          intent: "object-change",
-          proposed: { ...objectDims(objectById(action.id)), ...action.patch },
-        },
+        draft: { ...base, proposed: { ...plan, ...action.patch } },
+        // Undo can go back to "no changes yet" (the draft stays open).
+        history: { past: [base], future: [], lastKey: key, lastAt: Date.now() },
       };
     }
 
     case "updateDraft":
       if (!state.draft) return state;
-      return { ...state, draft: { ...state.draft, ...action.patch } };
+      return withHistory(state, { ...state.draft, ...action.patch }, `draft:${Object.keys(action.patch).sort().join(",")}`);
 
     case "startGhost":
-      if (state.draft) return keepDraft(state);
+      if (state.draft) return askDiscard(state, action);
       // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
       return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft", ghostCategory: action.category };
 
@@ -229,7 +268,7 @@ function reducer(state: State, action: Action): State {
       if (state.interactionMode !== "ghost_draft") return state;
       // Moving an already placed ghost.
       if (state.draft?.anchor.type === "ghost") {
-        return { ...state, draft: { ...state.draft, marker: action.point } };
+        return withHistory(state, { ...state.draft, marker: action.point }, `ghost:${Date.now()}`);
       }
       // First tap: the proposal now has a place, so the pane opens.
       return {
@@ -245,6 +284,39 @@ function reducer(state: State, action: Action): State {
 
     case "cancelDraft":
       return { ...state, ...NO_DRAFT };
+
+    case "undo": {
+      const { past, future } = state.history;
+      if (!state.draft || past.length === 0) return state;
+      return {
+        ...state,
+        draft: past[past.length - 1],
+        history: { past: past.slice(0, -1), future: [state.draft, ...future], lastKey: null, lastAt: 0 },
+      };
+    }
+
+    case "redo": {
+      const { past, future } = state.history;
+      if (!state.draft || future.length === 0) return state;
+      return {
+        ...state,
+        draft: future[0],
+        history: { past: [...past, state.draft], future: future.slice(1), lastKey: null, lastAt: 0 },
+      };
+    }
+
+    case "askDiscard":
+      return state.draft ? askDiscard(state) : state;
+
+    case "keepDraft":
+      return { ...state, discardPrompt: null };
+
+    case "confirmDiscard": {
+      // Discard, then do what the stray tap meant to do (e.g. select that wall).
+      const next = state.discardPrompt?.next;
+      const cleared: State = { ...state, ...NO_DRAFT };
+      return next ? reducer(cleared, next) : cleared;
+    }
 
     case "submit": {
       const e = action.escalation;
@@ -444,6 +516,24 @@ export function useDeviationState() {
   );
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   const cancelDraft = useCallback(() => dispatch({ type: "cancelDraft" }), []);
+  const undo = useCallback(() => dispatch({ type: "undo" }), []);
+  const redo = useCallback(() => dispatch({ type: "redo" }), []);
+  // Page-level follow-ups (open a popover, an Insert item…) run after Discard.
+  const afterDiscard = useRef<(() => void) | null>(null);
+  const requestDiscard = useCallback((then?: () => void) => {
+    afterDiscard.current = then ?? null;
+    dispatch({ type: "askDiscard" });
+  }, []);
+  const confirmDiscard = useCallback(() => {
+    dispatch({ type: "confirmDiscard" });
+    const then = afterDiscard.current;
+    afterDiscard.current = null;
+    then?.();
+  }, []);
+  const keepDraftOpen = useCallback(() => {
+    afterDiscard.current = null;
+    dispatch({ type: "keepDraft" });
+  }, []);
 
   const submitEscalation = useCallback(
     (draft: EscalationDraft) => {
@@ -547,6 +637,9 @@ export function useDeviationState() {
     // state
     selectedElement: state.selectedElement,
     draft: state.draft,
+    discardPrompt: !!state.discardPrompt,
+    canUndo: !!state.draft && state.history.past.length > 0,
+    canRedo: !!state.draft && state.history.future.length > 0,
     interactionMode: state.interactionMode,
     ghostCategory: state.ghostCategory,
     escalations: state.escalations,
@@ -570,6 +663,11 @@ export function useDeviationState() {
     startGhostDraft,
     placeGhost,
     cancelDraft,
+    undo,
+    redo,
+    requestDiscard,
+    confirmDiscard,
+    keepDraftOpen,
     submitEscalation,
     revokeEscalation,
     mockExpertReview,

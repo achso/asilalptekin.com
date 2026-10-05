@@ -47,6 +47,8 @@ export type CanvasAreaProps = {
   objectProposals?: Record<string, ObjectProposal | undefined>;
   onRotateObject?: (objectId: string, rotation: number) => void;
   onMoveObject?: (objectId: string, center: Point) => void;
+  /** Undo / redo for the open draft (the plan itself is locked). */
+  undo?: { canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void };
   className?: string;
 };
 
@@ -65,6 +67,7 @@ export const CanvasArea = memo(function CanvasArea({
   objectProposals,
   onRotateObject,
   onMoveObject,
+  undo,
   className,
 }: CanvasAreaProps) {
   return (
@@ -126,7 +129,7 @@ export const CanvasArea = memo(function CanvasArea({
 
       <ElementBadges statusFor={statusFor} photoCountFor={photoCountFor} onPress={onSelect} />
 
-      <UndoRedo />
+      <UndoRedo {...undo} />
       <FloorPicker />
     </main>
   );
