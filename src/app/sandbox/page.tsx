@@ -182,7 +182,7 @@ export default function SandboxPage() {
             </Specimen>
             <Specimen title="NotesAndAudioInput" note="Notes + voice memo in one footprint (mocked audio): text with a mic → recording pill (timer, Stop) → WhatsApp bubble (play, waveform, Transcribe, trash) → editable transcript.">
               <div style={{ width: CARD_W }}>
-                <NotesAndAudioDemo onMemo={(m) => record(`NotesAndAudioInput → ${m ? `${m.durationS}s${m.transcribed ? ", transcribed" : ""}` : "deleted"}`)} />
+                <NotesAndAudioDemo onMemo={(m) => record(`NotesAndAudioInput → ${m ? `${m.durationS}s${m.transcript ? ", transcribed" : ""}` : "deleted"}`)} />
               </div>
             </Specimen>
           </div>

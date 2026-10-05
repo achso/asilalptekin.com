@@ -174,22 +174,20 @@ reviews it.
     (the + tile opens the rear camera; on a laptop use *"No camera? Use demo
     photo"*), at least one photo. The grid is the native 4 × 2 one, untouched.
   - **Notes + voice memo in one field** (`NotesAndAudioInput`, right under
-    the grid; mocked audio, no speech-to-text API). The field shape-shifts in
-    the same footprint instead of adding a section:
+    the grid; mocked audio, no speech-to-text API):
     - **text**: the note, with a gray **mic** button in its bottom-right corner;
-    - **recording**: the text area gives way to a pill with a pulsing red dot,
-      a live timer and **Stop**;
-    - **recorded**: a WhatsApp-style bubble with play (mock playback fills the
-      waveform), the waveform, the duration, a green **Transcribe** link and a
-      trash icon (deletes the audio, back to text);
-    - **Transcribe**: the text area comes back under the waveform, pre-filled
-      with the transcript for the current path (e.g. *"The physical wall is
-      20cm shorter than the locked plan indicates. Requesting permission to
-      proceed."*), editable.
+    - **recording**: the text area gives way to a compact pill with a pulsing
+      red dot, a live timer and **Stop**;
+    - **recorded**: a compact WhatsApp-style card (play with mock playback,
+      waveform, duration, green **Transcribe**, trash to delete the audio)
+      with a compact note field below it for typing;
+    - **Transcribe**: the transcript appears **inside the voice card** (e.g.
+      *"The physical wall is 20cm shorter than the locked plan indicates.
+      Requesting permission to proceed."*); the typed note is left alone.
 
     The memo's length shows on the sent card; the ticket has a *Voice memo*
-    row (*transcribed into the note* or *audio only*). Every Photos & Notes
-    tab uses the same field.
+    row with the transcript (or *audio only*) next to the *Note* row. Every
+    Photos & Notes tab uses the same field.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
   - **Priority** (UX audit #5, renamed in round 2): what the contractor is

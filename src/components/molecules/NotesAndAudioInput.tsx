@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export type NotesMode = "text" | "recording" | "recorded";
 /** The voice memo that rides along with the note (mocked: no audio is kept). */
-export type VoiceMemoValue = { durationS: number; transcribed?: boolean };
+export type VoiceMemoValue = { durationS: number; transcript?: string };
 
 /** MVP transcript (golden path: the dimension mismatch). */
 export const DEFAULT_TRANSCRIPT =
@@ -20,8 +20,7 @@ const BAR_GAP = 2;
 const WAVE_W = BARS.length * (BAR_W + BAR_GAP) - BAR_GAP;
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-/** Same box for every mode, so the field shape-shifts in place instead of growing the form. */
-const FOOTPRINT = "min-h-[96px] w-full rounded-xl bg-gray-100";
+const FIELD = "w-full rounded-xl bg-gray-100";
 
 /**
  * NotesAndAudioInput (molecule): the Notes field and the voice memo in ONE
@@ -30,10 +29,10 @@ const FOOTPRINT = "min-h-[96px] w-full rounded-xl bg-gray-100";
  *
  *   text       the note's text area, gray mic button in its bottom-right corner
  *   recording  the text area gives way to a pill: pulsing red dot · timer · Stop
- *   recorded   the WhatsApp bubble: play · waveform · duration · green Transcribe,
- *              and a trash icon (deletes the audio, back to text)
- *   Transcribe the text area comes back below the waveform, pre-filled with the
- *              transcript, editable
+ *   recorded   a compact WhatsApp bubble (play · waveform · duration · green
+ *              Transcribe · trash, which deletes the audio) with a compact
+ *              note field below it for typing
+ *   Transcribe the transcript appears inside the bubble; the note is untouched
  */
 export function NotesAndAudioInput({
   id,
@@ -93,11 +92,9 @@ export function NotesAndAudioInput({
     onMemoChange?.({ durationS: d });
   };
   const transcribe = () => {
+    // The transcript belongs to the memo: shown in the bubble, never typed into the note.
     setTranscribed(true);
-    // Pre-fill (after anything already typed), editable from here.
-    const prev = note.trim();
-    onNoteChange(prev ? `${prev} ${transcript}` : transcript);
-    onMemoChange?.({ durationS: seconds, transcribed: true });
+    onMemoChange?.({ durationS: seconds, transcript });
   };
   const discard = () => {
     setPlaying(false);
@@ -107,6 +104,7 @@ export function NotesAndAudioInput({
     onMemoChange?.(null);
   };
 
+  /** withMic: the full note field (text mode); otherwise a compact one under the memo. */
   const textArea = (withMic: boolean) => (
     <div className="relative">
       <textarea
@@ -114,13 +112,13 @@ export function NotesAndAudioInput({
         value={note}
         onChange={(e) => onNoteChange(e.target.value)}
         placeholder="Add note..."
-        rows={3}
+        rows={withMic ? 3 : 2}
         maxLength={500}
         className={cn(
-          FOOTPRINT,
-          "block resize-y border-0 py-2.5 pl-3 text-[15px] leading-snug outline-none placeholder:text-[#a1a1a6] focus:ring-2 focus:ring-mp-blue/40",
+          FIELD,
+          "block resize-y border-0 pl-3 text-[15px] leading-snug outline-none placeholder:text-[#a1a1a6] focus:ring-2 focus:ring-mp-blue/40",
           // The mic sits in the bottom-right corner; this padding keeps text clear of it.
-          withMic ? "pr-14" : "pr-3",
+          withMic ? "min-h-[96px] py-2.5 pr-14" : "min-h-[64px] py-2 pr-3",
         )}
       />
       {withMic && (
@@ -146,7 +144,7 @@ export function NotesAndAudioInput({
         data-notes-mode="recording"
         role="status"
         aria-label={`Recording voice memo, ${clock(seconds)}`}
-        className={cn(FOOTPRINT, "flex items-center gap-3 rounded-full border border-mp-line bg-white pl-5 pr-2")}
+        className={cn(FIELD, "flex h-14 items-center gap-3 rounded-full border border-mp-line bg-white pl-5 pr-1.5")}
       >
         <span className="relative flex size-3" aria-hidden>
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-mp-red opacity-60" />
@@ -165,22 +163,22 @@ export function NotesAndAudioInput({
     );
   }
 
-  // ── recorded: the WhatsApp bubble (+ the editable transcript once transcribed)
+  // ── recorded: a compact WhatsApp bubble (+ its transcript), the note below ──
   const played = Math.round(progress * BARS.length);
   return (
     <div data-notes-mode={transcribed ? "transcribed" : "recorded"} className="flex flex-col gap-2">
-      <div className={cn(FOOTPRINT, "flex items-center gap-3 p-3")}>
-        <button
-          type="button"
-          onClick={() => setPlaying((p) => !p)}
-          aria-label={playing ? "Pause voice memo" : "Play voice memo"}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-mp-ink shadow-sm active:bg-gray-50"
-        >
-          {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
-        </button>
-        <div className="min-w-0 flex-1">
+      <div data-memo-card className={cn(FIELD, "px-2 py-1.5")}>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPlaying((p) => !p)}
+            aria-label={playing ? "Pause voice memo" : "Play voice memo"}
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-mp-ink shadow-sm active:bg-gray-50"
+          >
+            {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
+          </button>
           {/* Mock waveform: bars of varying height; played bars go dark. */}
-          <svg width="100%" height={28} viewBox={`0 0 ${WAVE_W} 28`} preserveAspectRatio="none" aria-hidden>
+          <svg className="h-6 min-w-0 flex-1" viewBox={`0 0 ${WAVE_W} 28`} preserveAspectRatio="none" aria-hidden>
             {BARS.map((h, i) => (
               <rect
                 key={i}
@@ -193,45 +191,47 @@ export function NotesAndAudioInput({
               />
             ))}
           </svg>
-          <div className="mt-1 flex items-center justify-between">
-            <span className="text-[15px] tabular-nums text-mp-muted">
-              {playing ? clock(Math.round(progress * seconds)) : clock(seconds)}
-            </span>
-            {!transcribed && (
-              <button
-                type="button"
-                onClick={transcribe}
-                className="-my-2 px-1 py-2 text-[15px] font-semibold text-emerald-600 active:text-emerald-700"
-              >
-                Transcribe
-              </button>
-            )}
-          </div>
+          <span className="w-9 shrink-0 text-right text-[15px] tabular-nums text-mp-muted">
+            {playing ? clock(Math.round(progress * seconds)) : clock(seconds)}
+          </span>
+          {!transcribed && (
+            <button
+              type="button"
+              onClick={transcribe}
+              className="shrink-0 px-1 py-2 text-[15px] font-semibold text-emerald-600 active:text-emerald-700"
+            >
+              Transcribe
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={discard}
+            aria-label="Delete voice memo"
+            className="grid size-10 shrink-0 place-items-center rounded-full text-mp-muted active:bg-gray-200"
+          >
+            <Trash2 size={17} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={discard}
-          aria-label="Delete voice memo"
-          className="grid size-11 shrink-0 place-items-center rounded-full text-mp-muted active:bg-gray-200"
-        >
-          <Trash2 size={18} />
-        </button>
+
+        {/* Transcribed: the text appears inside the bubble (the note stays as typed). */}
+        <AnimatePresence initial={false}>
+          {transcribed && (
+            <motion.p
+              key="transcript"
+              data-transcript
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              transition={{ height: { duration: 0.2 }, opacity: { duration: 0.3, delay: 0.08 } }}
+              className="overflow-hidden px-1 pb-1 pt-1.5 text-[15px] leading-snug text-mp-ink"
+            >
+              {transcript}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Transcribed: the text area returns below the waveform, pre-filled, editable. */}
-      <AnimatePresence initial={false}>
-        {transcribed && (
-          <motion.div
-            key="transcript"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            transition={{ height: { duration: 0.22 }, opacity: { duration: 0.3, delay: 0.1 } }}
-            className="overflow-hidden"
-          >
-            {textArea(false)}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Compact note field below the memo, for anything typed. */}
+      {textArea(false)}
     </div>
   );
 }
