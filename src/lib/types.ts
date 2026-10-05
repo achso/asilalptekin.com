@@ -82,8 +82,10 @@ export type Escalation = {
   marker?: Point;
   /** The ghost was inserted at a tapped point on a wall (the native blue triangle). */
   markerSpot?: WallSpot;
-  /** Inserted objects (squares; Structural: a wall segment), one per copy. */
+  /** Inserted objects (squares), one per copy. */
   items?: GhostItem[];
+  /** Missing wall: drawn with two taps (start → end), at true length, in plan metres. */
+  line?: WallLine;
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */
   photoUrls: string[];
@@ -120,3 +122,6 @@ export type WallSpot = { wallId: string; offsetM: number };
 
 /** One inserted (proposed) object on the plan: where it is and how it's turned. */
 export type GhostItem = { id: string; center: Point; rotation: number };
+
+/** A drawn wall: start and end in plan metres (gives direction and true length). */
+export type WallLine = { a: Point; b: Point };

@@ -1,4 +1,14 @@
-import type { Corner, IssueType, ObjectState, PlanObject, Point, SelectedElement, Wall, WallSpot } from "./types";
+import type {
+  Corner,
+  IssueType,
+  ObjectState,
+  PlanObject,
+  Point,
+  SelectedElement,
+  Wall,
+  WallLine,
+  WallSpot,
+} from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -179,19 +189,62 @@ export function wallSpotPx(spot: WallSpot) {
   return { p: { x: g.a.x + g.ux * s, y: g.a.y + g.uy * s }, nx: g.nx, ny: g.ny, ux: g.ux, uy: g.uy };
 }
 
-/** Where a ghost inserted at a spot sits: against the wall, just inside the room (metres). */
-export function wallSpotGhost(spot: WallSpot): Point {
-  const { p, nx, ny } = wallSpotPx(spot);
-  const m = toMetres({ x: p.x + nx * 8, y: p.y + ny * 8 });
+/** Footprint of an inserted object: a 0.6 m square (walls are drawn as lines instead). */
+export const GHOST_ITEM_SIZE = { widthM: 0.6, depthM: 0.6 };
+
+/** The spot on the wall's inner face, in plan metres (a drawn wall starts here). */
+export function wallSpotPoint(spot: WallSpot): Point {
+  const m = toMetres(wallSpotPx(spot).p);
   return { x: +m.x.toFixed(2), y: +m.y.toFixed(2) };
 }
 
+// ── Drawing a missing wall (two taps) ───────────────────────────────────────
+
+const GRID_M = 0.05;
+const WALL_SNAP_M = 0.15;
+const AXIS_SNAP_DEG = 10;
+
 /**
- * Footprint of an inserted object, by category: a square for anything placed
- * in the room, a wall segment (≈ 0.9 m) for Structural.
+ * Snap a tapped point for wall drawing: to a 5 cm grid, onto an existing
+ * wall's inner face when close, and (for the end point) square to the start
+ * when the line is within 10° of horizontal / vertical. Kept inside the room.
  */
-export const ghostItemSize = (category?: string) =>
-  category === "Structural" ? { widthM: 0.9, depthM: 0.09 } : { widthM: 0.6, depthM: 0.6 };
+export function snapWallPoint(p: Point, from?: Point | null): Point {
+  let x = Math.round(p.x / GRID_M) * GRID_M;
+  let y = Math.round(p.y / GRID_M) * GRID_M;
+  if (from) {
+    const deg = Math.abs((Math.atan2(y - from.y, x - from.x) * 180) / Math.PI);
+    if (deg < AXIS_SNAP_DEG || deg > 180 - AXIS_SNAP_DEG) y = from.y;
+    else if (Math.abs(deg - 90) < AXIS_SNAP_DEG) x = from.x;
+  }
+  if (Math.abs(x) < WALL_SNAP_M) x = 0;
+  if (Math.abs(x - ROOM.widthM) < WALL_SNAP_M) x = ROOM.widthM;
+  if (Math.abs(y) < WALL_SNAP_M) y = 0;
+  if (Math.abs(y - ROOM.depthM) < WALL_SNAP_M) y = ROOM.depthM;
+  return clampToRoom({ x, y });
+}
+
+export const lineLength = (l: WallLine) => +Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y).toFixed(2);
+
+/** Where a drawn wall's end sits, in words: on which wall, or how far into the room. */
+function pointText(p: Point) {
+  const W = ROOM.widthM;
+  const D = ROOM.depthM;
+  const e = 0.01;
+  if (p.y < e) return `North wall, ${p.x.toFixed(2)} m from west`;
+  if (p.y > D - e) return `South wall, ${p.x.toFixed(2)} m from west`;
+  if (p.x < e) return `West wall, ${p.y.toFixed(2)} m from north`;
+  if (p.x > W - e) return `East wall, ${p.y.toFixed(2)} m from north`;
+  return `${p.x.toFixed(2)} m from west, ${p.y.toFixed(2)} m from north`;
+}
+
+/** "Runs north–south", start and end in words: what the expert needs to see the wall. */
+export function describeLine(l: WallLine) {
+  const dx = Math.abs(l.b.x - l.a.x);
+  const dy = Math.abs(l.b.y - l.a.y);
+  const runs = dy < 0.01 ? "east–west" : dx < 0.01 ? "north–south" : "diagonally";
+  return { runs, from: pointText(l.a), to: pointText(l.b) };
+}
 
 /** Centre for an object inserted at a spot: against the wall, inside the room. */
 export function wallSpotInside(spot: WallSpot, depthM: number): Point {

@@ -35,7 +35,7 @@ import { ToolButton } from "@/components/atoms/ToolButton";
 import { cn } from "@/lib/utils";
 
 export const LOCKED_MESSAGE =
-  "Plan locked for execution. Use Insert to mark a missing element, or tap the 4.55 dimension to propose a correction.";
+  "Plan locked for execution. Use Insert to mark a missing wall or element, or tap any dimension to propose a correction.";
 
 type Tool = { icon: LucideIcon; label: string; chevron?: boolean; danger?: boolean; insert?: boolean };
 
@@ -74,8 +74,9 @@ const OBJECT_TOOLS: Tool[] = [
  *   Delete… (a wall / corner / object selected) → "Element Not on Site" draft;
  *     nothing is deleted, the remote expert reviews the removal.
  *
- *   + Insert → native popover (Room · Object · Note · Photo · Form)
- *     Object → category grid (Structural, Plumbing, …)
+ *   + Insert → native popover (Room · Wall · Object · Note · Photo · Form)
+ *     Wall → ghost_draft: two taps draw the missing wall (start, end)
+ *     Object → category grid (Doors, Plumbing, …)
  *       any category → the same trapdoor: ghost_draft. The next canvas tap
  *       drops the red dashed ghost and opens the EscalationDraftPane as
  *       "Undocumented Element → <category>".
@@ -172,8 +173,8 @@ export function LeftToolbar({
             {t.chevron && <ChevronsUpDown size={16} className="text-mp-muted" aria-hidden />}
           </ToolButton>
         ) : t.label === "Add Wall" && (canAddWall || addingWall) ? (
-          // A spot is marked on a wall: Add Wall inserts a proposed wall there,
-          // perpendicular, as magicplan does. Never a plan edit: a draft opens.
+          // A spot is marked on a wall: Add Wall draws a proposed wall from
+          // there (one tap for the end). Never a plan edit: a draft opens.
           <ToolButton
             key={t.label}
             aria-pressed={addingWall}
@@ -227,6 +228,10 @@ export function LeftToolbar({
           >
             {menu === "root" ? (
               <InsertRootMenu
+                onWall={() => {
+                  close();
+                  onInsertCategory("Wall");
+                }}
                 onObject={() => setMenu("objects")}
                 onRoom={() => {
                   close();
@@ -257,16 +262,20 @@ export function LeftToolbar({
 
 /** magicplan's Insert popover. Room would change the locked layout, so it shows the lock. */
 function InsertRootMenu({
+  onWall,
   onObject,
   onRoom,
   onOther,
 }: {
+  onWall: () => void;
   onObject: () => void;
   onRoom: () => void;
   onOther: (k: "note" | "photo" | "form") => void;
 }) {
   const rows: { label: string; icon: LucideIcon; onClick: () => void; locked?: boolean; more?: boolean }[] = [
     { label: "Room", icon: SquareDashed, onClick: onRoom, locked: true },
+    // Renamed from "Structural": a wall is the case we support, so say so.
+    { label: "Wall", icon: BrickWall, onClick: onWall },
     { label: "Object", icon: Armchair, onClick: onObject, more: true },
     { label: "Note", icon: StickyNote, onClick: () => onOther("note") },
     { label: "Photo", icon: Camera, onClick: () => onOther("photo") },
@@ -301,7 +310,6 @@ function InsertRootMenu({
  * same handler (the trapdoor); only the label travels into the draft.
  */
 const CATEGORIES: { label: string; icon: LucideIcon }[] = [
-  { label: "Structural", icon: BrickWall },
   { label: "Doors", icon: DoorOpen },
   { label: "Windows", icon: AppWindow },
   { label: "Plumbing", icon: Droplets },

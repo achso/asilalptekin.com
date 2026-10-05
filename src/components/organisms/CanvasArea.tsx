@@ -43,7 +43,8 @@ export type CanvasAreaProps = {
   draftGhost?: GhostSpec | null;
   /** The inserted (draft) element is the selection. */
   ghostSelected?: boolean;
-  onMoveSpot?: (offsetM: number) => void;
+  /** Drawing a wall (two taps): the first tap, once made. */
+  wallStart?: Point | null;
   onSelectItem?: (id: string) => void;
   onMoveItem?: (id: string, center: Point) => void;
   onRotateItem?: (id: string, rotation: number) => void;
@@ -74,7 +75,7 @@ export const CanvasArea = memo(function CanvasArea({
   draftMarker,
   draftGhost,
   ghostSelected,
-  onMoveSpot,
+  wallStart,
   onSelectItem,
   onMoveItem,
   onRotateItem,
@@ -113,7 +114,8 @@ export const CanvasArea = memo(function CanvasArea({
         placing={placing}
         draftGhost={draftGhost}
         ghostSelected={ghostSelected}
-        onMoveSpot={onMoveSpot}
+        wallStart={wallStart}
+        drawingWall={placing && ghostCategory === "Wall"}
         onSelectItem={onSelectItem}
         onMoveItem={onMoveItem}
         onRotateItem={onRotateItem}
@@ -139,8 +141,12 @@ export const CanvasArea = memo(function CanvasArea({
             className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-mp-red py-1.5 pl-4 pr-1.5 text-[15px] font-semibold text-white shadow-lg"
           >
             <Crosshair size={18} aria-hidden />
-            Tap where the missing element is
-            {ghostCategory && (
+            {ghostCategory === "Wall"
+              ? wallStart
+                ? "Tap where the wall ends"
+                : "Tap where the wall starts"
+              : "Tap where the missing element is"}
+            {ghostCategory && ghostCategory !== "Wall" && (
               <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-semibold">{ghostCategory}</span>
             )}
             <button

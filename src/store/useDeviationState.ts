@@ -7,12 +7,17 @@ import {
   clampToRoom,
   elementById,
   elementInfo,
-  ghostItemSize,
+  GHOST_ITEM_SIZE,
   objectById,
   objectDims,
-  wallSpotGhost,
+  lineLength,
+  snapWallPoint,
   wallSpotInside,
+  wallSpotPoint,
 } from "@/lib/floorplan";
+
+/** Insert → Wall (renamed from "Structural": walls are the case we support). */
+export const WALL_CATEGORY = "Wall";
 import type {
   DraftIntent,
   ElementMedia,
@@ -23,6 +28,7 @@ import type {
   Point,
   GhostItem,
   SelectedElement,
+  WallLine,
   WallSpot,
 } from "@/lib/types";
 import { isExpertOnline } from "@/lib/useMunichCutoff";
@@ -103,6 +109,8 @@ type State = {
   ghostCategory: string | null;
   /** The tapped point on the selected wall (native blue triangle); Insert lands here. */
   wallSpot: WallSpot | null;
+  /** Drawing a wall (ghost_draft, category Wall): the first tap, waiting for the end. */
+  wallStart: Point | null;
   escalations: Escalation[];
   /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
   media: Record<string, ElementMedia>;
@@ -126,7 +134,6 @@ type Action =
   | { type: "updateDraft"; patch: Partial<Pick<Draft, "measuredM" | "proposed">> }
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
-  | { type: "moveSpot"; offsetM: number }
   | { type: "selectItem"; id: string }
   | { type: "moveItem"; id: string; center: Point }
   | { type: "rotateItem"; id: string; rotation: number }
@@ -155,6 +162,7 @@ const initialState: State = {
   interactionMode: "select",
   ghostCategory: null,
   wallSpot: null,
+  wallStart: null,
   escalations: [],
   media: {},
   pendingRevokes: {},
@@ -189,6 +197,7 @@ function withHistory(state: State, draft: Draft, key: string): State {
 /** Closing the pane also ends ghost drafting, its history and any prompt. */
 const NO_DRAFT = {
   draft: null,
+  wallStart: null,
   interactionMode: "select",
   ghostCategory: null,
   history: EMPTY_HISTORY,
@@ -222,10 +231,12 @@ export type Draft = {
   anchor: SelectedElement;
   intent: DraftIntent;
   marker?: Point;
-  /** missing-element inserted at the wall's blue triangle: the ghost is tied to that spot. */
+  /** missing-element inserted at the wall's blue triangle: the object starts at that spot. */
   spot?: WallSpot;
+  /** Missing wall: drawn start → end (true length, direction). */
+  line?: WallLine;
   /**
-   * missing-element objects (everything but a wall attached to a spot): each
+   * missing-element objects (everything but walls): each
    * copy can be dragged and rotated; Duplicate adds one, Delete removes the
    * active one. `marker` mirrors the first copy's centre.
    */
@@ -319,67 +330,79 @@ function reducer(state: State, action: Action): State {
       if (!state.draft) return state;
       return withHistory(state, { ...state.draft, ...action.patch }, `draft:${Object.keys(action.patch).sort().join(",")}`);
 
-    case "startGhost":
+    case "startGhost": {
       if (state.draft) return askDiscard(state, action);
-      // A wall spot is marked (blue triangle): the insertion is tied to it, so
-      // the ghost lands there at once and the pane opens. No second tap needed.
-      // It stays attached to that wall: dragging slides it along the wall
-      // (moveSpot), and a tap elsewhere asks to discard like any other draft,
-      // so the canvas is back in select mode.
-      if (state.wallSpot && state.selectedElement?.type === "wall" && state.selectedElement.id === state.wallSpot.wallId) {
+      const onSpot =
+        state.wallSpot && state.selectedElement?.type === "wall" && state.selectedElement.id === state.wallSpot.wallId
+          ? state.wallSpot
+          : null;
+      // Wall: drawn with two taps (start, end). From a marked wall spot (Add
+      // Wall, or Insert → Wall with the blue triangle showing) the spot is the
+      // start, so one tap finishes it. The selection stays meanwhile.
+      if (action.category === WALL_CATEGORY) {
+        return {
+          ...state,
+          ...NO_DRAFT,
+          interactionMode: "ghost_draft",
+          ghostCategory: WALL_CATEGORY,
+          wallStart: onSpot ? wallSpotPoint(onSpot) : null,
+        };
+      }
+      // An object at a marked spot: a square against the wall there, selected,
+      // free to drag and rotate. No canvas tap needed.
+      if (onSpot) {
         const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
-        // Anything but a wall: a square against the wall at the spot, free to
-        // drag and rotate from there.
-        if (action.category !== "Structural") {
-          const spot = state.wallSpot;
-          const item = newItem(wallSpotInside(spot, ghostItemSize(action.category).depthM));
-          return {
-            ...state,
-            ...NO_DRAFT,
-            ghostCategory: action.category,
-            selectedElement: anchor,
-            draft: {
-              anchor,
-              intent: "missing-element",
-              marker: item.center,
-              spot,
-              category: action.category,
-              items: [item],
-              activeItem: item.id,
-            },
-          };
-        }
+        const item = newItem(wallSpotInside(onSpot, GHOST_ITEM_SIZE.depthM));
         return {
           ...state,
           ...NO_DRAFT,
           ghostCategory: action.category,
-          // Like magicplan: the inserted element is what's selected now.
           selectedElement: anchor,
           draft: {
             anchor,
             intent: "missing-element",
-            marker: wallSpotGhost(state.wallSpot),
-            spot: state.wallSpot,
+            marker: item.center,
+            spot: onSpot,
             category: action.category,
+            items: [item],
+            activeItem: item.id,
           },
         };
       }
       // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
       return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft", ghostCategory: action.category };
+    }
 
     case "placeGhost": {
-      if (state.interactionMode !== "ghost_draft") return state;
-      // Moving an already placed ghost.
-      if (state.draft?.anchor.type === "ghost") {
-        // Moved off the wall spot: no longer tied to it.
-        return withHistory(state, { ...state.draft, marker: action.point, spot: undefined }, `ghost:${Date.now()}`);
-      }
-      // First tap: the proposal now has a place, so the pane opens, and the
-      // inserted element is selected.
-      // From here it's dragged and rotated like any object, so the canvas goes
-      // back to select mode (a tap elsewhere asks to discard).
+      if (state.interactionMode !== "ghost_draft" || state.draft) return state;
       const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
-      const item = newItem(action.point);
+      if (state.ghostCategory === WALL_CATEGORY) {
+        // Tap 1: the start.
+        if (!state.wallStart) return { ...state, wallStart: snapWallPoint(action.point) };
+        // Tap 2: the end. The wall now has direction and true length: open the
+        // pane with the drawn length prefilled. A tap on the start is ignored.
+        const line = { a: state.wallStart, b: snapWallPoint(action.point, state.wallStart) };
+        const length = lineLength(line);
+        if (length < 0.2) return state;
+        return {
+          ...state,
+          interactionMode: "select",
+          wallStart: null,
+          selectedElement: anchor,
+          draft: {
+            anchor,
+            intent: "missing-element",
+            category: WALL_CATEGORY,
+            line,
+            marker: { x: +((line.a.x + line.b.x) / 2).toFixed(2), y: +((line.a.y + line.b.y) / 2).toFixed(2) },
+            measuredM: length,
+          },
+        };
+      }
+      // An object: the tap places it, the pane opens, and it's selected. From
+      // here it's dragged and rotated, so the canvas goes back to select mode
+      // (a tap elsewhere asks to discard).
+      const item = newItem(clampToRoom(action.point));
       return {
         ...state,
         interactionMode: "select",
@@ -387,20 +410,12 @@ function reducer(state: State, action: Action): State {
         draft: {
           anchor,
           intent: "missing-element",
-          marker: action.point,
+          marker: item.center,
           category: state.ghostCategory ?? undefined,
           items: [item],
           activeItem: item.id,
         },
       };
-    }
-
-    case "moveSpot": {
-      const d = state.draft;
-      if (!d?.spot || d.spot.offsetM === action.offsetM) return state;
-      const spot = { ...d.spot, offsetM: action.offsetM };
-      // One drag = one undo step.
-      return withHistory(state, { ...d, spot, marker: wallSpotGhost(spot) }, "spot");
     }
 
     case "selectItem": {
@@ -430,7 +445,7 @@ function reducer(state: State, action: Action): State {
       if (!d?.items || !src) return state;
       // Native Duplicate: a copy beside the original (clear of it), selected.
       // No room to the east → it goes to the west.
-      const step = ghostItemSize(d.category).widthM + 0.15;
+      const step = GHOST_ITEM_SIZE.widthM + 0.15;
       const east = src.center.x + step <= ROOM.widthM;
       const copy = newItem(clampToRoom({ x: src.center.x + (east ? step : -step), y: src.center.y }), src.rotation);
       return {
@@ -694,7 +709,6 @@ export function useDeviationState() {
   );
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   /** Slide an inserted element along the wall it's attached to. */
-  const moveSpot = useCallback((offsetM: number) => dispatch({ type: "moveSpot", offsetM }), []);
   const selectItem = useCallback((id: string) => dispatch({ type: "selectItem", id }), []);
   const moveItem = useCallback((id: string, center: Point) => dispatch({ type: "moveItem", id, center }), []);
   const rotateItem = useCallback((id: string, rotation: number) => dispatch({ type: "rotateItem", id, rotation }), []);
@@ -731,6 +745,7 @@ export function useDeviationState() {
         marker: open.marker,
         markerSpot: open.spot,
         items: open.items,
+        line: open.line,
         category: open.category,
         id: `esc-${now}`,
         target: anchor,
@@ -867,12 +882,12 @@ export function useDeviationState() {
     clearSelection,
     selectWallAt,
     wallSpot: state.wallSpot,
+    wallStart: state.wallStart,
     startDraft,
     proposeObjectChange,
     updateDraft,
     startGhostDraft,
     placeGhost,
-    moveSpot,
     selectItem,
     moveItem,
     rotateItem,

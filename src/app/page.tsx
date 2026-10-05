@@ -17,7 +17,7 @@ import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
 import type { EscalationStatus, ObjectDims, Point, SelectedElement } from "@/lib/types";
 import type { TabRequest } from "@/lib/useTabRequest";
-import { useDeviationState } from "@/store/useDeviationState";
+import { WALL_CATEGORY, useDeviationState } from "@/store/useDeviationState";
 import { DiscardDraftDialog } from "@/components/molecules/DiscardDraftDialog";
 
 /**
@@ -71,8 +71,7 @@ export default function Page() {
     [escalationFor],
   );
   // Ghost walls of submitted Undocumented Element reports stay on the plan.
-  // A Structural element inserted at a wall's blue triangle is a new wall,
-  // drawn perpendicular from that spot (native Insert → Wall).
+  // Submitted proposals stay on the plan: a drawn wall as its line, objects as squares.
   const markers = useMemo(
     () =>
       store.escalations.flatMap((e) =>
@@ -83,8 +82,7 @@ export default function Page() {
                 point: e.marker,
                 status: e.status,
                 spot: e.markerSpot,
-                perpendicular: !!e.markerSpot && e.category === "Structural",
-                lengthM: e.measuredM,
+                line: e.line,
                 items: e.items,
                 category: e.category,
               },
@@ -99,14 +97,13 @@ export default function Page() {
         ? {
             point: draft.marker,
             spot: draft.spot,
-            perpendicular: !!draft.spot && draft.category === "Structural",
-            lengthM: draft.measuredM,
+            line: draft.line,
             items: draft.items,
             activeItem: draft.activeItem,
             category: draft.category,
           }
         : null,
-    [draft?.marker, draft?.spot, draft?.category, draft?.measuredM, draft?.items, draft?.activeItem],
+    [draft?.marker, draft?.spot, draft?.category, draft?.line, draft?.items, draft?.activeItem],
   );
   // The blue triangle: on the selected wall's tapped spot, or the spot the
   // open ghost is tied to (it goes once the ghost is moved off it).
@@ -128,8 +125,11 @@ export default function Page() {
   // 3. Object → popover (width / depth / height / rotation) or rotate handle
   //    → Object change, drawn as a red dashed ghost over the original
   const placing = store.interactionMode === "ghost_draft";
-  // Add Wall at the blue triangle = a Structural ghost tied to the spot.
-  const addingWall = !!draft?.spot && draft.category === "Structural";
+  // Drawing (or reporting) a wall. Started from Add Wall at the blue
+  // triangle, Add Wall shows pressed instead of Insert.
+  const wallFlow = store.ghostCategory === WALL_CATEGORY || draft?.category === WALL_CATEGORY;
+  const [viaAddWall, setViaAddWall] = useState(false);
+  const addingWall = wallFlow && viaAddWall;
   const inserting = (placing || draft?.intent === "missing-element") && !addingWall;
   const { startDraft, startGhostDraft, cancelDraft, notify, proposeObjectChange, updateDraft, requestDiscard } =
     store;
@@ -248,7 +248,7 @@ export default function Page() {
       ? [
           // The inserted element is selected: name it, like magicplan's "Wall".
           selectedElement.type === "ghost"
-            ? draft?.category === "Structural"
+            ? draft?.category === WALL_CATEGORY
               ? "New wall (proposed)"
               : `${draft?.category ?? "Element"} (proposed)`
             : elementInfo(selectedElement).label,
@@ -289,7 +289,7 @@ export default function Page() {
               draftMarker={draft?.marker ?? null}
               draftGhost={draftGhost}
               ghostSelected={selectedElement?.type === "ghost"}
-              onMoveSpot={store.moveSpot}
+              wallStart={store.wallStart}
               onSelectItem={store.selectItem}
               onMoveItem={store.moveItem}
               onRotateItem={store.rotateItem}
@@ -331,14 +331,22 @@ export default function Page() {
                   ? store.deleteItem()
                   : selectedElement && startDraft(selectedElement, "remove")
               }
-              onInsertCategory={startGhostDraft}
+              onInsertCategory={(c) => {
+                setViaAddWall(false);
+                startGhostDraft(c);
+              }}
               // Insert again stops placing; an open draft stays (only ✕ / Send close it).
               onCancelInsert={() => (draft ? requestDiscard() : cancelDraft())}
               onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
               canAddWall={!!store.wallSpot && selectedElement?.type === "wall" && !draft}
               addingWall={addingWall}
-              onAddWall={() => (draft ? requestDiscard() : startGhostDraft("Structural"))}
+              onAddWall={() => {
+                if (draft) return requestDiscard();
+                if (placing) return cancelDraft();
+                setViaAddWall(true);
+                startGhostDraft(WALL_CATEGORY);
+              }}
               spotLabel={
                 store.wallSpot && !draft
                   ? `${wallById(store.wallSpot.wallId).label}, ${wallSpotText(store.wallSpot)}`
@@ -368,7 +376,8 @@ export default function Page() {
 
             <StatusToast
               toast={store.toast}
-              showHint={!selectedElement && !dev.open}
+              // Hidden while placing: the canvas banner says what to tap.
+              showHint={!selectedElement && !dev.open && !placing}
               raised={dev.open}
               onDismiss={store.dismissToast}
             />

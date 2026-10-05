@@ -9,7 +9,7 @@ import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
-import { ISSUE_TYPES, PROJECT, ROOM, issueLabel, objectById, objectDims, wallById, wallSpotText } from "@/lib/floorplan";
+import { ISSUE_TYPES, PROJECT, ROOM, issueLabel, objectById, objectDims, describeLine, wallById, wallSpotText } from "@/lib/floorplan";
 import type { EscalationDraft, IssueType, ObjectDims } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Draft, draftLabel } from "@/store/useDeviationState";
@@ -279,7 +279,16 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
             <div className="flex min-h-14 items-center gap-3 rounded-xl bg-white px-3 py-2">
               <MapPinCheck size={22} className="shrink-0 text-mp-red" aria-hidden />
               <span className="min-w-0 flex-1">
-                {draft.spot ? (
+                {draft.line ? (
+                  <>
+                    <span className="block text-[15px] font-semibold text-mp-ink">
+                      Drawn on plan · runs {describeLine(draft.line).runs}
+                    </span>
+                    <span className="block text-[15px] leading-snug text-mp-muted">
+                      From {describeLine(draft.line).from} to {describeLine(draft.line).to}
+                    </span>
+                  </>
+                ) : draft.spot ? (
                   <>
                     <span className="block text-[15px] font-semibold text-mp-ink">
                       At the marked spot · {wallById(draft.spot.wallId).label}
@@ -305,7 +314,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           )}
           <NumericStepper
             label="Measured Length"
-            hint={isWallLength ? undefined : category === "Structural" ? "Length of physical wall" : "Length of element"}
+            hint={isWallLength ? undefined : category === "Wall" ? "Length of physical wall" : "Length of element"}
             value={measured}
             onChange={setMeasured}
             reference={plannedM}

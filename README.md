@@ -81,64 +81,43 @@ sidebar with the intent already filled in.
    wall shows (and updates) the proposed value. The line under the input
    shows the difference ("−20 cm vs plan").
 
-### Path 2: "There's something on site that isn't on the plan"
+### Path 2: "There's a wall on site that isn't on the plan" (and objects)
 
 1. Tap **+ Insert** in the left toolbar. magicplan's Insert popover opens:
-   **Room** (locked), **Object**, **Note**, **Photo**, **Form**. Note, Photo
-   and Form never change the plan, so they're allowed: the sidebar jumps to
-   the matching tab (Photos & Notes, with the cursor in the note field for
-   Note; Forms for Form) and an alert says why. This works for the room panel
-   and for a selected element's inspector, and closes an open draft.
-2. Tap **Object**: the popover turns into the **All Objects** grid
-   (Structural, Doors, Windows, Plumbing, Appliances, Electrical, HVAC,
-   Furniture), with ‹ back and ✕.
-3. Tap **any** category. They all lead through the same trapdoor: the menu
-   closes and a red banner on the canvas says *Tap where the missing element
-   is* with the category as a chip (✕ or Insert again cancels).
-4. Tap inside the room: a **red dashed ghost** (100 × 10 px, faint red fill,
-   never solid black) appears centred on the tap, and the draft opens:
-   *Proposing · Undocumented Element → Plumbing* (whatever was picked). Tap
-   the plan again to move it; the pane shows its distance from the west and
-   north walls.
-5. Enter its **Measured Length** (*Length of physical wall* for Structural,
-   *Length of element* otherwise).
+   **Room** (locked), **Wall**, **Object**, **Note**, **Photo**, **Form**.
+   *Wall* was *Structural* inside the object grid; it's renamed and moved up
+   because a wall is the case we support (UX audit #6). Note, Photo and Form
+   never change the plan, so they're allowed: the sidebar jumps to the
+   matching tab and an alert says why.
+2. Tap **Wall**: the canvas enters `ghost_draft`. The *Tap any dimension* hint
+   pill hides; a red banner says *Tap where the wall starts* (✕ cancels).
+3. **Two taps draw the wall** (UX audit #1). Tap 1 drops the start; the banner
+   turns into *Tap where the wall ends* and a rubber band with a live length
+   follows the pointer. Tap 2 sets the end. Points snap to a 5 cm grid, onto an
+   existing wall's inner face within 15 cm, and the end squares up with the
+   start within 10° of horizontal / vertical.
+4. The wall is drawn as a **red dashed line at true length**, with its length
+   beside it, and is selected (title *New wall (proposed)*). The
+   `EscalationDraftPane` opens with the **length prefilled** from the drawing
+   and the location in words: *Drawn on plan · runs north–south · From North
+   wall, 1.40 m from west to 1.40 m from west, 2.40 m from north*. The
+   contractor corrects the length with the tape measure reading if it differs.
+5. Delete… removes the drawn wall (nothing was sent).
 
-**Tied to a spot on a wall (native).** Tap a wall first: as in magicplan, the
-exact spot gets a **blue triangle** on the wall's inner face with a white notch
-through the wall, and the toolbar switches to the element tools (Insert, Add
-Corner, Add Wall, Split Room, Delete…). Tapping the wall again moves the spot.
-Insert → Object now says *Inserts at the marked spot: North wall, 1.80 m from
-the west end*, and picking a category skips step 4: the ghost lands on the spot
-and the draft opens at once, with *At the marked spot · North wall* in place
-of the coordinates.
+**From a spot on a wall.** Tap a wall first: as in magicplan, the exact spot
+gets a **blue triangle** with a white notch through the wall, and the toolbar
+switches to the element tools. **Add Wall** is then live: the spot is the
+start, so a single tap draws the wall (Insert → Wall does the same while the
+triangle shows). Tapping the wall again moves the spot.
 
-- **Structural** is drawn the way magicplan inserts a wall: a new wall running
-  **perpendicular** from the spot into the room, 1.50 m until measured, then
-  as long as the Measured Length typed (live). The host wall's dimension is
-  split at the spot (e.g. 4.14 | 0.41) and the length is labelled.
-- **Any other category** sits against the wall, parallel to it.
-- It stays **attached to that wall**. Drag it (magicplan's ring handle with
-  two arrows shows on the selected element) and it slides left / right along
-  the host wall only; the triangle, split dimensions and the pane's
-  *"2.86 m from the west end"* follow. One drag = one ⌘Z step. Tapping it does
-  nothing; a tap elsewhere asks to discard the draft, like every other draft.
-- **Inserted objects** (every category but Structural) are a **0.6 × 0.6 m
-  red dashed square** labelled with the category. At a spot it lands against
-  the wall; with no spot, the first tap places it. From then on it behaves like
-  the plan's own objects: **drag** to move it (it leaves the spot and the
-  triangle goes), the native **rotate arrow** turns it (45° snap, green when
-  snapped, tap = +45°). The toolbar switches to object tools: **Duplicate**
-  adds a copy beside it in the same report (*Placed on plan · 2 items*), and
-  **Delete…** removes the selected copy; deleting the last one removes the
-  proposal (nothing was sent). Every move, turn, copy and delete is a ⌘Z step.
-  A free Structural element is the same, as a 0.9 m wall segment.
-- **Add Wall** is live while a spot is marked: it's the shortcut for
-  Insert → Object → Structural at the spot (pressed while that draft is open;
-  tapping it again asks to discard, like Insert).
-- As in magicplan, **the inserted element becomes the selection**: blue
-  selection under the red proposal dash, the host wall goes back to black, and
-  the title reads *New wall (proposed)* (or *Plumbing (proposed)*, …). ✕ on
-  the draft gives the selection back to the host wall, triangle included.
+**Objects** (Insert → Object → Doors, Windows, Plumbing, …) are a
+**0.6 × 0.6 m red dashed square** labelled with the category. At a marked
+spot it lands against the wall at once; otherwise one tap places it. It behaves
+like the plan's own objects: **drag** to move, the native **rotate arrow** to
+turn (45° snap, green when snapped, tap = +45°). The toolbar switches to object
+tools: **Duplicate** adds a copy in the same report (*Placed on plan · 2
+items*), **Delete…** removes the selected copy (the last one removes the
+proposal). Every move, turn, copy and delete is a ⌘Z step.
 
 ### Path 3: "This object is a different size, or turned"
 

@@ -12,13 +12,15 @@ import {
   toMetres,
   toPx,
   wallGeometry,
-  ghostItemSize,
-  wallById,
+  GHOST_ITEM_SIZE,
+  lineLength,
+  snapWallPoint,
   wallSpotAt,
   wallSpotPx,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
-import type { EscalationStatus, GhostItem, Point, SelectedElement, Wall, WallSpot } from "@/lib/types";
+import { useState } from "react";
+import type { EscalationStatus, GhostItem, Point, SelectedElement, Wall, WallLine, WallSpot } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
 import { GhostItems } from "./GhostItems";
@@ -57,7 +59,9 @@ type Props = {
   /** The draft ghost is selected: magicplan's blue selection around it. */
   ghostSelected?: boolean;
   /** Drag an inserted element along the wall it's attached to (new offset, metres). */
-  onMoveSpot?: (offsetM: number) => void;
+  /** Drawing a wall (two taps): the first tap, once made. */
+  wallStart?: Point | null;
+  drawingWall?: boolean;
   /** Inserted objects: select / drag / rotate a copy. */
   onSelectItem?: (id: string) => void;
   onMoveItem?: (id: string, center: Point) => void;
@@ -95,7 +99,8 @@ export function FloorPlan({
   placing,
   draftGhost,
   ghostSelected = false,
-  onMoveSpot,
+  wallStart = null,
+  drawingWall = false,
   onSelectItem,
   onMoveItem,
   onRotateItem,
@@ -107,6 +112,17 @@ export function FloorPlan({
   onMoveObject,
   removals = {},
 }: Props) {
+  // Wall drawing: where the next tap would land (rubber band preview).
+  const [hover, setHover] = useState<Point | null>(null);
+  const toPlan = (e: React.PointerEvent<SVGSVGElement>) => {
+    const ctm = e.currentTarget.getScreenCTM();
+    if (!ctm) return null;
+    const m = toMetres(new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse()));
+    // Inside the room, or on a wall (up to 20 cm out): it has to be on this plan.
+    const out = 0.2;
+    if (m.x < -out || m.y < -out || m.x > ROOM.widthM + out || m.y > ROOM.depthM + out) return null;
+    return { x: +m.x.toFixed(2), y: +m.y.toFixed(2) };
+  };
   return (
     <svg
       width={width}
@@ -119,15 +135,11 @@ export function FloorPlan({
         // the iPad frame's CSS scale.
         if (!placing) return;
         e.stopPropagation();
-        const svg = e.currentTarget;
-        const ctm = svg.getScreenCTM();
-        if (!ctm) return;
-        const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
-        const m = toMetres(pt);
-        // Only inside the room: the element has to be somewhere on this plan.
-        if (m.x < 0 || m.y < 0 || m.x > ROOM.widthM || m.y > ROOM.depthM) return;
-        onPlace?.({ x: +m.x.toFixed(2), y: +m.y.toFixed(2) });
+        const m = toPlan(e);
+        if (m) onPlace?.(m);
       }}
+      onPointerMove={(e) => drawingWall && setHover(toPlan(e))}
+      onPointerLeave={() => setHover(null)}
       onPointerDown={(e) => {
         // Tap on empty canvas clears the selection.
         if (e.target === e.currentTarget || (e.target as SVGElement).dataset.bg) onSelect(null);
@@ -274,18 +286,22 @@ export function FloorPlan({
           <GhostItems
             key={m.id}
             items={m.items}
-            size={ghostItemSize(m.category)}
+            size={GHOST_ITEM_SIZE}
             category={m.category}
             color={STATUS_STROKE[m.status]}
           />
         ) : (
-          <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
+          m.line ? (
+            <GhostLine key={m.id} line={m.line} color={STATUS_STROKE[m.status]} />
+          ) : (
+            <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
+          )
         ),
       )}
       {draftGhost?.items ? (
         <GhostItems
           items={draftGhost.items}
-          size={ghostItemSize(draftGhost.category)}
+          size={GHOST_ITEM_SIZE}
           category={draftGhost.category}
           color={GHOST_RED}
           interactive
@@ -296,8 +312,9 @@ export function FloorPlan({
           onRotate={onRotateItem}
         />
       ) : (
-        draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft selected={ghostSelected} onSlide={onMoveSpot} />
+        draftGhost?.line && <GhostLine line={draftGhost.line} color={GHOST_RED} draft selected={ghostSelected} />
       )}
+      {drawingWall && <WallPreview start={wallStart} hover={hover} />}
     </svg>
   );
 }
@@ -409,203 +426,135 @@ function OpeningShape({ wall, opening }: { wall: Wall; opening: NonNullable<Wall
 }
 
 /**
- * Where and how a proposed element is drawn. A free ghost (placed by a canvas
- * tap) is a hardcoded 100 × 10 px rect (≈ 0.9 m) centred on the tap. One
- * inserted at a wall's blue triangle is tied to that spot: a Structural one is
- * a new wall running perpendicular from the spot into the room, as magicplan
- * inserts walls (1.50 m until measured); any other category sits against the
- * wall, parallel to it.
+ * Where and how a proposed element is drawn:
+ * - a missing wall: a line from start to end, at true length (two taps);
+ * - inserted objects: squares, drawn by GhostItems;
+ * - older free markers (no line, no items): a 100 × 10 px rect at the point.
  */
 export type GhostSpec = {
   point: Point;
   spot?: WallSpot;
-  /** Structural at a spot: a wall perpendicular to the host wall. */
-  perpendicular?: boolean;
-  /** The measured length, once entered (perpendicular walls grow to it). */
-  lengthM?: number | null;
+  line?: WallLine;
   /** Inserted objects (drag / rotate / duplicate); drawn by GhostItems instead. */
   items?: GhostItem[];
   activeItem?: string;
   category?: string;
 };
 
-/** magicplan's default length for an inserted wall. */
-const INSERTED_WALL_M = 1.5;
-
 /**
  * The proposal is not approved geometry, so it's red, dashed and faintly
  * filled, never solid black. Submitted ones keep the dash in their status colour.
  */
 const GHOST_RED = "#EF4444";
-function GhostWall({
-  ghost,
-  color,
-  draft = false,
-  selected = false,
-  onSlide,
-}: {
-  ghost: GhostSpec;
-  color: string;
-  draft?: boolean;
-  selected?: boolean;
-  /** Attached to a wall: drag slides it along that wall. */
-  onSlide?: (offsetM: number) => void;
-}) {
-  const slidable = !!(draft && ghost.spot && onSlide);
-  const host = ghost.spot && wallById(ghost.spot.wallId);
-  // Drag: project the pointer onto the host wall; it never leaves the wall.
-  const slide = (e: React.PointerEvent<SVGGElement>) => {
-    const ctm = e.currentTarget.ownerSVGElement?.getScreenCTM();
-    if (!ctm || !host) return;
-    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
-    onSlide?.(wallSpotAt(host, { x: pt.x, y: pt.y }).offsetM);
-  };
-  const fill = color === GHOST_RED ? "rgba(239, 68, 68, 0.1)" : color;
-  const fillOpacity = color === GHOST_RED ? 1 : 0.12;
-  const box = ghostBox(ghost);
-  const sp = ghost.spot && wallSpotPx(ghost.spot);
+function GhostWall({ ghost, color }: { ghost: GhostSpec; color: string }) {
+  const at = toPx(ghost.point);
   return (
-    <g
-      pointerEvents={slidable ? "auto" : "none"}
-      className={slidable ? "cursor-grab touch-none active:cursor-grabbing" : undefined}
-      onPointerDown={
-        slidable
-          ? (e) => {
-              // Its own gesture: no deselect, no discard prompt.
-              e.stopPropagation();
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }
-          : undefined
-      }
-      onPointerMove={slidable ? (e) => e.currentTarget.hasPointerCapture(e.pointerId) && slide(e) : undefined}
-      data-ghost={draft ? "draft" : "submitted"}
-      data-selected={selected || undefined} data-ghost-kind={ghost.perpendicular ? "wall" : ghost.spot ? "spot" : "free"}>
-      {/* Selected (just inserted): magicplan's blue selection, under the red proposal dash. */}
-      {selected && (
-        <motion.rect
-          data-ghost-selection
-          initial={false}
-          animate={{ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 }}
-          transition={{ type: "spring", stiffness: 420, damping: 32 }}
-          rx={3}
-          fill={BLUE}
-          fillOpacity={0.35}
-          stroke={BLUE_STRONG}
-          strokeWidth={1.5}
-        />
-      )}
-      <motion.rect
-        initial={false}
-        animate={box}
-        transition={{ type: "spring", stiffness: 420, damping: 32 }}
-        stroke={color}
-        strokeDasharray="4 4"
-        strokeWidth={2}
-        fill={fill}
-        fillOpacity={fillOpacity}
-      />
-      {/* Fat-finger hit area for the drag */}
-      {slidable && <rect x={box.x - 14} y={box.y - 14} width={box.width + 28} height={box.height + 28} fill="transparent" />}
-      {slidable && selected && sp && <SlideHandle box={box} ux={sp.ux} uy={sp.uy} />}
-      {ghost.perpendicular && sp && (
-        <>
-          <SpotSplit spot={ghost.spot!} color={color} />
-          {ghost.lengthM ? (
-            <LengthTag
-              x={sp.p.x + sp.nx * (ghost.lengthM * PX_PER_M) / 2 + (Math.abs(sp.ny) > 0.5 ? 22 : 0)}
-              y={sp.p.y + sp.ny * (ghost.lengthM * PX_PER_M) / 2 + (Math.abs(sp.nx) > 0.5 ? 18 : 0)}
-              text={ghost.lengthM.toFixed(2)}
-              color={color}
-            />
-          ) : null}
-        </>
-      )}
-    </g>
+    <rect
+      pointerEvents="none"
+      data-ghost="submitted"
+      data-ghost-kind="free"
+      x={at.x - 50}
+      y={at.y - 5}
+      width={100}
+      height={10}
+      stroke={color}
+      strokeDasharray="4 4"
+      strokeWidth={2}
+      fill={color}
+      fillOpacity={0.12}
+    />
   );
 }
 
 /**
- * magicplan's move handle on a selected inserted wall: a ring with two
- * triangles pointing along the host wall, the only way it can move.
+ * A missing wall as drawn: a red dashed line at true length (status colour
+ * once sent), round end points, and its length on a tag beside the middle.
+ * Selected (just drawn): magicplan's blue selection under it.
  */
-function SlideHandle({ box, ux, uy }: { box: { x: number; y: number; width: number; height: number }; ux: number; uy: number }) {
-  const c = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  const tri = (dir: 1 | -1) => {
-    const t = { x: c.x + ux * dir * 15, y: c.y + uy * dir * 15 };
-    const b = { x: c.x + ux * dir * 4, y: c.y + uy * dir * 4 };
-    const px = -uy * 9;
-    const py = ux * 9;
-    return `${t.x},${t.y} ${b.x + px},${b.y + py} ${b.x - px},${b.y - py}`;
-  };
+function GhostLine({
+  line,
+  color,
+  draft = false,
+  selected = false,
+}: {
+  line: WallLine;
+  color: string;
+  draft?: boolean;
+  selected?: boolean;
+}) {
+  const a = toPx(line.a);
+  const b = toPx(line.b);
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  // Label offset to the line's side (perpendicular), so it never sits on it.
+  const nx = -(b.y - a.y) / len;
+  const ny = (b.x - a.x) / len;
+  const mid = { x: (a.x + b.x) / 2 + nx * 18, y: (a.y + b.y) / 2 + ny * 18 };
+  const vertical = Math.abs(b.y - a.y) > Math.abs(b.x - a.x);
   return (
-    <g data-slide-handle pointerEvents="none">
-      <circle cx={c.x} cy={c.y} r={22} fill="rgba(107, 107, 214, 0.12)" stroke="#6b6bd6" strokeWidth={1.25} />
-      <polygon points={tri(1)} fill="#6b6bd6" />
-      <polygon points={tri(-1)} fill="#6b6bd6" />
+    <g pointerEvents="none" data-ghost={draft ? "draft" : "submitted"} data-ghost-kind="line" data-selected={selected || undefined}>
+      {selected && (
+        <line
+          data-ghost-selection
+          x1={a.x}
+          y1={a.y}
+          x2={b.x}
+          y2={b.y}
+          stroke={BLUE}
+          strokeOpacity={0.45}
+          strokeWidth={WALL_THICKNESS + 8}
+          strokeLinecap="round"
+        />
+      )}
+      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth={WALL_THICKNESS - 4} strokeOpacity={0.15} />
+      <line
+        data-ghost-line
+        x1={a.x}
+        y1={a.y}
+        x2={b.x}
+        y2={b.y}
+        stroke={color}
+        strokeWidth={3}
+        strokeDasharray="9 6"
+      />
+      {[a, b].map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={5} fill="#fff" stroke={color} strokeWidth={2.5} />
+      ))}
+      <LengthTag x={mid.x} y={mid.y} text={`${lineLength(line).toFixed(2)} m`} color={color} vertical={vertical} />
     </g>
   );
 }
 
-/** The ghost's rect in canvas px (walls are axis-aligned, so a plain box). */
-function ghostBox(g: GhostSpec) {
-  if (g.spot && g.perpendicular) {
-    const { p, nx, ny, ux, uy } = wallSpotPx(g.spot);
-    const L = (g.lengthM || INSERTED_WALL_M) * PX_PER_M;
-    const t = 10;
-    const xs = [p.x - (ux * t) / 2, p.x + (ux * t) / 2, p.x + nx * L - (ux * t) / 2, p.x + nx * L + (ux * t) / 2];
-    const ys = [p.y - (uy * t) / 2, p.y + (uy * t) / 2, p.y + ny * L - (uy * t) / 2, p.y + ny * L + (uy * t) / 2];
-    const x = Math.min(...xs);
-    const y = Math.min(...ys);
-    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
-  }
-  const at = toPx(g.point);
-  const v = !!g.spot && Math.abs(wallSpotPx(g.spot).uy) > 0.5;
-  return { x: at.x - (v ? 5 : 50), y: at.y - (v ? 50 : 5), width: v ? 10 : 100, height: v ? 100 : 10 };
-}
-
-/** The host wall's dimension split at the spot (native: 1.26 | 3.17), just outside the wall. */
-function SpotSplit({ spot, color }: { spot: WallSpot; color: string }) {
-  const w = wallById(spot.wallId);
-  const g = wallGeometry(w);
-  const off = 28;
-  const pt = (m: number) => ({ x: g.a.x + g.ux * m * PX_PER_M - g.nx * off, y: g.a.y + g.uy * m * PX_PER_M - g.ny * off });
-  const a = pt(0);
-  const s = pt(spot.offsetM);
-  const b = pt(w.lengthM);
-  const tick = (q: Point) => (
-    <line x1={q.x - g.nx * 5} y1={q.y - g.ny * 5} x2={q.x + g.nx * 5} y2={q.y + g.ny * 5} />
-  );
-  const segs: [Point, Point, number][] = [
-    [a, s, spot.offsetM],
-    [s, b, w.lengthM - spot.offsetM],
-  ];
+/** While drawing: the start point, and a rubber band to where the next tap would end it. */
+function WallPreview({ start, hover }: { start: Point | null; hover: Point | null }) {
+  if (!start && !hover) return null;
+  const s = start && toPx(start);
+  const end = start && hover ? snapWallPoint(hover, start) : null;
+  const h = hover && toPx(start ? end! : snapWallPoint(hover));
   return (
-    <g data-spot-split stroke={color} strokeWidth={1}>
-      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeDasharray="4 3" />
-      {tick(a)}
-      {tick(s)}
-      {tick(b)}
-      {segs.map(([p, q, m], i) =>
-        m >= 0.35 ? (
+    <g pointerEvents="none" data-wall-preview>
+      {s && h && (
+        <>
+          <line x1={s.x} y1={s.y} x2={h.x} y2={h.y} stroke={GHOST_RED} strokeWidth={3} strokeDasharray="9 6" strokeOpacity={0.7} />
           <LengthTag
-            key={i}
-            x={(p.x + q.x) / 2}
-            y={(p.y + q.y) / 2}
-            text={m.toFixed(2)}
-            color={color}
-            vertical={Math.abs(g.uy) > 0.5}
+            x={(s.x + h.x) / 2}
+            y={(s.y + h.y) / 2 - 16}
+            text={`${lineLength({ a: start!, b: end! }).toFixed(2)} m`}
+            color={GHOST_RED}
           />
-        ) : null,
+        </>
       )}
+      {s && <circle data-wall-start cx={s.x} cy={s.y} r={6} fill={GHOST_RED} stroke="#fff" strokeWidth={2} />}
+      {h && <circle cx={h.x} cy={h.y} r={5} fill="#fff" stroke={GHOST_RED} strokeWidth={2} strokeOpacity={0.8} />}
     </g>
   );
 }
 
 function LengthTag({ x, y, text, color, vertical }: { x: number; y: number; text: string; color: string; vertical?: boolean }) {
+  const w = text.length * 7.6 + 10;
   return (
     <g transform={vertical ? `rotate(-90 ${x} ${y})` : undefined} stroke="none">
-      <rect x={x - 19} y={y - 8} width={38} height={16} rx={4} fill="#fff" />
-      <text x={x} y={y} fill={color} fontSize={12} fontWeight={600} textAnchor="middle" dominantBaseline="central">
+      <rect x={x - w / 2} y={y - 9} width={w} height={18} rx={4} fill="#fff" />
+      <text x={x} y={y} fill={color} fontSize={13} fontWeight={600} textAnchor="middle" dominantBaseline="central">
         {text}
       </text>
     </g>
