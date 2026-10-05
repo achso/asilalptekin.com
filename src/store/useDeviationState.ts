@@ -177,6 +177,18 @@ const NO_DRAFT = {
   discardPrompt: null,
 } as const;
 
+/**
+ * Selection once the draft closes without sending: an inserted (ghost) element
+ * no longer exists, so the selection goes back to the wall it was inserted on
+ * (its blue triangle shows again), or to nothing.
+ */
+const selectionAfterDraft = (state: State): SelectedElement | null =>
+  state.selectedElement?.type === "ghost"
+    ? state.draft?.spot
+      ? { type: "wall", id: state.draft.spot.wallId }
+      : null
+    : state.selectedElement;
+
 export type InteractionMode = "select" | "ghost_draft";
 /** The open escalation draft: what was intercepted, where. */
 export type Draft = {
@@ -279,13 +291,16 @@ function reducer(state: State, action: Action): State {
       // the ghost lands there at once and the pane opens. No second tap needed;
       // a tap on the plan still moves it.
       if (state.wallSpot && state.selectedElement?.type === "wall" && state.selectedElement.id === state.wallSpot.wallId) {
+        const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
         return {
           ...state,
           ...NO_DRAFT,
           interactionMode: "ghost_draft",
           ghostCategory: action.category,
+          // Like magicplan: the inserted element is what's selected now.
+          selectedElement: anchor,
           draft: {
-            anchor: { type: "ghost", id: `ghost-${Date.now()}` },
+            anchor,
             intent: "missing-element",
             marker: wallSpotGhost(state.wallSpot),
             spot: state.wallSpot,
@@ -303,11 +318,14 @@ function reducer(state: State, action: Action): State {
         // Moved off the wall spot: no longer tied to it.
         return withHistory(state, { ...state.draft, marker: action.point, spot: undefined }, `ghost:${Date.now()}`);
       }
-      // First tap: the proposal now has a place, so the pane opens.
+      // First tap: the proposal now has a place, so the pane opens, and the
+      // inserted element is selected.
+      const anchor: SelectedElement = { type: "ghost", id: `ghost-${Date.now()}` };
       return {
         ...state,
+        selectedElement: anchor,
         draft: {
-          anchor: { type: "ghost", id: `ghost-${Date.now()}` },
+          anchor,
           intent: "missing-element",
           marker: action.point,
           category: state.ghostCategory ?? undefined,
@@ -316,7 +334,7 @@ function reducer(state: State, action: Action): State {
     }
 
     case "cancelDraft":
-      return { ...state, ...NO_DRAFT };
+      return { ...state, ...NO_DRAFT, selectedElement: selectionAfterDraft(state) };
 
     case "undo": {
       const { past, future } = state.history;
@@ -347,7 +365,7 @@ function reducer(state: State, action: Action): State {
     case "confirmDiscard": {
       // Discard, then do what the stray tap meant to do (e.g. select that wall).
       const next = state.discardPrompt?.next;
-      const cleared: State = { ...state, ...NO_DRAFT };
+      const cleared: State = { ...state, ...NO_DRAFT, selectedElement: selectionAfterDraft(state) };
       return next ? reducer(cleared, next) : cleared;
     }
 

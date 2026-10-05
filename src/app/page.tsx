@@ -119,7 +119,9 @@ export default function Page() {
   // 3. Object → popover (width / depth / height / rotation) or rotate handle
   //    → Object change, drawn as a red dashed ghost over the original
   const placing = store.interactionMode === "ghost_draft";
-  const inserting = placing || draft?.intent === "missing-element";
+  // Add Wall at the blue triangle = a Structural ghost tied to the spot.
+  const addingWall = !!draft?.spot && draft.category === "Structural";
+  const inserting = (placing || draft?.intent === "missing-element") && !addingWall;
   const { startDraft, startGhostDraft, cancelDraft, notify, proposeObjectChange, updateDraft, requestDiscard } =
     store;
   // Insert → Note / Photo / Form: these never change the plan, so they're
@@ -233,7 +235,16 @@ export default function Page() {
   const breadcrumbs = [
     PROJECT.floor,
     PROJECT.room,
-    ...(selectedElement ? [elementInfo(selectedElement).label] : []),
+    ...(selectedElement
+      ? [
+          // The inserted element is selected: name it, like magicplan's "Wall".
+          selectedElement.type === "ghost"
+            ? draft?.category === "Structural"
+              ? "New wall (proposed)"
+              : `${draft?.category ?? "Element"} (proposed)`
+            : elementInfo(selectedElement).label,
+        ]
+      : []),
   ];
 
   // Dev tools act on the selected element's report, else the newest one.
@@ -268,6 +279,7 @@ export default function Page() {
               placing={placing}
               draftMarker={draft?.marker ?? null}
               draftGhost={draftGhost}
+              ghostSelected={selectedElement?.type === "ghost"}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
@@ -298,6 +310,9 @@ export default function Page() {
               onCancelInsert={() => (draft ? requestDiscard() : cancelDraft())}
               onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
+              canAddWall={!!store.wallSpot && selectedElement?.type === "wall" && !draft}
+              addingWall={addingWall}
+              onAddWall={() => (draft ? requestDiscard() : startGhostDraft("Structural"))}
               spotLabel={
                 store.wallSpot && !draft
                   ? `${wallById(store.wallSpot.wallId).label}, ${wallSpotText(store.wallSpot)}`

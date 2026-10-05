@@ -41,6 +41,8 @@ export type CanvasAreaProps = {
   placing?: boolean;
   draftMarker?: Point | null;
   draftGhost?: GhostSpec | null;
+  /** The inserted (draft) element is the selection. */
+  ghostSelected?: boolean;
   onPlace?: (p: Point) => void;
   /** Leave ghost_draft before anything was placed. */
   onCancelPlacing?: () => void;
@@ -67,6 +69,7 @@ export const CanvasArea = memo(function CanvasArea({
   placing,
   draftMarker,
   draftGhost,
+  ghostSelected,
   onPlace,
   onCancelPlacing,
   ghostCategory,
@@ -101,6 +104,7 @@ export const CanvasArea = memo(function CanvasArea({
         tapSpot={tapSpot}
         placing={placing}
         draftGhost={draftGhost}
+        ghostSelected={ghostSelected}
         onPlace={onPlace}
         markers={markers}
         onDimensionTap={onDimensionTap}

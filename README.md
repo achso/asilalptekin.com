@@ -119,6 +119,13 @@ of the coordinates.
 - **Any other category** sits against the wall, parallel to it.
 - Tapping the plan moves the ghost off the spot (it's then a free ghost and
   the triangle goes); ⌘Z puts it back on the spot.
+- **Add Wall** is live while a spot is marked: it's the shortcut for
+  Insert → Object → Structural at the spot (pressed while that draft is open;
+  tapping it again asks to discard, like Insert).
+- As in magicplan, **the inserted element becomes the selection**: blue
+  selection under the red proposal dash, the host wall goes back to black, and
+  the title reads *New wall (proposed)* (or *Plumbing (proposed)*, …). ✕ on
+  the draft gives the selection back to the host wall, triangle included.
 
 ### Path 3: "This object is a different size, or turned"
 

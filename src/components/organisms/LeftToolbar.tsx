@@ -90,6 +90,9 @@ export function LeftToolbar({
   onInsertOther,
   onLockedTool,
   spotLabel,
+  canAddWall = false,
+  addingWall = false,
+  onAddWall,
   className,
 }: {
   mode: "room" | "element";
@@ -108,6 +111,11 @@ export function LeftToolbar({
   /** Note / Photo / Form: not plan edits; explained, not drafted. */
   onInsertOther: (kind: "note" | "photo" | "form") => void;
   onLockedTool?: () => void;
+  /** A wall spot is marked: Add Wall inserts a wall there. */
+  canAddWall?: boolean;
+  /** That wall's draft is open: Add Wall shows pressed. */
+  addingWall?: boolean;
+  onAddWall?: () => void;
   /** A wall spot is marked (blue triangle): insertions land there, e.g. "North wall, 1.80 m from the west end". */
   spotLabel?: string | null;
   className?: string;
@@ -149,6 +157,18 @@ export function LeftToolbar({
           >
             <t.icon size={20} aria-hidden /> {t.label}
             {t.chevron && <ChevronsUpDown size={16} className="text-mp-muted" aria-hidden />}
+          </ToolButton>
+        ) : t.label === "Add Wall" && (canAddWall || addingWall) ? (
+          // A spot is marked on a wall: Add Wall inserts a proposed wall there,
+          // perpendicular, as magicplan does. Never a plan edit: a draft opens.
+          <ToolButton
+            key={t.label}
+            aria-pressed={addingWall}
+            onClick={onAddWall}
+            className={cn(addingWall && "border-mp-blue bg-mp-blue-soft/20 text-mp-blue")}
+            title="Propose a wall at the marked spot"
+          >
+            <t.icon size={20} aria-hidden /> {t.label}
           </ToolButton>
         ) : t.label === "Delete…" && canDelete ? (
           // A wall / corner / object is selected: Delete is live, but it never

@@ -52,6 +52,8 @@ type Props = {
   placing?: boolean;
   /** The open draft's ghost (Insert → Object), drawn red and dashed. */
   draftGhost?: GhostSpec | null;
+  /** The draft ghost is selected: magicplan's blue selection around it. */
+  ghostSelected?: boolean;
   onPlace?: (p: Point) => void;
   /** Ghost walls of submitted proposals, drawn in their status colour. */
   markers?: (GhostSpec & { id: string; status: EscalationStatus })[];
@@ -84,6 +86,7 @@ export function FloorPlan({
   tapSpot,
   placing,
   draftGhost,
+  ghostSelected = false,
   onPlace,
   markers,
   onDimensionTap,
@@ -257,7 +260,7 @@ export function FloorPlan({
       {markers?.map((m) => (
         <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
       ))}
-      {draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft />}
+      {draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft selected={ghostSelected} />}
     </svg>
   );
 }
@@ -393,13 +396,37 @@ const INSERTED_WALL_M = 1.5;
  * filled, never solid black. Submitted ones keep the dash in their status colour.
  */
 const GHOST_RED = "#EF4444";
-function GhostWall({ ghost, color, draft = false }: { ghost: GhostSpec; color: string; draft?: boolean }) {
+function GhostWall({
+  ghost,
+  color,
+  draft = false,
+  selected = false,
+}: {
+  ghost: GhostSpec;
+  color: string;
+  draft?: boolean;
+  selected?: boolean;
+}) {
   const fill = color === GHOST_RED ? "rgba(239, 68, 68, 0.1)" : color;
   const fillOpacity = color === GHOST_RED ? 1 : 0.12;
   const box = ghostBox(ghost);
   const sp = ghost.spot && wallSpotPx(ghost.spot);
   return (
-    <g pointerEvents="none" data-ghost={draft ? "draft" : "submitted"} data-ghost-kind={ghost.perpendicular ? "wall" : ghost.spot ? "spot" : "free"}>
+    <g pointerEvents="none" data-ghost={draft ? "draft" : "submitted"} data-selected={selected || undefined} data-ghost-kind={ghost.perpendicular ? "wall" : ghost.spot ? "spot" : "free"}>
+      {/* Selected (just inserted): magicplan's blue selection, under the red proposal dash. */}
+      {selected && (
+        <motion.rect
+          data-ghost-selection
+          initial={false}
+          animate={{ x: box.x - 4, y: box.y - 4, width: box.width + 8, height: box.height + 8 }}
+          transition={{ type: "spring", stiffness: 420, damping: 32 }}
+          rx={3}
+          fill={BLUE}
+          fillOpacity={0.35}
+          stroke={BLUE_STRONG}
+          strokeWidth={1.5}
+        />
+      )}
       <motion.rect
         initial={false}
         animate={box}
