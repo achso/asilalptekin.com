@@ -2,13 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Info, Lock, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { Switch } from "@/components/atoms/Switch";
 import { EscalationCard, type EscalationCardProps } from "@/components/molecules/EscalationCard";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { PROJECT, ROOM } from "@/lib/floorplan";
 import type { ElementMedia } from "@/lib/types";
+import { type TabRequest, useTabRequest } from "@/lib/useTabRequest";
 import { cn } from "@/lib/utils";
 
 /**
@@ -42,6 +43,9 @@ export type RoomDefaultSidebarProps = {
   /** Photos & Notes tab content. Uncontrolled (local state) if omitted. */
   media?: ElementMedia;
   onMediaChange?: (m: ElementMedia) => void;
+  /** Open a tab from outside (Insert → Note / Photo / Form); cleared via onTabRequestHandled. */
+  tabRequest?: TabRequest | null;
+  onTabRequestHandled?: () => void;
   onClose?: () => void;
   className?: string;
 };
@@ -66,16 +70,21 @@ export function RoomDefaultSidebar({
   escalations = [],
   media: mediaProp,
   onMediaChange,
+  tabRequest,
+  onTabRequestHandled,
   onClose,
   className,
 }: RoomDefaultSidebarProps) {
   const [tab, setTab] = useState<Tab>("Details");
+  const rootRef = useRef<HTMLElement>(null);
+  useTabRequest(tabRequest, setTab, onTabRequestHandled, rootRef);
   const [localMedia, setLocalMedia] = useState<ElementMedia>({ photos: [], note: "" });
   const media = mediaProp ?? localMedia;
   const setMedia = onMediaChange ?? setLocalMedia;
 
   return (
     <section
+      ref={rootRef}
       aria-label={`${roomName} details`}
       className={cn("flex h-full w-[350px] flex-col bg-mp-panel text-mp-ink", className)}
     >

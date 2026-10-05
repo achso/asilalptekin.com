@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CanvasArea } from "@/components/organisms/CanvasArea";
 import { DeviceStatusBar } from "@/components/organisms/DeviceStatusBar";
 import { DevToolsPanel, useDevToolsToggle } from "@/components/organisms/DevToolsPanel";
@@ -12,6 +12,7 @@ import { TopBar } from "@/components/organisms/TopBar";
 import { PROJECT, elementInfo } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
 import type { SelectedElement } from "@/lib/types";
+import type { TabRequest } from "@/lib/useTabRequest";
 import { useDeviationState } from "@/store/useDeviationState";
 
 /**
@@ -31,6 +32,13 @@ import { useDeviationState } from "@/store/useDeviationState";
  * grid-area), so they float over the plan like magicplan's palette instead of
  * shrinking it.
  */
+/** Insert → Note / Photo / Form alerts: allowed (no geometry change), tab opened. */
+const INSERT_OTHER_ALERT: Record<"note" | "photo" | "form", string> = {
+  note: "Plan locked, but notes are allowed: Photos & Notes is open. Type your note.",
+  photo: "Plan locked, but photos are allowed: Photos & Notes is open. Tap + to add one.",
+  form: "Plan locked, but forms are allowed: the Forms tab is open.",
+};
+
 export default function Page() {
   const store = useDeviationState();
   const dev = useDevToolsToggle();
@@ -65,6 +73,15 @@ export default function Page() {
   const placing = store.interactionMode === "ghost_draft";
   const inserting = placing || draft?.intent === "missing-element";
   const { startDraft, startGhostDraft, cancelDraft, notify } = store;
+  // Insert → Note / Photo / Form: these never change the plan, so they're
+  // allowed. Open the matching sidebar tab and say so.
+  const [tabRequest, setTabRequest] = useState<TabRequest | null>(null);
+  const clearTabRequest = useCallback(() => setTabRequest(null), []);
+  const onInsertOther = (kind: "note" | "photo" | "form") => {
+    if (draft) cancelDraft(); // the panel is needed for the tab
+    setTabRequest(kind === "form" ? { tab: "Forms" } : { tab: "Photos & Notes", focusNote: kind === "note" });
+    notify(INSERT_OTHER_ALERT[kind], "hint");
+  };
   const onProposeWallLength = useCallback(
     (wallId: string) => startDraft({ type: "wall", id: wallId }, "wall-length"),
     [startDraft],
@@ -122,14 +139,7 @@ export default function Page() {
               inserting={inserting}
               onInsertCategory={startGhostDraft}
               onCancelInsert={cancelDraft}
-              onInsertOther={(kind) =>
-                notify(
-                  kind === "form"
-                    ? "Forms stay open while the plan is locked: use the Forms tab on the right."
-                    : "Photos and notes stay open while the plan is locked: use the Photos & Notes tab on the right.",
-                  "hint",
-                )
-              }
+              onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />
 
@@ -161,6 +171,8 @@ export default function Page() {
             draft={draft}
             escalations={store.escalations}
             onCancelDraft={cancelDraft}
+            tabRequest={tabRequest}
+            onTabRequestHandled={clearTabRequest}
             onSubmit={store.submitEscalation}
             onFocus={(el) => store.selectElement(el.id)}
             onClear={store.clearSelection}

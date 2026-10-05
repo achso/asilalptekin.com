@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Info, Loader2, Lock, X } from "lucide-react";
 import { ROOM, elementInfo, wallById } from "@/lib/floorplan";
 import type {
@@ -11,6 +11,7 @@ import type {
   EscalationStatus,
   SelectedElement,
 } from "@/lib/types";
+import { type TabRequest, useTabRequest } from "@/lib/useTabRequest";
 import { cn } from "@/lib/utils";
 import { isActive } from "@/store/deviationMachine";
 import { EscalationCard, toEscalationCardProps } from "@/components/molecules/EscalationCard";
@@ -27,6 +28,9 @@ type Props = {
   draft: Draft | null;
   escalations: Escalation[];
   onCancelDraft: () => void;
+  /** Open a tab in whichever panel shows (Insert → Note / Photo / Form). */
+  tabRequest?: TabRequest | null;
+  onTabRequestHandled?: () => void;
   onSubmit: (draft: EscalationDraft) => void;
   onFocus: (t: SelectedElement) => void;
   onClear: () => void;
@@ -87,6 +91,8 @@ export function RightSidebar(props: Props) {
               escalation={props.selectedEscalation}
               pendingRevoke={props.pendingRevoke}
               onClear={props.onClear}
+              tabRequest={props.tabRequest}
+              onTabRequestHandled={props.onTabRequestHandled}
               onRevoke={props.onRevoke}
               media={mediaFor(selected)}
               onMediaChange={setMediaFor(selected)}
@@ -96,6 +102,8 @@ export function RightSidebar(props: Props) {
               className="w-full"
               media={mediaFor(roomEl)}
               onMediaChange={setMediaFor(roomEl)}
+              tabRequest={props.tabRequest}
+              onTabRequestHandled={props.onTabRequestHandled}
               // Full cards (photo, status, Revoke) for every unresolved report, newest first.
               // Tapping a card selects its element on the plan.
               escalations={activeEscalations.map((e) => ({
@@ -124,6 +132,8 @@ function Inspector({
   onRevoke,
   media,
   onMediaChange,
+  tabRequest,
+  onTabRequestHandled,
 }: {
   target: SelectedElement;
   escalation?: Escalation;
@@ -132,12 +142,16 @@ function Inspector({
   onRevoke: (id: string) => void;
   media: ElementMedia;
   onMediaChange: (m: ElementMedia) => void;
+  tabRequest?: TabRequest | null;
+  onTabRequestHandled?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("Details");
+  const rootRef = useRef<HTMLDivElement>(null);
+  useTabRequest(tabRequest, setTab, onTabRequestHandled, rootRef);
   const { label } = elementInfo(target);
 
   return (
-    <>
+    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-3 px-5 pb-3 pt-4">
         <span className="grid h-10 w-10 place-items-center rounded-xl bg-white">
           <Info size={20} />
@@ -188,7 +202,7 @@ function Inspector({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

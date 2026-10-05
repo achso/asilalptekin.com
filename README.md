@@ -83,8 +83,10 @@ sidebar with the intent already filled in.
 
 1. Tap **+ Insert** in the left toolbar. magicplan's Insert popover opens:
    **Room** (locked), **Object**, **Note**, **Photo**, **Form**. Note, Photo
-   and Form point to the sidebar's Photos & Notes / Forms tabs (they never
-   change the plan).
+   and Form never change the plan, so they're allowed: the sidebar jumps to
+   the matching tab (Photos & Notes, with the cursor in the note field for
+   Note; Forms for Form) and an alert says why. This works for the room panel
+   and for a selected element's inspector, and closes an open draft.
 2. Tap **Object**: the popover turns into the **All Objects** grid
    (Structural, Doors, Windows, Plumbing, Appliances, Electrical, HVAC,
    Furniture), with ‹ back and ✕.
