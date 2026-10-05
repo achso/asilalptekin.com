@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Eye, X } from "lucide-react";
+import { Eye, Send, X } from "lucide-react";
 import { useEffect } from "react";
 import {
   CORNERS,
@@ -31,7 +31,20 @@ const RED = "#EF4444";
  * proposal drawn in red, the photo, the measured values, The Ask and the
  * deadline: everything someone who has never seen the room needs, without a call.
  */
-export function ExpertTicketModal({ escalation, onClose }: { escalation: Escalation | null; onClose: () => void }) {
+export function ExpertTicketModal({
+  escalation,
+  onClose,
+  onConfirm,
+}: {
+  escalation: Escalation | null;
+  /** Close; in review mode this is "Back to edit" (the draft stays open). */
+  onClose: () => void;
+  /**
+   * Review mode: the same ticket shown before Send, so the contractor checks
+   * exactly what the expert will get. Confirm sends it.
+   */
+  onConfirm?: () => void;
+}) {
   useEffect(() => {
     if (!escalation) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -60,7 +73,7 @@ export function ExpertTicketModal({ escalation, onClose }: { escalation: Escalat
             transition={{ type: "spring", stiffness: 420, damping: 34 }}
             className="flex max-h-full w-[960px] max-w-full flex-col overflow-hidden rounded-2xl bg-mp-panel shadow-2xl"
           >
-            <Ticket e={escalation} onClose={onClose} />
+            <Ticket e={escalation} onClose={onClose} onConfirm={onConfirm} />
           </motion.div>
         </motion.div>
       )}
@@ -68,7 +81,8 @@ export function ExpertTicketModal({ escalation, onClose }: { escalation: Escalat
   );
 }
 
-function Ticket({ e, onClose }: { e: Escalation; onClose: () => void }) {
+function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void; onConfirm?: () => void }) {
+  const review = !!onConfirm;
   const availability = useExpertAvailability();
   const name = reportName(e);
   const where = e.line ? describeLine(e.line) : null;
@@ -81,16 +95,18 @@ function Ticket({ e, onClose }: { e: Escalation; onClose: () => void }) {
         </span>
         <div className="min-w-0 flex-1">
           <h2 id="ticket-title" className="text-[17px] font-semibold text-mp-ink">
-            What the expert receives
+            {review ? "Check before sending" : "What the expert receives"}
           </h2>
           <p className="text-[15px] text-mp-muted">
-            Read-only · {name} report · {PROJECT.floor}, {PROJECT.room} · {STATUS_META[e.status].label}
+            {review ? "Not sent yet · this is what the expert will receive" : "Read-only"} · {name} report ·{" "}
+            {PROJECT.floor}, {PROJECT.room}
+            {!review && <> · {STATUS_META[e.status].label}</>}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={review ? "Back to edit" : "Close"}
           className="grid size-10 place-items-center rounded-full bg-[#e6e6e9] text-[#6b6b70]"
         >
           <X size={20} strokeWidth={2.5} />
@@ -141,6 +157,24 @@ function Ticket({ e, onClose }: { e: Escalation; onClose: () => void }) {
           </dl>
         </section>
       </div>
+      {review && (
+        <footer className="flex items-center justify-end gap-3 border-t border-mp-line bg-white px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-12 rounded-xl border border-mp-line bg-white px-5 text-[15px] font-semibold text-mp-ink active:bg-gray-50"
+          >
+            Back to edit
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex h-12 items-center gap-2 rounded-xl bg-mp-blue px-6 text-[15px] font-semibold text-white active:opacity-90"
+          >
+            <Send size={18} aria-hidden /> Send to expert
+          </button>
+        </footer>
+      )}
     </>
   );
 }

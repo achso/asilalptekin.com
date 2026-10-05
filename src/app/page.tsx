@@ -15,9 +15,9 @@ import { TopBar } from "@/components/organisms/TopBar";
 import { PROJECT, dimensionLabelAt, elementInfo, objectById, toPx, wallById, wallSpotText } from "@/lib/floorplan";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
-import type { EscalationStatus, ObjectDims, Point, SelectedElement } from "@/lib/types";
+import type { Escalation, EscalationDraft, EscalationStatus, ObjectDims, Point, SelectedElement } from "@/lib/types";
 import type { TabRequest } from "@/lib/useTabRequest";
-import { WALL_CATEGORY, useDeviationState } from "@/store/useDeviationState";
+import { WALL_CATEGORY, draftLabel, useDeviationState } from "@/store/useDeviationState";
 import { DiscardDraftDialog } from "@/components/molecules/DiscardDraftDialog";
 import { ExpertTicketModal } from "@/components/organisms/ExpertTicketModal";
 
@@ -149,6 +149,26 @@ export default function Page() {
   const [ticketId, setTicketId] = useState<string | null>(null);
   const closeTicket = useCallback(() => setTicketId(null), []);
   const ticket = ticketId ? (store.escalations.find((e) => e.id === ticketId) ?? null) : null;
+  // Review before Send: the same ticket, built from the open draft, not sent yet.
+  const [review, setReview] = useState<EscalationDraft | null>(null);
+  const closeReview = useCallback(() => setReview(null), []);
+  const preview: Escalation | null =
+    review && draft
+      ? {
+          ...review,
+          id: "preview",
+          target: draft.anchor,
+          targetLabel: draftLabel(draft.anchor),
+          marker: draft.marker,
+          markerSpot: draft.spot,
+          items: draft.items,
+          line: draft.line,
+          category: review.category ?? draft.category,
+          createdAt: Date.now(),
+          status: "queued",
+          statusChangedAt: Date.now(),
+        }
+      : null;
   // One popover for every locked value; Propose Correction writes into the draft.
   const [measure, setMeasure] = useState<MeasureTarget | null>(null);
   const closeMeasure = useCallback(() => setMeasure(null), []);
@@ -414,6 +434,7 @@ export default function Page() {
             tabRequest={tabRequest}
             onTabRequestHandled={clearTabRequest}
             onSubmit={store.submitEscalation}
+            onReview={setReview}
             onFocus={(el) => store.selectElement(el.id)}
             onClear={store.clearSelection}
             onRevoke={(id) => store.revokeEscalation(id)}
@@ -426,6 +447,14 @@ export default function Page() {
       </div>
       {/* Stray tap while drafting → confirm before throwing the draft away. */}
       <ExpertTicketModal escalation={ticket} onClose={closeTicket} />
+      <ExpertTicketModal
+        escalation={preview}
+        onClose={closeReview}
+        onConfirm={() => {
+          if (review) store.submitEscalation(review);
+          setReview(null);
+        }}
+      />
       <DiscardDraftDialog
         open={store.discardPrompt}
         onKeep={store.keepDraftOpen}

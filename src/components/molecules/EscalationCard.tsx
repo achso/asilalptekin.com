@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useRef } from "react";
 import { CheckCheck, CheckCircle2, ChevronRight, CloudOff, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
 import { askLabel, issueLabel } from "@/lib/floorplan";
-import { useExpertAvailability } from "@/lib/useMunichCutoff";
+import { munichClock, useExpertAvailability } from "@/lib/useMunichCutoff";
 import type { AskId, Escalation, EscalationStatus, IssueType, ObjectState } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
@@ -327,8 +327,8 @@ function Timestamps({
   );
 }
 
-const clock = (ts: number) =>
-  new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+// Munich time, same clock as the availability strings.
+const clock = munichClock;
 
 // ── Adapter ─────────────────────────────────────────────────────────────────
 

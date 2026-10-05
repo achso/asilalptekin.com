@@ -164,10 +164,14 @@ reviews it.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
   - **Priority** (UX audit #5): an explicit choice, **Can continue work**
-    (default) or **Blocked**, with the expert's availability under it
-    (*"Expert is back at 08:00 tomorrow"*, plus the deadline when Blocked).
-  - **Send to review** is solid primary blue and names what's missing
-    (*"Add photo · pick the ask"*, *"Pick what you need back"*).
+    (default) or **Blocked**, with the expert's availability and the
+    resulting **deadline** under it (*"Expert is back at 08:00 tomorrow ·
+    Deadline: Tomorrow by 10:00 · work is stopped"*).
+  - **Review and send** is solid primary blue and names what's missing
+    (*"Add photo · pick the ask"*, *"Pick what you need back"*). It opens
+    **Check before sending**: the exact ticket the expert will receive (see
+    below), with *Back to edit* (the draft stays as it was) and **Send to
+    expert**.
   - **Footer**: *Auto-attached: plan dimensions · Permit approved last
     Tuesday*. Nothing else (no budget, no site history).
 - On send the toast names what was sent: **"Wall report sent"** (or
@@ -201,12 +205,15 @@ so the top bar, the form, the cards and the ticket never disagree.
 | Form (priority) | *Expert available for 40 more minutes* | *Expert is back at 08:00 tomorrow* |
 | Sent card | *Queued* / *Delivered* + *Expert available for …* | *Queued* + *Expert sees it at 08:00 tomorrow* |
 | Deadline (Blocked) | *Today before 15:00 · work is stopped* | *Tomorrow by 10:00 · work is stopped* |
+| Deadline (Can continue) | *Within 2 working days · work continues* | same |
+| Clocks (status bar, card times) | Munich time | Munich time |
 
 **What the expert receives** (UX audit #3): the **chevron** on a sent card
 opens a read-only ticket: the plan snapshot with the drawn wall in red
 (length label, north arrow, room size), *Runs north–south · From … to …*,
 the photo, the measured value against the drawing or the plan, **The Ask**,
-and the **deadline**. Esc, ✕ or a tap outside closes it.
+and the **deadline**. Esc, ✕ or a tap outside closes it. The same view is the
+review step before Send.
 
 ---
 

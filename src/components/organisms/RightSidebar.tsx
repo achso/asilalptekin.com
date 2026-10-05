@@ -39,6 +39,8 @@ type Props = {
   tabRequest?: TabRequest | null;
   onTabRequestHandled?: () => void;
   onSubmit: (draft: EscalationDraft) => void;
+  /** Review before Send (opens the expert's view of the ticket). */
+  onReview?: (draft: EscalationDraft) => void;
   onFocus: (t: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
@@ -99,6 +101,7 @@ export function RightSidebar(props: Props) {
               draft={draft}
               onCancel={props.onCancelDraft}
               onSubmit={props.onSubmit}
+              onReview={props.onReview}
               onChange={props.onDraftChange}
             />
           ) : mode === "inspector" && selected ? (

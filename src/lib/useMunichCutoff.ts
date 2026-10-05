@@ -71,6 +71,21 @@ export function expertAvailability(now = new Date()): ExpertAvailability {
   };
 }
 
+/** "16:19", in Munich time: every clock in the app (cards, status bar) uses it. */
+export const munichClock = (ts: number | Date) =>
+  new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
+
+/** "Mon, 5 Oct, 16:19" in Munich time (the device status bar). */
+export const munichDateTime = (ts: number | Date) =>
+  new Date(ts).toLocaleString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Europe/Berlin",
+  });
+
 /** Is the remote expert online right now? */
 export const isExpertOnline = (now = new Date()) => expertAvailability(now).online;
 

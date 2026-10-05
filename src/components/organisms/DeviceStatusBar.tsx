@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { munichDateTime } from "@/lib/useMunichCutoff";
 
 /**
  * Fake iPadOS status bar, so the browser prototype feels like a native app.
@@ -12,16 +13,8 @@ export function DeviceStatusBar({ onSecretTap }: { onSecretTap?: () => void }) {
   const taps = useRef<number[]>([]);
 
   useEffect(() => {
-    const fmt = () =>
-      setTime(
-        new Date().toLocaleString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-        }),
-      );
+    // Munich time, like every other clock in the app (one time source).
+    const fmt = () => setTime(munichDateTime(new Date()));
     fmt();
     const t = setInterval(fmt, 30_000);
     return () => clearInterval(t);

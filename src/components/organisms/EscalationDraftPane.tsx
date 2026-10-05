@@ -52,6 +52,11 @@ export type EscalationDraftPaneProps = {
   onCancel: () => void;
   onSubmit: (draft: EscalationDraft) => void;
   /**
+   * Review before Send: the button opens the ticket as the expert will get it;
+   * sending happens from there. Without it, the button sends directly.
+   */
+  onReview?: (draft: EscalationDraft) => void;
+  /**
    * The values live in the draft (store), shared with the canvas (rotate
    * handle, ghost) and the Change Measurement popover, so every entry point
    * edits the same proposal.
@@ -66,7 +71,7 @@ const OBJECT_INPUTS: { key: keyof ObjectDims; label: string }[] = [
   { key: "rotation", label: "Rotation" },
 ];
 
-export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: EscalationDraftPaneProps) {
+export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onChange }: EscalationDraftPaneProps) {
   const { anchor, intent, marker, category } = draft;
   const label = draftLabel(anchor);
   const isWallLength = intent === "wall-length";
@@ -116,7 +121,9 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
   ].filter(Boolean) as string[];
   const canSend = missing.length === 0 && !!ask && !recording;
   const sendLabel = canSend
-    ? "Send to review"
+    ? onReview
+      ? "Review and send"
+      : "Send to review"
     : recording
       ? "Stop recording first"
       : missing.length
@@ -127,7 +134,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
     if (!canSend) return;
     // Changed type: send the type, photo and note; skip the intercept's values.
     const keep = !overridden;
-    onSubmit({
+    (onReview ?? onSubmit)({
       issueType,
       plannedM: keep ? plannedM : undefined,
       measuredM: keep && !isObject && !isRemove ? (measured ?? undefined) : undefined,
@@ -439,7 +446,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
               <Clock size={18} className="mt-0.5 shrink-0" aria-hidden />
               <span>
                 {availability.formLine}
-                {blocking && <> · deadline: {availability.deadline(true)}</>}
+                <span className="block font-medium text-mp-ink">Deadline: {availability.deadline(blocking)}</span>
               </span>
             </p>
           )}
