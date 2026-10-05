@@ -38,6 +38,11 @@ export type NumericStepperProps = {
   placeholder?: string;
   /** Subtext under the field when there's no reference to compare against. */
   hint?: string;
+  /**
+   * One row (label · − · value · +, difference underneath): about half the
+   * height, for several inputs stacked in one grouped card.
+   */
+  compact?: boolean;
   className?: string;
 };
 
@@ -52,6 +57,7 @@ export function NumericStepper({
   unit = "m",
   placeholder = "0.00",
   hint,
+  compact = false,
   className,
 }: NumericStepperProps) {
   const id = useId();
@@ -80,18 +86,30 @@ export function NumericStepper({
   const subId = `${id}-sub`;
 
   return (
-    <div className={cn("rounded-xl bg-white p-3", className)}>
-      <label htmlFor={id} className="block whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-mp-muted">
-        {label}
-      </label>
+    <div className={cn(compact ? "px-3 py-2" : "rounded-xl bg-white p-3", className)}>
+      {!compact && (
+        <label htmlFor={id} className="block whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-mp-muted">
+          {label}
+        </label>
+      )}
 
-      <div className="mt-2 flex items-center gap-2.5">
-        <StepButton label={`Decrease by ${stepLabel}`} onClick={() => nudge(-1)}>
-          <Minus size={24} />
+      <div className={cn("flex items-center", compact ? "gap-2" : "mt-2 gap-2.5")}>
+        {compact && (
+          <label htmlFor={id} className="w-[68px] shrink-0 whitespace-nowrap text-[15px] font-medium text-mp-ink">
+            {label}
+          </label>
+        )}
+        <StepButton compact={compact} label={`Decrease by ${stepLabel}`} onClick={() => nudge(-1)}>
+          <Minus size={compact ? 20 : 24} />
         </StepButton>
 
         {/* Tappable field: gray fill + bottom border affordance, blue on focus */}
-        <div className="flex h-14 min-w-0 flex-1 items-center rounded-t-lg border-b-2 border-gray-300 bg-gray-100 px-3 transition-colors focus-within:border-mp-blue focus-within:bg-blue-50/60">
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 items-center rounded-t-lg border-b-2 border-gray-300 bg-gray-100 transition-colors focus-within:border-mp-blue focus-within:bg-blue-50/60",
+            compact ? "h-11 px-2" : "h-14 px-3",
+          )}
+        >
           <input
             ref={input}
             id={id}
@@ -118,18 +136,29 @@ export function NumericStepper({
               }
             }}
             aria-describedby={reference !== undefined || hint ? subId : undefined}
-            className="min-w-0 placeholder:text-gray-400 flex-1 bg-transparent text-center text-[26px] font-semibold tabular-nums text-mp-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className={cn(
+              "min-w-0 flex-1 bg-transparent text-center font-semibold tabular-nums text-mp-ink outline-none placeholder:text-gray-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+              compact ? "text-[18px]" : "text-[26px]",
+            )}
           />
-          <span className="shrink-0 text-[18px] font-medium text-mp-muted">{unit}</span>
+          <span className={cn("shrink-0 font-medium text-mp-muted", compact ? "text-[15px]" : "text-[18px]")}>
+            {unit}
+          </span>
         </div>
 
-        <StepButton label={`Increase by ${stepLabel}`} onClick={() => nudge(1)}>
-          <Plus size={24} />
+        <StepButton compact={compact} label={`Increase by ${stepLabel}`} onClick={() => nudge(1)}>
+          <Plus size={compact ? 20 : 24} />
         </StepButton>
       </div>
 
       {reference === undefined && hint && (
-        <div id={subId} className="mt-2 whitespace-nowrap text-center text-[12px] font-medium text-mp-muted">
+        <div
+          id={subId}
+          className={cn(
+            "whitespace-nowrap text-center font-medium text-mp-muted",
+            compact ? "ml-[76px] mt-0.5 text-[11px]" : "mt-2 text-[12px]",
+          )}
+        >
           {hint}
         </div>
       )}
@@ -138,7 +167,9 @@ export function NumericStepper({
           id={subId}
           aria-live="polite"
           className={cn(
-            "mt-2 whitespace-nowrap text-center text-[12px] font-medium tabular-nums",
+            "whitespace-nowrap text-center font-medium tabular-nums",
+            // compact: centred under the − value + group, past the label column
+            compact ? "ml-[76px] mt-0.5 text-[11px]" : "mt-2 text-[12px]",
             value === null || delta === 0 ? "text-mp-muted" : "text-mp-red",
           )}
         >
@@ -156,10 +187,12 @@ export function NumericStepper({
 function StepButton({
   label,
   onClick,
+  compact,
   children,
 }: {
   label: string;
   onClick: () => void;
+  compact?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -168,7 +201,11 @@ function StepButton({
       aria-label={label}
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
-      className="grid size-14 shrink-0 place-items-center rounded-xl bg-mp-panel active:bg-mp-line"
+      // compact keeps a 44 px target: still glove-friendly
+      className={cn(
+        "grid shrink-0 place-items-center rounded-xl bg-mp-panel active:bg-mp-line",
+        compact ? "size-11" : "size-14",
+      )}
     >
       {children}
     </motion.button>

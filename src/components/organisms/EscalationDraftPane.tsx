@@ -146,9 +146,12 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
             <p className="px-1 text-[12px] leading-snug text-mp-muted">
               Edit here, tap a value on the plan, or drag the rotate arrow. The plan stays locked.
             </p>
+            {/* One grouped card, a compact row per value (like magicplan's Dimensions list). */}
+            <div className="divide-y divide-mp-line overflow-hidden rounded-xl bg-white">
             {OBJECT_INPUTS.map((i) => (
               <NumericStepper
                 key={i.key}
+                compact
                 label={i.label}
                 value={proposed[i.key]}
                 onChange={(v) => onChange({ proposed: { ...proposed, [i.key]: i.key === "rotation" ? v % 360 : v } })}
@@ -159,6 +162,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                 max={i.key === "rotation" ? 360 : i.key === "heightM" ? ROOM.ceilingM : 99.99}
               />
             ))}
+            </div>
           </section>
         ) : (
         <section className="flex flex-col gap-2.5">
