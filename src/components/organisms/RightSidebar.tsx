@@ -44,6 +44,8 @@ type Props = {
   onRevoke: (id: string) => void;
   /** Reviewer cheat: double-tap a card header → next lifecycle state. */
   onAdvance?: (id: string) => void;
+  /** Card chevron: open the ticket as the remote expert receives it. */
+  onOpenTicket?: (id: string) => void;
   /** Standard Photos & Notes per element (store-owned, drives the canvas paperclip). */
   mediaFor: (el: SelectedElement) => ElementMedia;
   onMediaChange: (el: SelectedElement, m: ElementMedia) => void;
@@ -111,6 +113,7 @@ export function RightSidebar(props: Props) {
               onMeasureObject={props.onMeasureObject}
               onRevoke={props.onRevoke}
               onAdvance={props.onAdvance}
+              onOpenTicket={props.onOpenTicket}
               media={mediaFor(selected)}
               onMediaChange={setMediaFor(selected)}
             />
@@ -129,6 +132,7 @@ export function RightSidebar(props: Props) {
                 onPress: () => props.onFocus(e.target),
                 onRevoke: () => props.onRevoke(e.id),
                 onAdvance: props.onAdvance && (() => props.onAdvance!(e.id)),
+                onOpen: props.onOpenTicket && (() => props.onOpenTicket!(e.id)),
               }))}
             />
           )}
@@ -149,6 +153,7 @@ function Inspector({
   onClear,
   onRevoke,
   onAdvance,
+  onOpenTicket,
   media,
   onMediaChange,
   tabRequest,
@@ -162,6 +167,7 @@ function Inspector({
   onClear: () => void;
   onRevoke: (id: string) => void;
   onAdvance?: (id: string) => void;
+  onOpenTicket?: (id: string) => void;
   media: ElementMedia;
   onMediaChange: (m: ElementMedia) => void;
   tabRequest?: TabRequest | null;
@@ -207,6 +213,7 @@ function Inspector({
               {...toEscalationCardProps(escalation)}
               onRevoke={() => onRevoke(escalation.id)}
               onAdvance={onAdvance && (() => onAdvance(escalation.id))}
+              onOpen={onOpenTicket && (() => onOpenTicket(escalation.id))}
             />
             <p className="mt-2 px-1 text-[12px] text-mp-muted">{INSPECTOR_HINT[escalation.status]}</p>
           </div>

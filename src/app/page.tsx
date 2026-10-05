@@ -19,6 +19,7 @@ import type { EscalationStatus, ObjectDims, Point, SelectedElement } from "@/lib
 import type { TabRequest } from "@/lib/useTabRequest";
 import { WALL_CATEGORY, useDeviationState } from "@/store/useDeviationState";
 import { DiscardDraftDialog } from "@/components/molecules/DiscardDraftDialog";
+import { ExpertTicketModal } from "@/components/organisms/ExpertTicketModal";
 
 /**
  * Main iPad layout shell (landscape). Owns the store and composes organisms:
@@ -144,6 +145,10 @@ export default function Page() {
   // A draft open: ask before discarding it (only ✕ / Send close it silently).
   const onInsertOther = (kind: "note" | "photo" | "form") =>
     draft ? requestDiscard(() => openTabFor(kind)) : openTabFor(kind);
+  // Card chevron → the ticket as the remote expert receives it (read-only).
+  const [ticketId, setTicketId] = useState<string | null>(null);
+  const closeTicket = useCallback(() => setTicketId(null), []);
+  const ticket = ticketId ? (store.escalations.find((e) => e.id === ticketId) ?? null) : null;
   // One popover for every locked value; Propose Correction writes into the draft.
   const [measure, setMeasure] = useState<MeasureTarget | null>(null);
   const closeMeasure = useCallback(() => setMeasure(null), []);
@@ -413,12 +418,14 @@ export default function Page() {
             onClear={store.clearSelection}
             onRevoke={(id) => store.revokeEscalation(id)}
             onAdvance={store.advanceEscalation}
+            onOpenTicket={setTicketId}
             mediaFor={store.mediaFor}
             onMediaChange={store.setMediaFor}
           />
         </div>
       </div>
       {/* Stray tap while drafting → confirm before throwing the draft away. */}
+      <ExpertTicketModal escalation={ticket} onClose={closeTicket} />
       <DiscardDraftDialog
         open={store.discardPrompt}
         onKeep={store.keepDraftOpen}

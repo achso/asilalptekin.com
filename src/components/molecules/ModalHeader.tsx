@@ -46,7 +46,7 @@ export function ModalHeader({
       <div className="min-w-0 flex-1 text-center leading-tight">
         <h2 className="truncate whitespace-nowrap text-[18px] font-bold text-mp-ink">{title}</h2>
         {subtitle && (
-          <p className="mt-0.5 truncate whitespace-nowrap text-[13px] text-mp-muted">{subtitle}</p>
+          <p className="mt-0.5 truncate whitespace-nowrap text-[15px] text-mp-muted">{subtitle}</p>
         )}
       </div>
 

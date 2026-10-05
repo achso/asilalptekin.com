@@ -10,6 +10,7 @@ import {
   GHOST_ITEM_SIZE,
   objectById,
   objectDims,
+  reportName,
   lineLength,
   snapWallPoint,
   wallSpotInside,
@@ -518,7 +519,8 @@ function reducer(state: State, action: Action): State {
           e,
           ...state.escalations.filter((x) => !(sameElement(x.target, e.target) && x.status === "resolved")),
         ],
-        toast: toast(`${e.targetLabel} saved. It sends in the background, you can move on.`, "success"),
+        // Name the thing that was sent (UX audit): "Wall report sent".
+        toast: toast(`${reportName(e)} report sent`, "success"),
       };
     }
 

@@ -1,4 +1,5 @@
 import type {
+  AskId,
   Corner,
   IssueType,
   ObjectState,
@@ -371,3 +372,28 @@ export function elementById(id: string): SelectedElement | null {
   if (PLAN_OBJECTS.some((o) => o.id === id)) return { type: "object", id };
   return null;
 }
+
+/** The Ask: one required tap, phrased as what the contractor needs back. */
+export const ASKS: { id: AskId; label: string }[] = [
+  { id: "update-plan", label: "Update the plan" },
+  { id: "can-continue", label: "Tell me whether I can continue" },
+  { id: "check-permit", label: "Check the permit" },
+];
+export const askLabel = (id?: AskId) => ASKS.find((a) => a.id === id)?.label;
+
+/** Shortest name for what a report is about: "Wall", "Plumbing", "Dimension"… */
+export function reportName(e: { issueType: IssueType; category?: string; objectChange?: unknown }) {
+  switch (e.issueType) {
+    case "undocumented-element":
+      return e.category ?? "Element";
+    case "dimension-mismatch":
+      return e.objectChange ? "Object change" : "Dimension";
+    case "element-not-on-site":
+      return "Removal";
+    case "site-condition-hazard":
+      return "Hazard";
+  }
+}
+
+/** "approved last Tuesday": the permit status, mid-sentence ("Permit approved last Tuesday"). */
+export const PERMIT_TEXT = PROJECT.permit.charAt(0).toLowerCase() + PROJECT.permit.slice(1);

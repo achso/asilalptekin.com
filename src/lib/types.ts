@@ -93,6 +93,8 @@ export type Escalation = {
   note?: string;
   voiceMemo?: { url: string; durationS: number };
   blocking: boolean; // "work is stopped until resolved"
+  /** The Ask: what the contractor needs back (required). */
+  ask?: AskId;
   createdAt: number;
   status: EscalationStatus;
   statusChangedAt: number;
@@ -125,3 +127,6 @@ export type GhostItem = { id: string; center: Point; rotation: number };
 
 /** A drawn wall: start and end in plan metres (gives direction and true length). */
 export type WallLine = { a: Point; b: Point };
+
+/** The Ask: what the contractor needs back from the expert (UX audit #2). */
+export type AskId = "update-plan" | "can-continue" | "check-permit";

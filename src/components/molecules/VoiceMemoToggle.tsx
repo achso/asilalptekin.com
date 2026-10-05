@@ -59,7 +59,7 @@ export function VoiceMemoToggle({ onChange, onRecordingChange }: VoiceMemoToggle
             {voice.memo.url ? (
               <audio src={voice.memo.url} controls className="h-9 w-full min-w-0" />
             ) : (
-              <span className="text-[14px] font-medium">Memo · {voice.memo.durationS}s</span>
+              <span className="text-[15px] font-medium">Memo · {voice.memo.durationS}s</span>
             )}
             <button
               type="button"
@@ -73,7 +73,7 @@ export function VoiceMemoToggle({ onChange, onRecordingChange }: VoiceMemoToggle
         ) : (
           <div>
             <div className="text-[15px] font-semibold">Record Voice Memo</div>
-            <div className="text-[12px] text-mp-muted">Expected vs. found, in your words</div>
+            <div className="text-[15px] text-mp-muted">Expected vs. found, in your words</div>
           </div>
         )}
       </div>
@@ -94,7 +94,7 @@ function Waveform({ seconds }: { seconds: number }) {
           />
         ))}
       </div>
-      <span className="text-[14px] font-semibold tabular-nums text-mp-red">
+      <span className="text-[15px] font-semibold tabular-nums text-mp-red">
         {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
       </span>
     </div>

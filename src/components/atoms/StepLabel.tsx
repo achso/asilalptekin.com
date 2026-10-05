@@ -17,14 +17,14 @@ export function StepLabel({
     <div className="flex items-center gap-2.5">
       <span
         className={cn(
-          "grid size-6 place-items-center rounded-full text-[12px] font-bold text-white",
+          "grid size-6 place-items-center rounded-full text-[15px] font-bold text-white",
           done ? "bg-emerald-500" : "bg-mp-ink",
         )}
       >
         {done ? <Check size={14} strokeWidth={3} /> : n}
       </span>
       <span className="text-[15px] font-semibold">{children}</span>
-      {optional && <span className="text-[12px] text-mp-muted">optional</span>}
+      {optional && <span className="text-[15px] text-mp-muted">optional</span>}
     </div>
   );
 }

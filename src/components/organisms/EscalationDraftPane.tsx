@@ -1,16 +1,28 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, MapPinCheck, Move3d, PackagePlus, Ruler, Send, Trash2, TriangleAlert, SearchX } from "lucide-react";
+import { Check, Clock, MapPinCheck, Move3d, PackagePlus, Ruler, Send, Trash2, TriangleAlert, SearchX } from "lucide-react";
 import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
-import { Switch } from "@/components/atoms/Switch";
 import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
-import { ISSUE_TYPES, PROJECT, ROOM, issueLabel, objectById, objectDims, describeLine, wallById, wallSpotText } from "@/lib/floorplan";
-import type { EscalationDraft, IssueType, ObjectDims } from "@/lib/types";
+import {
+  ASKS,
+  ISSUE_TYPES,
+  PROJECT,
+  PERMIT_TEXT,
+  ROOM,
+  describeLine,
+  issueLabel,
+  objectById,
+  objectDims,
+  wallById,
+  wallSpotText,
+} from "@/lib/floorplan";
+import type { AskId, EscalationDraft, IssueType, ObjectDims } from "@/lib/types";
+import { useExpertAvailability } from "@/lib/useMunichCutoff";
 import { cn } from "@/lib/utils";
 import { type Draft, draftLabel } from "@/store/useDeviationState";
 
@@ -26,9 +38,14 @@ import { type Draft, draftLabel } from "@/store/useDeviationState";
  *   missing-element (Insert → Object → a category → tap the plan)
  *                Undocumented Element → <category>: where it is + its length
  *
- * Both need a reading > 0 and at least one photo. Budget, permit status and a
- * plan snapshot are attached automatically and shown above Send.
+ * Every report needs a plausible reading (≥ 0.50 m), one photo and The Ask
+ * (what the contractor needs back), plus an explicit priority: Can continue
+ * (default) or Blocked. The permit date and dimensions are attached
+ * automatically. Text is 15 px minimum; one decimal separator (".").
  */
+
+/** Below this a reading isn't plausible for a wall or element (UX audit: step 1 check). */
+export const MIN_LENGTH_M = 0.5;
 export type EscalationDraftPaneProps = {
   draft: Draft;
   /** Close (✕): discard the draft, keep the selection. */
@@ -84,15 +101,27 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
   const [note, setNote] = useState("");
   const [voiceMemo, setVoiceMemo] = useState<VoiceMemo | undefined>();
   const [recording, setRecording] = useState(false);
-  const [blocking, setBlocking] = useState(true);
+  // Priority: an explicit choice, defaulting to "Can continue" (UX audit #5).
+  const [blocking, setBlocking] = useState(false);
+  const [ask, setAsk] = useState<AskId | null>(null);
+  const availability = useExpertAvailability();
 
-  const hasLength = measured !== null && measured > 0;
+  const hasLength = measured !== null && measured >= MIN_LENGTH_M;
+  const tooShort = measured !== null && measured > 0 && measured < MIN_LENGTH_M;
   const hasPhoto = photos.length > 0;
   const structuredDone = overridden || isRemove || (isObject ? changed.length > 0 : hasLength);
-  const missing = [!structuredDone && (isObject ? "change" : "length"), !hasPhoto && "photo"].filter(
-    Boolean,
-  ) as string[];
-  const canSend = missing.length === 0 && !recording;
+  const missing = [
+    !structuredDone && (isObject ? "change" : tooShort ? `length ≥ ${MIN_LENGTH_M.toFixed(2)} m` : "length"),
+    !hasPhoto && "photo",
+  ].filter(Boolean) as string[];
+  const canSend = missing.length === 0 && !!ask && !recording;
+  const sendLabel = canSend
+    ? "Send to review"
+    : recording
+      ? "Stop recording first"
+      : missing.length
+        ? `Add ${missing.join(" + ")}${ask ? "" : " · pick the ask"}`
+        : "Pick what you need back";
 
   const send = () => {
     if (!canSend) return;
@@ -108,6 +137,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
       note: note.trim() || undefined,
       voiceMemo,
       blocking,
+      ask: ask ?? undefined,
     });
   };
 
@@ -153,13 +183,13 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-mp-red">Proposing</span>
+              <span className="text-[15px] font-semibold text-mp-red">Proposing</span>
               {/* Padded hit area (44 px tall) without pushing the title around. */}
               <button
                 type="button"
                 onClick={() => setPickingType((v) => !v)}
                 aria-expanded={pickingType}
-                className="-my-3 -mr-1 px-2 py-3 text-[13px] font-semibold text-mp-blue"
+                className="-my-3 -mr-1 px-2 py-3 text-[15px] font-semibold text-mp-blue"
               >
                 {pickingType ? "Done" : "Change type"}
               </button>
@@ -167,7 +197,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
             <span className="block truncate whitespace-nowrap text-[16px] font-semibold text-mp-ink">
               {issueLabel(issueType)}
             </span>
-            <span className="block text-[12px] leading-snug text-mp-muted">
+            <span className="block text-[15px] leading-snug text-mp-muted">
               {overridden
                 ? `${label} · ${ISSUE_TYPES.find((t) => t.id === issueType)?.description ?? ""}`
                 : isRemove
@@ -204,9 +234,9 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                   <span className="min-w-0 flex-1">
                     <span className="block truncate whitespace-nowrap text-[15px] font-semibold text-mp-ink">
                       {t.label}
-                      {t.id === naturalType && <span className="ml-1.5 text-[12px] font-normal text-mp-muted">· suggested</span>}
+                      {t.id === naturalType && <span className="ml-1.5 text-[15px] font-normal text-mp-muted">· suggested</span>}
                     </span>
-                    <span className="mt-0.5 block text-[12px] leading-snug text-gray-500">{t.description}</span>
+                    <span className="mt-0.5 block text-[15px] leading-snug text-gray-500">{t.description}</span>
                   </span>
                   <Check size={18} strokeWidth={2.75} aria-hidden className={cn("shrink-0 text-mp-blue", active ? "opacity-100" : "opacity-0")} />
                 </button>
@@ -216,11 +246,11 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
         )}
 
         {overridden ? (
-          <p className="-mt-2 px-1 text-[13px] leading-snug text-mp-muted">
+          <p className="-mt-2 px-1 text-[15px] leading-snug text-mp-muted">
             Reported as {issueLabel(issueType)}: the photo and your note carry the details.
           </p>
         ) : isRemove ? (
-          <p className="-mt-2 px-1 text-[13px] leading-snug text-mp-muted">
+          <p className="-mt-2 px-1 text-[15px] leading-snug text-mp-muted">
             Nothing is deleted: the plan stays locked. The remote expert reviews the removal and
             updates the plan. A photo of the spot is all that&apos;s needed.
           </p>
@@ -228,11 +258,11 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           <section className="flex flex-col gap-2.5">
             <StepLabel n={1} done={structuredDone}>
               Proposed changes <span className="text-mp-red">*</span>
-              <span className="ml-1.5 text-[12px] font-normal text-mp-muted">
+              <span className="ml-1.5 text-[15px] font-normal text-mp-muted">
                 {changed.length ? `${changed.length} changed` : "none yet"}
               </span>
             </StepLabel>
-            <p className="px-1 text-[12px] leading-snug text-mp-muted">
+            <p className="px-1 text-[15px] leading-snug text-mp-muted">
               Edit here, tap a value, drag the object to move it or the arrow to rotate it. The plan
               stays locked.
             </p>
@@ -255,14 +285,14 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
             {/* Position is visual only: no coordinates, just whether it moved. */}
             <div className="flex min-h-[60px] items-center gap-2 px-3 py-2">
               <span className="w-[68px] shrink-0 text-[15px] font-medium text-mp-ink">Position</span>
-              <span className={cn("min-w-0 flex-1 text-[13px] leading-snug", moved ? "font-medium text-mp-red" : "text-mp-muted")}>
+              <span className={cn("min-w-0 flex-1 text-[15px] leading-snug", moved ? "font-medium text-mp-red" : "text-mp-muted")}>
                 {moved ? "Moved on plan" : "Drag the object on the plan to move it"}
               </span>
               {moved && (
                 <button
                   type="button"
                   onClick={() => onChange({ proposed: { ...proposed, center: plan.center } })}
-                  className="h-11 shrink-0 rounded-xl bg-mp-panel px-3 text-[14px] font-semibold active:bg-mp-line"
+                  className="h-11 shrink-0 rounded-xl bg-mp-panel px-3 text-[15px] font-semibold active:bg-mp-line"
                 >
                   Reset
                 </button>
@@ -293,7 +323,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                     <span className="block text-[15px] font-semibold text-mp-ink">
                       At the marked spot · {wallById(draft.spot.wallId).label}
                     </span>
-                    <span className="block text-[12px] leading-snug text-mp-muted">
+                    <span className="block text-[15px] leading-snug text-mp-muted">
                       {wallSpotText(draft.spot)} · {draft.items ? "drag to move, rotate with the arrow" : "drag it along the wall"}
                     </span>
                   </>
@@ -302,7 +332,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
                     <span className="block text-[15px] font-semibold text-mp-ink">
                       Placed on plan{(draft.items?.length ?? 0) > 1 ? ` · ${draft.items!.length} items` : ""}
                     </span>
-                    <span className="block text-[12px] leading-snug text-mp-muted">
+                    <span className="block text-[15px] leading-snug text-mp-muted">
                       {draft.items
                         ? "Drag to move · rotate with the arrow · Duplicate adds one"
                         : `${marker.x.toFixed(2)} m from west · ${marker.y.toFixed(2)} m from north · tap the plan to move`}
@@ -314,7 +344,15 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           )}
           <NumericStepper
             label="Measured Length"
-            hint={isWallLength ? undefined : category === "Wall" ? "Length of physical wall" : "Length of element"}
+            hint={
+              isWallLength
+                ? undefined
+                : tooShort
+                  ? `At least ${MIN_LENGTH_M.toFixed(2)} m`
+                  : category === "Wall"
+                    ? "Length of physical wall"
+                    : "Length of element"
+            }
             value={measured}
             onChange={setMeasured}
             reference={plannedM}
@@ -325,9 +363,15 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
         <section className="flex flex-col gap-2.5">
           <StepLabel n={isRemove ? 1 : 2} done={hasPhoto}>
             Evidence <span className="text-mp-red">*</span>
-            <span className="ml-1.5 text-[12px] font-normal text-mp-muted">at least 1 photo</span>
+            <span className="ml-1.5 text-[15px] font-normal text-mp-muted">at least 1 photo</span>
           </StepLabel>
-          <PhotoEvidenceCapture photos={photos} onPhotosChange={setPhotos} note={note} onNoteChange={setNote} />
+          <PhotoEvidenceCapture
+            variant="single"
+            photos={photos}
+            onPhotosChange={setPhotos}
+            note={note}
+            onNoteChange={setNote}
+          />
         </section>
 
         <section className="flex flex-col gap-2.5">
@@ -337,19 +381,69 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           <VoiceMemoToggle onChange={setVoiceMemo} onRecordingChange={setRecording} />
         </section>
 
-        <button
-          type="button"
-          role="switch"
-          aria-checked={blocking}
-          onClick={() => setBlocking((b) => !b)}
-          className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-left"
-        >
-          <span>
-            <span className="block text-[15px] font-semibold">Work is blocked here</span>
-            <span className="block text-[12px] text-mp-muted">Prioritised before 15:00 CET</span>
-          </span>
-          <Switch checked={blocking} />
-        </button>
+        {/* The Ask + priority, right above Send: Send stays disabled until
+            the ask is picked, so neither can be skipped below the fold. */}
+        <section className="flex flex-col gap-2.5">
+          <StepLabel n={isRemove ? 3 : 4} done={!!ask}>
+            What do you need back? <span className="text-mp-red">*</span>
+          </StepLabel>
+          <div role="radiogroup" aria-label="The ask" className="flex flex-wrap gap-2">
+            {ASKS.map((a) => {
+              const active = ask === a.id;
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setAsk(a.id)}
+                  className={cn(
+                    "min-h-12 rounded-full border-2 px-4 text-left text-[15px] font-semibold transition-colors",
+                    active ? "border-mp-blue bg-blue-50 text-mp-blue" : "border-mp-line bg-white text-mp-ink active:bg-gray-50",
+                  )}
+                >
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
+          <div role="radiogroup" aria-label="Priority" className="grid grid-cols-2 gap-1 rounded-xl bg-mp-line/70 p-1">
+            {[
+              { v: false, label: "Can continue work" },
+              { v: true, label: "Blocked" },
+            ].map((o) => {
+              const active = blocking === o.v;
+              return (
+                <button
+                  key={o.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setBlocking(o.v)}
+                  className={cn(
+                    "h-12 rounded-lg text-[15px] font-semibold transition-colors",
+                    active
+                      ? o.v
+                        ? "bg-mp-red text-white shadow-sm"
+                        : "bg-white text-mp-ink shadow-sm"
+                      : "text-mp-muted",
+                  )}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+          {availability && (
+            <p role="status" className="flex items-start gap-2 px-1 text-[15px] leading-snug text-mp-muted">
+              <Clock size={18} className="mt-0.5 shrink-0" aria-hidden />
+              <span>
+                {availability.formLine}
+                {blocking && <> · deadline: {availability.deadline(true)}</>}
+              </span>
+            </p>
+          )}
+        </section>
       </div>
 
       {/* Sticky submit with the auto-attached metadata */}
@@ -361,18 +455,16 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
           className={cn(
             "flex h-14 w-full items-center justify-center gap-2.5 rounded-xl text-[18px] font-semibold transition-colors",
             canSend
-              ? "bg-mp-red text-white shadow-[0_8px_24px_rgba(229,53,43,0.35)]"
+              ? "bg-mp-blue text-white shadow-[0_8px_24px_rgba(26,124,245,0.3)]"
               : "bg-mp-line text-mp-muted",
           )}
         >
           <Send size={20} />
-          {canSend ? "Send to review" : recording ? "Stop recording first" : `Add ${missing.join(" + ")}`}
+          {sendLabel}
         </motion.button>
         {/* Context the expert gets without anyone typing it. */}
-        <p aria-label="Attached automatically" className="mt-2.5 text-[11px] leading-snug text-mp-muted">
-          <span className="font-semibold">Auto-attached to ticket:</span> Plan snapshot, dimensions. Budget: ≈ €
-          {PROJECT.budgetEur.toLocaleString("en-US")}. Permit: {PROJECT.permit}. Site history: last visited 2 years ago
-          (different plan). Remote expert available until 15:00 CET.
+        <p aria-label="Attached automatically" className="mt-2.5 text-[15px] leading-snug text-mp-muted">
+          <span className="font-semibold">Auto-attached:</span> plan dimensions · Permit {PERMIT_TEXT}
         </p>
       </div>
     </form>

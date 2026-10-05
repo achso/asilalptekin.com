@@ -4,8 +4,9 @@ import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef } from "react";
 import { CheckCheck, CheckCircle2, ChevronRight, CloudOff, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
-import { issueLabel } from "@/lib/floorplan";
-import type { Escalation, EscalationStatus, IssueType, ObjectState } from "@/lib/types";
+import { askLabel, issueLabel } from "@/lib/floorplan";
+import { useExpertAvailability } from "@/lib/useMunichCutoff";
+import type { AskId, Escalation, EscalationStatus, IssueType, ObjectState } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
 
@@ -60,8 +61,8 @@ const statusBadge = cva(
 );
 
 const BADGE: Record<EscalationStatus, { icon: React.ReactNode; text: string }> = {
-  // Short pill; the "waiting for connection" detail sits in the line below.
-  queued: { icon: <CloudOff size={13} />, text: "Saved" },
+  // Short pill; when the expert will see it sits in the line below.
+  queued: { icon: <CloudOff size={13} />, text: "Queued" },
   sending: { icon: <Loader2 size={13} className="animate-spin" />, text: "Sending…" },
   delivered: { icon: <CheckCheck size={13} />, text: "Delivered" },
   in_review: { icon: <Eye size={13} className="animate-pulse" />, text: "Expert is reviewing" },
@@ -99,6 +100,10 @@ export type EscalationCardProps = {
   voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
+  /** The chevron: open the read-only ticket as the remote expert receives it. */
+  onOpen?: () => void;
+  /** The Ask: what the contractor needs back. */
+  ask?: AskId;
   /**
    * Reviewer cheat: a double-tap on the card's header forces the next
    * lifecycle state (queued → sending → delivered → in review → resolved),
@@ -126,6 +131,8 @@ export function EscalationCard({
   changeSummary,
   voiceMemoSeconds,
   onPress,
+  onOpen,
+  ask,
   onAdvance,
   className,
 }: EscalationCardProps) {
@@ -142,6 +149,7 @@ export function EscalationCard({
       aria-label={`${title}${targetLabel ? ` on ${targetLabel}` : ""}, ${STATUS_META[status].label}`}
       className={cn(card({ status }), className)}
     >
+      <div className="flex">
       <button
         type="button"
         // Double-tap detection by hand (iPad Safari doesn't reliably fire
@@ -161,7 +169,7 @@ export function EscalationCard({
         }}
         disabled={!onPress && !onAdvance}
         className={cn(
-          "flex w-full touch-manipulation gap-3 p-3 text-left disabled:cursor-default",
+          "flex min-w-0 flex-1 touch-manipulation gap-3 p-3 text-left disabled:cursor-default",
           !onPress && "cursor-default",
         )}
       >
@@ -187,6 +195,7 @@ export function EscalationCard({
             <span className="max-w-full truncate whitespace-nowrap text-[15px] font-semibold leading-tight">{title}</span>
           </div>
           {targetLabel && <div className="truncate text-[13px] text-mp-muted">{targetLabel}</div>}
+          {ask && <div className="truncate text-[13px] font-medium text-mp-ink">Ask: {askLabel(ask)}</div>}
           {note && <div className="line-clamp-2 text-[12px] italic text-mp-muted">“{note}”</div>}
 
           {changeSummary && (
@@ -215,8 +224,19 @@ export function EscalationCard({
           )}
         </div>
 
-        {onPress && <ChevronRight size={18} className="mt-1 shrink-0 text-mp-muted" />}
       </button>
+        {/* Chevron: what the expert receives (read-only ticket). */}
+        {onOpen && (
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label="See what the expert receives"
+            className="grid w-12 shrink-0 place-items-center text-mp-muted active:bg-mp-panel"
+          >
+            <ChevronRight size={22} />
+          </button>
+        )}
+      </div>
 
       {/* Footer: status badge + timestamps, and Revoke while it can still succeed */}
       <div className="flex items-center gap-3 border-t border-mp-line px-3 py-2.5">
@@ -284,10 +304,17 @@ function Timestamps({
   statusChangedAt?: number;
 }) {
   const since = SINCE[status];
+  // Same source as the header and the form: "Expert sees it at 08:00 tomorrow".
+  const availability = useExpertAvailability();
+  const waiting = status === "queued" || status === "sending" || status === "delivered";
   return (
     <div className="mt-1 text-[11px] leading-tight tabular-nums text-mp-muted">
+      {waiting && availability && (
+        <div data-seen-line className="mb-0.5 text-[13px] font-medium text-mp-ink">
+          {availability.seenLine}
+        </div>
+      )}
       <time dateTime={new Date(timestamp).toISOString()}>Reported {clock(timestamp)}</time>
-      {status === "queued" && " · Offline"}
       {since && statusChangedAt && statusChangedAt > timestamp && (
         <>
           {" · "}
@@ -321,7 +348,7 @@ export function summarizeObjectChange({ from, to }: { from: ObjectState; to: Obj
 /** Map a store `Escalation` onto the card's presentational props. */
 export function toEscalationCardProps(
   e: Escalation,
-): Omit<EscalationCardProps, "onPress" | "onRevoke" | "className"> {
+): Omit<EscalationCardProps, "onPress" | "onOpen" | "onRevoke" | "className"> {
   return {
     status: e.status,
     issueType: e.issueType,
@@ -340,5 +367,6 @@ export function toEscalationCardProps(
     lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
     changeSummary: e.objectChange ? summarizeObjectChange(e.objectChange) : undefined,
     voiceMemoSeconds: e.voiceMemo?.durationS,
+    ask: e.ask,
   };
 }

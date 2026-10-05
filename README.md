@@ -153,14 +153,25 @@ reviews it.
 
 ### All paths
 
-- **Evidence (at least one photo) is mandatory**: the + tile opens the iPad's
-  rear camera; on a laptop use *"No camera? Use demo photo"*. Voice memo is
-  optional; *Work is blocked here* is on by default.
-- **Send to review** stays disabled until there's a reading above 0 (or, for
-  an object, at least one change) and a photo, and its label names what's
-  missing ("Add length + photo"). Budget
-  (€40k), permit status and a plan snapshot are attached automatically and
-  shown above it.
+- **The form** (`EscalationDraftPane`): 15 px minimum text everywhere
+  (footer and hints included), and one decimal separator: a typed comma
+  becomes a period, so it's always *2.40*.
+  - **Measured length**: prefilled from the drawn wall (or the popover);
+    a plausible minimum of **0.50 m** is required (*"At least 0.50 m"*).
+  - **Evidence** (UX audit #7): **one large photo slot** (*Take photo* opens
+    the rear camera; on a laptop use *"No camera? Use demo photo"*) plus an
+    **Add photo** button. No empty slots. Voice memo is optional.
+  - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
+    *Tell me whether I can continue*, *Check the permit*.
+  - **Priority** (UX audit #5): an explicit choice, **Can continue work**
+    (default) or **Blocked**, with the expert's availability under it
+    (*"Expert is back at 08:00 tomorrow"*, plus the deadline when Blocked).
+  - **Send to review** is solid primary blue and names what's missing
+    (*"Add photo · pick the ask"*, *"Pick what you need back"*).
+  - **Footer**: *Auto-attached: plan dimensions · Permit approved last
+    Tuesday*. Nothing else (no budget, no site history).
+- On send the toast names what was sent: **"Wall report sent"** (or
+  *Plumbing / Dimension / Removal report sent*).
 - After sending, the pane closes **right away**. The North wall locks in a
   **red hatched pattern** with a status pin; the ghost stays on the plan in
   its status colour. Both appear in **Active Escalations** on the room
@@ -180,8 +191,22 @@ reviews it.
 yellow paperclip. If it's also escalated, only the escalation pin shows (red,
 amber or green): the blocker always wins.
 
-The top bar shows how long the remote expert is still available (live
-countdown to 15:00 Europe/Berlin).
+**One time source** (UX audit #4, `lib/useMunichCutoff.ts`): the expert works
+08:00–15:00 Europe/Berlin, and every time string comes from one shared clock,
+so the top bar, the form, the cards and the ticket never disagree.
+
+| | Before 15:00 | After 15:00 |
+|---|---|---|
+| Top bar | *Remote expert · available for 40 more minutes* | *Remote expert · back at 08:00 tomorrow* |
+| Form (priority) | *Expert available for 40 more minutes* | *Expert is back at 08:00 tomorrow* |
+| Sent card | *Queued* / *Delivered* + *Expert available for …* | *Queued* + *Expert sees it at 08:00 tomorrow* |
+| Deadline (Blocked) | *Today before 15:00 · work is stopped* | *Tomorrow by 10:00 · work is stopped* |
+
+**What the expert receives** (UX audit #3): the **chevron** on a sent card
+opens a read-only ticket: the plan snapshot with the drawn wall in red
+(length label, north arrow, room size), *Runs north–south · From … to …*,
+the photo, the measured value against the drawing or the plan, **The Ask**,
+and the **deadline**. Esc, ✕ or a tap outside closes it.
 
 ---
 
@@ -190,7 +215,7 @@ countdown to 15:00 Europe/Berlin).
 **Simulated backend.** Every report starts **queued** (saved on the iPad) and
 moves on by itself: **sending** after 1 s (or as soon as the iPad is back
 online), **delivered** 1.5 s later, then **in review** 3 s later if the remote
-expert is online (before 15:00 CET). **Cheat for reviewers:** double-tap a
+expert is online (08:00–15:00 Munich). **Cheat for reviewers:** double-tap a
 card's header to force the next state (queued → sending → delivered → in
 review → resolved) without waiting. Resolved reports leave *Active
 Escalations*; select the element to see its resolved card.
@@ -199,9 +224,8 @@ Escalations*; select the element to see its resolved card.
 *Change type* lists all four with their one-line definitions (Dimension
 Mismatch, Undocumented Element, Element Not on Site, Site Condition Hazard).
 Picking another type keeps the photo and note but drops the intercept's
-values. Under the send button: *Auto-attached to ticket: plan snapshot,
-dimensions, budget ≈ €40,000, permit approved last Tuesday, site history,
-expert availability.*
+values. Under the send button: *Auto-attached: plan dimensions · Permit
+approved last Tuesday.*
 
 Each report moves through an explicit state machine (`lib/deviationMachine.ts`):
 
@@ -214,7 +238,7 @@ idle ─submit─▶ queued ─▶ sending ─▶ delivered ─▶ in_review ─
 
 | State | Canvas | Escalation card |
 |---|---|---|
-| Queued (offline-first) | Hatched wall, gray cloud-off pin | Gray **Saved** pill, "Reported 14:46 · Offline"; sends by itself when a connection returns; Revoke available |
+| Queued | Hatched wall, gray cloud-off pin | Gray **Queued** pill + *"Expert sees it at 08:00 tomorrow"* after hours; cascades to sending → delivered by itself; Revoke available |
 | Idle (locked plan) | Black wall, toolbar tools disabled | — |
 | Delivered | Red hatched wall, red lock pin | **Revoke Escalation** available |
 | In Review | Hatched wall framed in amber with a pulse, amber eye pin | Revoke hidden; yellow "Expert is reviewing" badge and the note *"The expert is actively reviewing. Revocation disabled."* |

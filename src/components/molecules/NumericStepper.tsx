@@ -88,7 +88,7 @@ export function NumericStepper({
   return (
     <div className={cn(compact ? "px-3 py-2" : "rounded-xl bg-white p-3", className)}>
       {!compact && (
-        <label htmlFor={id} className="block whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-mp-muted">
+        <label htmlFor={id} className="block whitespace-nowrap text-[15px] font-semibold text-mp-muted">
           {label}
         </label>
       )}
@@ -113,19 +113,20 @@ export function NumericStepper({
           <input
             ref={input}
             id={id}
-            type="number"
+            // Text, not type="number": a German-locale browser would show
+            // "2,40". One decimal separator everywhere: a typed comma becomes
+            // a period.
+            type="text"
             inputMode="decimal"
             enterKeyHint="done"
-            step={deg ? 1 : 0.01}
-            min={min}
-            max={max}
             value={draft}
             placeholder={placeholder}
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => {
-              setDraft(e.target.value);
-              const n = e.target.valueAsNumber;
-              if (Number.isFinite(n)) onChange(clamp(n));
+              const text = e.target.value.replace(",", ".").replace(/[^0-9.]/g, "");
+              setDraft(text);
+              const n = Number(text);
+              if (text !== "" && Number.isFinite(n)) onChange(clamp(n));
             }}
             onBlur={() => setDraft(fmt(value))}
             onKeyDown={(e) => {
@@ -156,7 +157,7 @@ export function NumericStepper({
           id={subId}
           className={cn(
             "whitespace-nowrap text-center font-medium text-mp-muted",
-            compact ? "ml-[76px] mt-0.5 text-[11px]" : "mt-2 text-[12px]",
+            compact ? "ml-[76px] mt-0.5 text-[15px]" : "mt-2 text-[15px]",
           )}
         >
           {hint}
@@ -169,7 +170,7 @@ export function NumericStepper({
           className={cn(
             "whitespace-nowrap text-center font-medium tabular-nums",
             // compact: centred under the − value + group, past the label column
-            compact ? "ml-[76px] mt-0.5 text-[11px]" : "mt-2 text-[12px]",
+            compact ? "ml-[76px] mt-0.5 text-[15px]" : "mt-2 text-[15px]",
             value === null || delta === 0 ? "text-mp-muted" : "text-mp-red",
           )}
         >
