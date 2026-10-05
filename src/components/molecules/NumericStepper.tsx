@@ -56,7 +56,12 @@ export function NumericStepper({
 }: NumericStepperProps) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
-  const fmt = (v: number | null) => (v === null ? "" : v.toFixed(2));
+  // Degrees (rotation) are whole numbers; metres keep 2 decimals.
+  const deg = unit === "°";
+  const dp = deg ? 0 : 2;
+  const fmt = (v: number | null) => (v === null ? "" : v.toFixed(dp));
+  const stepLabel = deg ? `${step}°` : `${Math.round(step * 100)} cm`;
+  const fmtRef = (v: number) => (deg ? `${v}°` : `${v.toFixed(2)} ${unit}`);
   const [draft, setDraft] = useState(fmt(value));
 
   // Follow external changes (steppers, resets) unless the user is typing.
@@ -64,11 +69,11 @@ export function NumericStepper({
     if (document.activeElement !== input.current) setDraft(fmt(value));
   }, [value]);
 
-  const clamp = (v: number) => Math.min(max, Math.max(min, +v.toFixed(2)));
+  const clamp = (v: number) => Math.min(max, Math.max(min, +v.toFixed(dp)));
   const nudge = (dir: 1 | -1) => {
     const next = clamp((value ?? reference ?? 0) + dir * step);
     onChange(next);
-    setDraft(next.toFixed(2));
+    setDraft(next.toFixed(dp));
   };
 
   const delta = reference !== undefined && value !== null ? value - reference : 0;
@@ -81,7 +86,7 @@ export function NumericStepper({
       </label>
 
       <div className="mt-2 flex items-center gap-2.5">
-        <StepButton label={`Decrease by ${Math.round(step * 100)} cm`} onClick={() => nudge(-1)}>
+        <StepButton label={`Decrease by ${stepLabel}`} onClick={() => nudge(-1)}>
           <Minus size={24} />
         </StepButton>
 
@@ -93,7 +98,7 @@ export function NumericStepper({
             type="number"
             inputMode="decimal"
             enterKeyHint="done"
-            step={0.01}
+            step={deg ? 1 : 0.01}
             min={min}
             max={max}
             value={draft}
@@ -118,7 +123,7 @@ export function NumericStepper({
           <span className="shrink-0 text-[18px] font-medium text-mp-muted">{unit}</span>
         </div>
 
-        <StepButton label={`Increase by ${Math.round(step * 100)} cm`} onClick={() => nudge(1)}>
+        <StepButton label={`Increase by ${stepLabel}`} onClick={() => nudge(1)}>
           <Plus size={24} />
         </StepButton>
       </div>
@@ -138,10 +143,10 @@ export function NumericStepper({
           )}
         >
           {value === null
-            ? `Plan ${reference.toFixed(2)} ${unit}`
+            ? `Plan ${fmtRef(reference)}`
             : delta === 0
-            ? `Same as plan (${reference.toFixed(2)} ${unit})`
-            : `${delta > 0 ? "+" : "−"}${Math.abs(Math.round(delta * 100))} cm vs plan (${reference.toFixed(2)} ${unit})`}
+            ? `Same as plan (${fmtRef(reference)})`
+            : `${delta > 0 ? "+" : "−"}${deg ? `${Math.abs(Math.round(delta))}°` : `${Math.abs(Math.round(delta * 100))} cm`} vs plan (${fmtRef(reference)})`}
         </div>
       )}
     </div>

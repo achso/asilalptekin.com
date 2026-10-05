@@ -4,7 +4,7 @@ import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, ChevronRight, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
 import { issueLabel } from "@/lib/floorplan";
-import type { Escalation, EscalationStatus, IssueType } from "@/lib/types";
+import type { Escalation, EscalationStatus, IssueType, ObjectDims } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
 
@@ -87,8 +87,10 @@ export type EscalationCardProps = {
   statusChangedAt?: number;
   /** Dimension Mismatch: plan vs measured length. */
   dimension?: { plannedM: number; measuredM: number };
-  /** Undocumented Element: length of the physical wall measured on site. */
+  /** Undocumented Element: length of the physical element measured on site. */
   lengthM?: number;
+  /** Object change: what was changed, e.g. "W 0.95 → 1.10 m · ↻ 0° → 45°". */
+  changeSummary?: string;
   voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
@@ -110,6 +112,7 @@ export function EscalationCard({
   statusChangedAt,
   dimension,
   lengthM,
+  changeSummary,
   voiceMemoSeconds,
   onPress,
   className,
@@ -155,6 +158,11 @@ export function EscalationCard({
           {targetLabel && <div className="truncate text-[13px] text-mp-muted">{targetLabel}</div>}
           {note && <div className="line-clamp-2 text-[12px] italic text-mp-muted">“{note}”</div>}
 
+          {changeSummary && (
+            <div className="mt-1 flex items-start gap-1 text-[12px] font-medium leading-snug text-mp-ink">
+              <Ruler size={12} className="mt-0.5 shrink-0" /> <span>{changeSummary}</span>
+            </div>
+          )}
           {(dimension || lengthM !== undefined || voiceMemoSeconds !== undefined) && (
             <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
               {dimension && (
@@ -265,6 +273,18 @@ const clock = (ts: number) =>
 
 // ── Adapter ─────────────────────────────────────────────────────────────────
 
+/** "W 0.95 → 1.10 m · ↻ 0° → 45°": only the values that changed. */
+export function summarizeObjectChange({ from, to }: { from: ObjectDims; to: ObjectDims }) {
+  const parts: string[] = [];
+  const m = (k: "widthM" | "depthM" | "heightM", tag: string) =>
+    from[k] !== to[k] && parts.push(`${tag} ${from[k].toFixed(2)} → ${to[k].toFixed(2)} m`);
+  m("widthM", "W");
+  m("depthM", "D");
+  m("heightM", "H");
+  if (from.rotation !== to.rotation) parts.push(`↻ ${from.rotation}° → ${to.rotation}°`);
+  return parts.join(" · ");
+}
+
 /** Map a store `Escalation` onto the card's presentational props. */
 export function toEscalationCardProps(
   e: Escalation,
@@ -285,6 +305,7 @@ export function toEscalationCardProps(
         ? { plannedM: e.plannedM, measuredM: e.measuredM }
         : undefined,
     lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
+    changeSummary: e.objectChange ? summarizeObjectChange(e.objectChange) : undefined,
     voiceMemoSeconds: e.voiceMemo?.durationS,
   };
 }

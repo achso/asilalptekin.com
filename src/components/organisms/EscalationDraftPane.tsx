@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPinCheck, PackagePlus, Ruler, Send } from "lucide-react";
+import { MapPinCheck, Move3d, PackagePlus, Ruler, Send } from "lucide-react";
 import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
@@ -9,8 +9,8 @@ import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
-import { PROJECT, wallById } from "@/lib/floorplan";
-import type { EscalationDraft } from "@/lib/types";
+import { PROJECT, ROOM, objectById, objectDims, wallById } from "@/lib/floorplan";
+import type { EscalationDraft, ObjectDims } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Draft, draftLabel } from "@/store/useDeviationState";
 
@@ -34,15 +34,33 @@ export type EscalationDraftPaneProps = {
   /** Close (✕): discard the draft, keep the selection. */
   onCancel: () => void;
   onSubmit: (draft: EscalationDraft) => void;
+  /**
+   * The values live in the draft (store), shared with the canvas (rotate
+   * handle, ghost) and the Change Measurement popover, so every entry point
+   * edits the same proposal.
+   */
+  onChange: (patch: Partial<Pick<Draft, "measuredM" | "proposed">>) => void;
 };
 
-export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDraftPaneProps) {
+const OBJECT_INPUTS: { key: keyof ObjectDims; label: string }[] = [
+  { key: "widthM", label: "Width" },
+  { key: "depthM", label: "Depth" },
+  { key: "heightM", label: "Height" },
+  { key: "rotation", label: "Rotation" },
+];
+
+export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: EscalationDraftPaneProps) {
   const { anchor, intent, marker, category } = draft;
   const label = draftLabel(anchor);
   const isWallLength = intent === "wall-length";
+  const isObject = intent === "object-change";
   const plannedM = isWallLength ? wallById(anchor.id).lengthM : undefined;
+  const plan = isObject ? objectDims(objectById(anchor.id)) : null;
+  const proposed = draft.proposed;
+  const changed = plan && proposed ? OBJECT_INPUTS.filter((i) => proposed[i.key] !== plan[i.key]) : [];
 
-  const [measured, setMeasured] = useState<number | null>(null);
+  const measured = draft.measuredM ?? null;
+  const setMeasured = (v: number) => onChange({ measuredM: v });
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [voiceMemo, setVoiceMemo] = useState<VoiceMemo | undefined>();
@@ -51,16 +69,20 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDra
 
   const hasLength = measured !== null && measured > 0;
   const hasPhoto = photos.length > 0;
-  const missing = [!hasLength && "length", !hasPhoto && "photo"].filter(Boolean) as string[];
+  const structuredDone = isObject ? changed.length > 0 : hasLength;
+  const missing = [!structuredDone && (isObject ? "change" : "length"), !hasPhoto && "photo"].filter(
+    Boolean,
+  ) as string[];
   const canSend = missing.length === 0 && !recording;
 
   const send = () => {
-    if (!canSend || measured === null) return;
+    if (!canSend) return;
     onSubmit({
-      issueType: isWallLength ? "dimension-mismatch" : "undocumented-element",
+      issueType: isWallLength || isObject ? "dimension-mismatch" : "undocumented-element",
       plannedM,
-      measuredM: measured,
-      category: isWallLength ? undefined : category,
+      measuredM: isObject ? undefined : (measured ?? undefined),
+      category: intent === "missing-element" ? category : undefined,
+      objectChange: isObject && plan && proposed ? { from: plan, to: proposed } : undefined,
       photoUrls: photos,
       note: note.trim() || undefined,
       voiceMemo,
@@ -90,19 +112,55 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDra
         {/* "Proposing: …" — what the locked plan intercepted */}
         <div role="status" className="flex items-center gap-3 rounded-2xl bg-white p-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-red-50 text-mp-red">
-            {isWallLength ? <Ruler size={22} aria-hidden /> : <PackagePlus size={22} aria-hidden />}
+            {isWallLength ? (
+              <Ruler size={22} aria-hidden />
+            ) : isObject ? (
+              <Move3d size={22} aria-hidden />
+            ) : (
+              <PackagePlus size={22} aria-hidden />
+            )}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[11px] font-semibold uppercase tracking-wide text-mp-red">Proposing</span>
             <span className="block truncate whitespace-nowrap text-[16px] font-semibold text-mp-ink">
-              {isWallLength ? "Dimension Mismatch" : "Undocumented Element"}
+              {isWallLength || isObject ? "Dimension Mismatch" : "Undocumented Element"}
             </span>
             <span className="block text-[12px] leading-snug text-mp-muted">
-              {isWallLength ? `${label} · plan ${plannedM!.toFixed(2)} m` : `→ ${category ?? "Element"} (not on the plan)`}
+              {isWallLength
+                ? `${label} · plan ${plannedM!.toFixed(2)} m`
+                : isObject
+                  ? `${label} · drawn red on the plan`
+                  : `→ ${category ?? "Element"} (not on the plan)`}
             </span>
           </span>
         </div>
 
+        {isObject && plan && proposed ? (
+          <section className="flex flex-col gap-2.5">
+            <StepLabel n={1} done={structuredDone}>
+              Proposed changes <span className="text-mp-red">*</span>
+              <span className="ml-1.5 text-[12px] font-normal text-mp-muted">
+                {changed.length ? `${changed.length} changed` : "none yet"}
+              </span>
+            </StepLabel>
+            <p className="px-1 text-[12px] leading-snug text-mp-muted">
+              Edit here, tap a value on the plan, or drag the rotate arrow. The plan stays locked.
+            </p>
+            {OBJECT_INPUTS.map((i) => (
+              <NumericStepper
+                key={i.key}
+                label={i.label}
+                value={proposed[i.key]}
+                onChange={(v) => onChange({ proposed: { ...proposed, [i.key]: i.key === "rotation" ? v % 360 : v } })}
+                reference={plan[i.key]}
+                unit={i.key === "rotation" ? "°" : "m"}
+                step={i.key === "rotation" ? 45 : 0.05}
+                min={i.key === "rotation" ? 0 : 0.05}
+                max={i.key === "rotation" ? 360 : i.key === "heightM" ? ROOM.ceilingM : 99.99}
+              />
+            ))}
+          </section>
+        ) : (
         <section className="flex flex-col gap-2.5">
           <StepLabel n={1} done={hasLength}>
             Measured on site <span className="text-mp-red">*</span>
@@ -126,6 +184,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit }: EscalationDra
             reference={plannedM}
           />
         </section>
+        )}
 
         <section className="flex flex-col gap-2.5">
           <StepLabel n={2} done={hasPhoto}>

@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { PROJECT, elementById, elementInfo } from "@/lib/floorplan";
+import { PROJECT, elementById, elementInfo, objectById, objectDims } from "@/lib/floorplan";
 import type {
   DraftIntent,
   ElementMedia,
   Escalation,
   EscalationDraft,
   EscalationStatus,
+  ObjectDims,
   Point,
   SelectedElement,
 } from "@/lib/types";
@@ -34,7 +35,12 @@ import {
  * Intercept and Propose (two hardcoded Wizard-of-Oz paths, see DraftIntent):
  *   draft                { anchor, intent, marker? } | null: the open EscalationDraftPane
  *   interactionMode      "select" | "ghost_draft" (canvas taps place / move the ghost wall)
- *   startDraft(a, i)     4.55 popover → Propose Correction → open the pane
+ *   startDraft(a, i, m)  wall length popover → Propose Correction → open the pane
+ *                        (m: the value typed in the popover, prefilled in the draft)
+ *   proposeObjectChange(id, patch)
+ *                        object popover / rotate handle → open (or extend) the
+ *                        object's draft with the proposed size / rotation
+ *   updateDraft(patch)   the pane's inputs edit the same draft values
  *   startGhostDraft(c)   Insert → Object → category c → ghost_draft; the pane opens
  *                        on the first canvas tap ("Undocumented Element → c")
  *   placeGhost(p)        drop (first tap) or move the ghost at p (plan metres)
@@ -89,7 +95,9 @@ type State = {
 
 type Action =
   | { type: "select"; element: SelectedElement | null }
-  | { type: "startDraft"; anchor: SelectedElement; intent: DraftIntent }
+  | { type: "startDraft"; anchor: SelectedElement; intent: DraftIntent; measuredM?: number }
+  | { type: "proposeObject"; id: string; patch: Partial<ObjectDims> }
+  | { type: "updateDraft"; patch: Partial<Pick<Draft, "measuredM" | "proposed">> }
   | { type: "startGhost"; category: string }
   | { type: "placeGhost"; point: Point }
   | { type: "cancelDraft" }
@@ -121,7 +129,16 @@ const NO_DRAFT = { draft: null, interactionMode: "select", ghostCategory: null }
 
 export type InteractionMode = "select" | "ghost_draft";
 /** The open escalation draft: what was intercepted, where. */
-export type Draft = { anchor: SelectedElement; intent: DraftIntent; marker?: Point; category?: string };
+export type Draft = {
+  anchor: SelectedElement;
+  intent: DraftIntent;
+  marker?: Point;
+  category?: string;
+  /** wall-length / missing-element: the reading entered so far. */
+  measuredM?: number | null;
+  /** object-change: the proposed size and rotation. */
+  proposed?: ObjectDims;
+};
 
 /**
  * Label for a draft's target. A ghost is "in the Music Room", not an element;
@@ -169,9 +186,32 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         ...NO_DRAFT,
-        draft: { anchor: action.anchor, intent: action.intent },
+        draft: { anchor: action.anchor, intent: action.intent, measuredM: action.measuredM ?? null },
         selectedElement: action.anchor,
       };
+
+    case "proposeObject": {
+      const anchor: SelectedElement = { type: "object", id: action.id };
+      const open = state.draft;
+      // Same object's draft open: keep collecting changes in it.
+      if (open && open.intent === "object-change" && sameElement(open.anchor, anchor)) {
+        return { ...state, draft: { ...open, proposed: { ...open.proposed!, ...action.patch } } };
+      }
+      return {
+        ...state,
+        ...NO_DRAFT,
+        selectedElement: anchor,
+        draft: {
+          anchor,
+          intent: "object-change",
+          proposed: { ...objectDims(objectById(action.id)), ...action.patch },
+        },
+      };
+    }
+
+    case "updateDraft":
+      if (!state.draft) return state;
+      return { ...state, draft: { ...state.draft, ...action.patch } };
 
     case "startGhost":
       // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
@@ -378,7 +418,16 @@ export function useDeviationState() {
 
   const clearSelection = useCallback(() => dispatch({ type: "select", element: null }), []);
   const startDraft = useCallback(
-    (anchor: SelectedElement, intent: DraftIntent) => dispatch({ type: "startDraft", anchor, intent }),
+    (anchor: SelectedElement, intent: DraftIntent, measuredM?: number) =>
+      dispatch({ type: "startDraft", anchor, intent, measuredM }),
+    [],
+  );
+  const proposeObjectChange = useCallback(
+    (id: string, patch: Partial<ObjectDims>) => dispatch({ type: "proposeObject", id, patch }),
+    [],
+  );
+  const updateDraft = useCallback(
+    (patch: Partial<Pick<Draft, "measuredM" | "proposed">>) => dispatch({ type: "updateDraft", patch }),
     [],
   );
   const startGhostDraft = useCallback(
@@ -508,6 +557,8 @@ export function useDeviationState() {
     selectElement,
     clearSelection,
     startDraft,
+    proposeObjectChange,
+    updateDraft,
     startGhostDraft,
     placeGhost,
     cancelDraft,

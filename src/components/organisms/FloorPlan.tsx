@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
+import { type ObjectProposal, PlanObjects } from "./PlanObjects";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
@@ -45,8 +46,11 @@ type Props = {
   onPlace?: (p: Point) => void;
   /** Ghost walls of submitted proposals, drawn in their status colour. */
   markers?: { id: string; point: Point; status: EscalationStatus }[];
-  /** The one interactive dimension (North wall, 4.55): opens the Change Measurement popover. */
+  /** Tapping a wall's dimension label opens the Change Measurement popover. */
   onDimensionTap?: (wallId: string, at: Point) => void;
+  /** Proposed size / rotation per object (open draft or sent report). */
+  objectProposals?: Record<string, ObjectProposal | undefined>;
+  onRotateObject?: (objectId: string, rotation: number) => void;
 };
 
 const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
@@ -69,6 +73,8 @@ export function FloorPlan({
   onPlace,
   markers,
   onDimensionTap,
+  objectProposals = {},
+  onRotateObject,
 }: Props) {
   return (
     <svg
@@ -123,14 +129,18 @@ export function FloorPlan({
         deviationState={statusFor(ROOM_ELEMENT) ?? "idle"}
         onSelect={() => onSelect(ROOM_ELEMENT)}
       />
-      <Furniture />
+      <PlanObjects
+        selected={selected}
+        proposals={objectProposals}
+        onSelect={onSelect}
+        onRotate={(id, r) => onRotateObject?.(id, r)}
+      />
 
       {WALLS.map((w) => (
         <DimensionLine
           key={`dim-${w.id}`}
           wall={w}
-          // Wizard of Oz: only the North wall's dimension is wired up.
-          onTap={w.id === "w-north" && !placing ? onDimensionTap : undefined}
+          onTap={!placing ? onDimensionTap : undefined}
         />
       ))}
 
@@ -232,31 +242,6 @@ function RoomFloor({
           strokeDasharray="10 8"
         />
       )}
-    </g>
-  );
-}
-
-function Furniture() {
-  const t = toPx({ x: 2.6, y: 1.1 });
-  return (
-    <g pointerEvents="none" stroke="#111" strokeWidth="1.5" fill="#fff">
-      {/* table */}
-      <rect x={t.x} y={t.y} width={0.95 * PX_PER_M} height={1.2 * PX_PER_M} />
-      {/* chair */}
-      <path
-        d={`M ${t.x - 6} ${t.y + 40} h -28 a 14 14 0 0 0 0 40 h 28 z`}
-        fill="#fff"
-      />
-      <rect x={t.x - 52} y={t.y + 36} width="10" height="48" rx="3" />
-      {/* kitchen counter along the north wall */}
-      <rect
-        x={toPx({ x: 0.1, y: 0 }).x}
-        y={toPx({ x: 0, y: 0.08 }).y}
-        width={1.6 * PX_PER_M}
-        height={0.6 * PX_PER_M}
-      />
-      <circle cx={toPx({ x: 0.6, y: 0 }).x} cy={toPx({ x: 0, y: 0.38 }).y} r="14" />
-      <circle cx={toPx({ x: 1.15, y: 0 }).x} cy={toPx({ x: 0, y: 0.38 }).y} r="14" />
     </g>
   );
 }

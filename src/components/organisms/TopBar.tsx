@@ -38,11 +38,16 @@ export function TopBar({ breadcrumbs }: { breadcrumbs: string[] }) {
         </ol>
       </nav>
 
-      <LockedBadge />
+      {/* Badges keep their size; a long element name truncates instead. */}
+      <div className="shrink-0">
+        <LockedBadge />
+      </div>
 
       <div className="flex-1" />
 
-      <ExpertAvailability />
+      <div className="shrink-0">
+        <ExpertAvailability />
+      </div>
 
       <div className="flex items-center gap-1 text-mp-blue">
         <IconButton label="Help">

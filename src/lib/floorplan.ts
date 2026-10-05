@@ -1,4 +1,4 @@
-import type { Corner, IssueType, Point, SelectedElement, Wall } from "./types";
+import type { Corner, IssueType, ObjectDims, PlanObject, Point, SelectedElement, Wall } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -80,6 +80,52 @@ export const ISSUE_TYPES: { id: IssueType; label: string; description: string }[
 
 export const issueLabel = (id: IssueType) =>
   ISSUE_TYPES.find((t) => t.id === id)?.label ?? id;
+
+/**
+ * Furniture and fixtures on the plan: selectable (inspector, rotate handle),
+ * but locked like the rest of the plan; changes become proposals.
+ */
+export const PLAN_OBJECTS: PlanObject[] = [
+  {
+    id: "o-counter",
+    label: "Kitchen Counter",
+    kind: "counter",
+    center: { x: 0.9, y: 0.38 },
+    widthM: 1.6,
+    depthM: 0.6,
+    heightM: 0.9,
+    rotation: 0,
+  },
+  {
+    id: "o-table",
+    label: "Small table (rectangular)",
+    kind: "table",
+    center: { x: 3.075, y: 1.7 },
+    widthM: 0.95,
+    depthM: 1.2,
+    heightM: 0.82,
+    rotation: 0,
+  },
+  {
+    id: "o-chair",
+    label: "Dining chair",
+    kind: "chair",
+    center: { x: 2.3, y: 1.7 },
+    widthM: 0.52,
+    depthM: 0.6,
+    heightM: 0.83,
+    // back to the west, facing the table
+    rotation: 270,
+  },
+];
+
+export const objectById = (id: string) => PLAN_OBJECTS.find((o) => o.id === id)!;
+export const objectDims = ({ widthM, depthM, heightM, rotation }: ObjectDims): ObjectDims => ({
+  widthM,
+  depthM,
+  heightM,
+  rotation,
+});
 
 export const cornerById = (id: string) => CORNERS.find((c) => c.id === id)!;
 export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;
@@ -163,6 +209,10 @@ export function elementInfo(el: SelectedElement): ElementInfo {
       return { label: cornerById(el.id).label, summary: "Corner · 90°" };
     case "ghost":
       return { label: PROJECT.room, summary: "Proposed element (not on the plan)" };
+    case "object": {
+      const o = objectById(el.id);
+      return { label: o.label, summary: `${o.widthM.toFixed(2)} × ${o.depthM.toFixed(2)} m` };
+    }
     case "room": {
       return {
         label: ROOM.label,
@@ -179,6 +229,12 @@ export function elementInfo(el: SelectedElement): ElementInfo {
  * Where floating UI attaches to an element, in canvas px. `inward` is the
  * direction into the room (positive offsets land inside, negative outside).
  */
+/** Where a wall's dimension label sits (44 px outside the wall), in canvas px. */
+export function dimensionLabelAt(wall: Wall): Point {
+  const g = wallGeometry(wall);
+  return { x: (g.a.x + g.b.x) / 2 - g.nx * 44, y: (g.a.y + g.b.y) / 2 - g.ny * 44 };
+}
+
 export function elementAnchor(el: SelectedElement): { p: Point; inward: Point } {
   const centre = toPx({ x: ROOM.widthM / 2, y: ROOM.depthM / 2 });
   switch (el.type) {
@@ -193,6 +249,8 @@ export function elementAnchor(el: SelectedElement): { p: Point; inward: Point } 
     }
     case "ghost":
       return { p: centre, inward: { x: 0, y: 1 } };
+    case "object":
+      return { p: toPx(objectById(el.id).center), inward: { x: 0, y: 1 } };
     case "room":
       // Anchor near the top of the floor so the badge/button sit on open floor.
       return { p: { x: centre.x, y: centre.y - 40 }, inward: { x: 0, y: 1 } };
@@ -204,5 +262,6 @@ export function elementById(id: string): SelectedElement | null {
   if (WALLS.some((w) => w.id === id)) return { type: "wall", id };
   if (CORNERS.some((c) => c.id === id)) return { type: "corner", id };
   if (id === ROOM.id) return { type: "room", id };
+  if (PLAN_OBJECTS.some((o) => o.id === id)) return { type: "object", id };
   return null;
 }

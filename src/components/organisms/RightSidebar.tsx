@@ -2,13 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { Info, Loader2, Lock, X } from "lucide-react";
-import { ROOM, elementInfo, wallById } from "@/lib/floorplan";
+import { ChevronsUpDown, Info, Loader2, Lock, X } from "lucide-react";
+import { ROOM, elementInfo, objectById, wallById } from "@/lib/floorplan";
 import type {
   ElementMedia,
   Escalation,
   EscalationDraft,
   EscalationStatus,
+  ObjectDims,
   SelectedElement,
 } from "@/lib/types";
 import { type TabRequest, useTabRequest } from "@/lib/useTabRequest";
@@ -18,6 +19,7 @@ import { EscalationCard, toEscalationCardProps } from "@/components/molecules/Es
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import type { Draft } from "@/store/useDeviationState";
+type DraftPatch = Partial<Pick<Draft, "measuredM" | "proposed">>;
 import { EscalationDraftPane } from "./EscalationDraftPane";
 import { RoomDefaultSidebar } from "./RoomDefaultSidebar";
 
@@ -28,6 +30,11 @@ type Props = {
   draft: Draft | null;
   escalations: Escalation[];
   onCancelDraft: () => void;
+  /** The pane's inputs edit the draft in the store (shared with canvas + popover). */
+  onDraftChange: (patch: DraftPatch) => void;
+  /** Value pills → the Change Measurement popover. */
+  onMeasureWall?: (wallId: string) => void;
+  onMeasureObject?: (id: string, field: keyof ObjectDims) => void;
   /** Open a tab in whichever panel shows (Insert → Note / Photo / Form). */
   tabRequest?: TabRequest | null;
   onTabRequestHandled?: () => void;
@@ -84,7 +91,12 @@ export function RightSidebar(props: Props) {
           className="absolute inset-0 flex flex-col will-change-transform"
         >
           {mode === "form" && draft ? (
-            <EscalationDraftPane draft={draft} onCancel={props.onCancelDraft} onSubmit={props.onSubmit} />
+            <EscalationDraftPane
+              draft={draft}
+              onCancel={props.onCancelDraft}
+              onSubmit={props.onSubmit}
+              onChange={props.onDraftChange}
+            />
           ) : mode === "inspector" && selected ? (
             <Inspector
               target={selected}
@@ -93,6 +105,8 @@ export function RightSidebar(props: Props) {
               onClear={props.onClear}
               tabRequest={props.tabRequest}
               onTabRequestHandled={props.onTabRequestHandled}
+              onMeasureWall={props.onMeasureWall}
+              onMeasureObject={props.onMeasureObject}
               onRevoke={props.onRevoke}
               media={mediaFor(selected)}
               onMediaChange={setMediaFor(selected)}
@@ -134,6 +148,8 @@ function Inspector({
   onMediaChange,
   tabRequest,
   onTabRequestHandled,
+  onMeasureWall,
+  onMeasureObject,
 }: {
   target: SelectedElement;
   escalation?: Escalation;
@@ -144,6 +160,8 @@ function Inspector({
   onMediaChange: (m: ElementMedia) => void;
   tabRequest?: TabRequest | null;
   onTabRequestHandled?: () => void;
+  onMeasureWall?: (wallId: string) => void;
+  onMeasureObject?: (id: string, field: keyof ObjectDims) => void;
 }) {
   const [tab, setTab] = useState<Tab>("Details");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -152,15 +170,15 @@ function Inspector({
 
   return (
     <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-3 px-5 pb-3 pt-4">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-white">
-          <Info size={20} />
+      <div className="flex items-center gap-2.5 px-5 pb-3 pt-4">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white">
+          <Info size={19} />
         </span>
-        <div className="flex-1 text-[19px] font-semibold">{label}</div>
+        <div className="min-w-0 flex-1 truncate whitespace-nowrap text-[17px] font-semibold">{label}</div>
         <button
           onClick={onClear}
           aria-label="Close"
-          className="grid h-10 w-10 place-items-center rounded-full bg-white text-mp-muted"
+          className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-mp-muted"
         >
           <X size={20} />
         </button>
@@ -187,7 +205,9 @@ function Inspector({
           </div>
         ) : null}
 
-        {tab === "Details" && <DetailsTab target={target} />}
+        {tab === "Details" && (
+          <DetailsTab target={target} onMeasureWall={onMeasureWall} onMeasureObject={onMeasureObject} />
+        )}
         {tab === "Photos & Notes" && (
           <PhotoEvidenceCapture
             photos={media.photos}
@@ -206,13 +226,25 @@ function Inspector({
   );
 }
 
-function DetailsTab({ target }: { target: SelectedElement }) {
+function DetailsTab({
+  target,
+  onMeasureWall,
+  onMeasureObject,
+}: {
+  target: SelectedElement;
+  onMeasureWall?: (wallId: string) => void;
+  onMeasureObject?: (id: string, field: keyof ObjectDims) => void;
+}) {
   return (
     <div className="flex flex-col gap-4">
       <Group title="Dimensions">
-        {dimensionRows(target).map(({ label, value }) => (
+        {dimensionRows(target, onMeasureWall, onMeasureObject).map(({ label, value, onTap }) => (
           <Row key={label} label={label}>
-            <LockedValue>{value}</LockedValue>
+            {onTap ? (
+              <ValuePill label={label} value={value} onTap={onTap} />
+            ) : (
+              <LockedValue>{value}</LockedValue>
+            )}
           </Row>
         ))}
       </Group>
@@ -223,21 +255,37 @@ function DetailsTab({ target }: { target: SelectedElement }) {
           </Row>
         </Group>
       )}
+      {target.type === "object" && (
+        <Group title="Settings">
+          <Row label="Display Label">
+            <LockedValue>Never</LockedValue>
+          </Row>
+        </Group>
+      )}
       <p className="flex gap-2 text-[12px] leading-snug text-mp-muted">
         <Lock size={14} className="mt-0.5 shrink-0" />
-        Geometry is read-only because the permit is approved. If the site differs, tap the
-        dimension on the plan or use Insert to propose a change to the remote expert.
+        {target.type === "object"
+          ? "The plan is locked. Changing a value or rotating the object on the plan (drag the arrow) proposes the change to the remote expert; the plan itself stays as it is."
+          : "Geometry is read-only because the permit is approved. Tap a value (or a dimension on the plan), or use Insert, to propose a change to the remote expert."}
       </p>
     </div>
   );
 }
 
-function dimensionRows(target: SelectedElement): { label: string; value: string }[] {
+/**
+ * Inspector rows. Rows with `onTap` open the Change Measurement popover
+ * (the proposal path); the rest are derived values and stay locked.
+ */
+function dimensionRows(
+  target: SelectedElement,
+  onMeasureWall?: (wallId: string) => void,
+  onMeasureObject?: (id: string, field: keyof ObjectDims) => void,
+): { label: string; value: string; onTap?: () => void }[] {
   switch (target.type) {
     case "wall": {
       const w = wallById(target.id);
       return [
-        { label: "Length", value: `${w.lengthM.toFixed(2)} m` },
+        { label: "Length", value: `${w.lengthM.toFixed(2)} m`, onTap: onMeasureWall && (() => onMeasureWall(w.id)) },
         { label: "Openings", value: String(w.openings?.length ?? 0) },
       ];
     }
@@ -251,9 +299,34 @@ function dimensionRows(target: SelectedElement): { label: string; value: string 
         { label: "Floor area", value: ROOM.stats.floorArea },
         { label: "Perimeter", value: ROOM.stats.perimeter },
       ];
+    case "object": {
+      const o = objectById(target.id);
+      const tap = (field: keyof ObjectDims) => onMeasureObject && (() => onMeasureObject(o.id, field));
+      return [
+        { label: "Width", value: `${o.widthM.toFixed(2)} m`, onTap: tap("widthM") },
+        { label: "Depth", value: `${o.depthM.toFixed(2)} m`, onTap: tap("depthM") },
+        { label: "Height", value: `${o.heightM.toFixed(2)} m`, onTap: tap("heightM") },
+        { label: "Rotation", value: `${o.rotation}°`, onTap: tap("rotation") },
+      ];
+    }
     case "ghost":
       return [];
   }
+}
+
+/** magicplan's value pill (value + ⌃⌄): opens the Change Measurement popover. */
+function ValuePill({ label, value, onTap }: { label: string; value: string; onTap: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={`${label} ${value}. Change measurement`}
+      className="flex min-h-11 items-center gap-2 rounded-lg bg-[#f0f0f2] px-3 text-[15px] tabular-nums text-mp-ink hover:bg-gray-200 active:bg-gray-300"
+    >
+      {value}
+      <ChevronsUpDown size={15} className="text-mp-muted" aria-hidden />
+    </button>
+  );
 }
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {

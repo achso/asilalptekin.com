@@ -64,20 +64,22 @@ button. The contractor does what they'd do in magicplan anyway, the locked
 plan **intercepts** it, and an **Escalation Draft** slides into the right
 sidebar with the intent already filled in.
 
-> This is a *Wizard of Oz* prototype: exactly two interaction paths are
-> wired up end to end, to demonstrate the UX concept. Every other tool stays
-> locked and explains why when tapped.
+> This is a *Wizard of Oz* prototype: three interaction paths are wired up
+> end to end, to demonstrate the UX concept. Every other tool stays locked
+> and explains why when tapped.
 
 ### Path 1: "The measurement is off"
 
-1. Tap the **4.55** dimension above the North wall (the only interactive
-   dimension; it's tinted blue).
-2. magicplan's **Change Measurement** popover opens: the value sits in a
-   disabled field, and the one action is **🔒 Propose Correction**.
-3. The popover closes and the draft opens: *Proposing · Dimension Mismatch ·
-   North wall · plan 4.55 m*. Enter the laser reading under **Measured
-   Length** (numpad, or − / + in 5 cm steps); the line below shows the
-   difference ("−20 cm vs plan").
+1. Tap any wall dimension on the plan (e.g. **4.55** above the North wall;
+   they're tinted blue and carry the native lock glyph), or a wall's
+   **Length** value in the inspector.
+2. magicplan's **Change Measurement** popover opens: **Reset** (back to the
+   plan value), the value field and a dark **🔒 Propose Correction** button.
+   Type the laser reading and propose it.
+3. The draft opens with that reading prefilled: *Proposing · Dimension
+   Mismatch · East wall · plan 3.30 m*. Opening the popover again on the same
+   wall shows (and updates) the proposed value. The line under the input
+   shows the difference ("−20 cm vs plan").
 
 ### Path 2: "There's something on site that isn't on the plan"
 
@@ -101,13 +103,32 @@ sidebar with the intent already filled in.
 5. Enter its **Measured Length** (*Length of physical wall* for Structural,
    *Length of element* otherwise).
 
-### Both paths
+### Path 3: "This object is a different size, or turned"
+
+1. Tap the **kitchen counter**, the **table** or the **chair**. It gets
+   magicplan's blue selection frame and the curved **rotate arrow**; the
+   inspector shows **Width / Depth / Height / Rotation** as native value pills.
+2. Change a value: tap its pill → the same Change Measurement popover →
+   Propose Correction. Or **rotate**: drag the arrow. Rotation is free and
+   snaps magnetically to every 45°; on a snapped angle the arrow turns
+   **green** (blue otherwise), and a dashed circle shows the rotation path.
+   A plain tap on the arrow turns it to the next 45°.
+3. The plan stays locked: the original stays drawn (faded) and the proposal
+   is drawn over it as a **red dashed ghost**. The draft (*Dimension
+   Mismatch · Small table (rectangular)*) lists all four values against the
+   plan; editing them there, in the popover or with the arrow all change the
+   same proposal, live on the canvas. Send needs at least one change and a
+   photo; the card reads e.g. "W 0.95 → 1.10 m · ↻ 0° → 45°", and the
+   ghost stays on the plan in its status colour.
+
+### All paths
 
 - **Evidence (at least one photo) is mandatory**: the + tile opens the iPad's
   rear camera; on a laptop use *"No camera? Use demo photo"*. Voice memo is
   optional; *Work is blocked here* is on by default.
-- **Send to review** stays disabled until there's a length above 0 and a
-  photo, and its label names what's missing ("Add length + photo"). Budget
+- **Send to review** stays disabled until there's a reading above 0 (or, for
+  an object, at least one change) and a photo, and its label names what's
+  missing ("Add length + photo"). Budget
   (€40k), permit status and a plan snapshot are attached automatically and
   shown above it.
 - After sending, the pane closes **right away**. The North wall locks in a

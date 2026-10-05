@@ -198,15 +198,19 @@ export default function SandboxPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Specimen
               title="MeasurementPopover"
-              note="Native Change Measurement popover, intercepted: the value is locked; Propose Correction opens a Dimension Mismatch draft."
+              note="Native Change Measurement popover (Reset · value · primary), intercepted: Propose Correction writes the value into the escalation draft instead of the locked plan."
             >
-              <div className="relative h-[290px] rounded-xl bg-mp-canvas" style={{ width: 300 }}>
+              <div className="relative h-[360px] rounded-xl bg-mp-canvas" style={{ width: 324 }}>
                 <span className="absolute left-[118px] top-[8px] rounded-md bg-[#e8f1fe] px-2 text-[15px] font-medium text-mp-blue">4.55</span>
                 <MeasurementPopover
                   at={{ x: 150, y: 18 }}
-                  valueM={4.55}
+                  label="Length"
+                  value={4.55}
+                  planValue={4.55}
+                  unit="m"
                   canvasWidth={300}
-                  onPropose={() => record("MeasurementPopover → Propose Correction")}
+                  canvasHeight={400}
+                  onApply={(v) => record(`MeasurementPopover → Propose Correction (${v})`)}
                   onClose={() => record("MeasurementPopover → close")}
                 />
               </div>

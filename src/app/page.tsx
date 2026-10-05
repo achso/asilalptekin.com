@@ -1,6 +1,9 @@
 "use client";
 
+import { AnimatePresence } from "framer-motion";
 import { useCallback, useMemo, useState } from "react";
+import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
+import type { ObjectProposal } from "@/components/organisms/PlanObjects";
 import { CanvasArea } from "@/components/organisms/CanvasArea";
 import { DeviceStatusBar } from "@/components/organisms/DeviceStatusBar";
 import { DevToolsPanel, useDevToolsToggle } from "@/components/organisms/DevToolsPanel";
@@ -9,9 +12,10 @@ import { LOCKED_MESSAGE, LeftToolbar } from "@/components/organisms/LeftToolbar"
 import { RightSidebar } from "@/components/organisms/RightSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { TopBar } from "@/components/organisms/TopBar";
-import { PROJECT, elementInfo } from "@/lib/floorplan";
+import { PROJECT, dimensionLabelAt, elementInfo, objectById, toPx, wallById } from "@/lib/floorplan";
+import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
-import type { SelectedElement } from "@/lib/types";
+import type { ObjectDims, Point, SelectedElement } from "@/lib/types";
 import type { TabRequest } from "@/lib/useTabRequest";
 import { useDeviationState } from "@/store/useDeviationState";
 
@@ -37,6 +41,18 @@ const INSERT_OTHER_ALERT: Record<"note" | "photo" | "form", string> = {
   note: "Plan locked, but notes are allowed: Photos & Notes is open. Type your note.",
   photo: "Plan locked, but photos are allowed: Photos & Notes is open. Tap + to add one.",
   form: "Plan locked, but forms are allowed: the Forms tab is open.",
+};
+
+/** The Change Measurement popover's target: a wall's length or an object attribute. */
+type MeasureTarget =
+  | { kind: "wall"; wallId: string; at: Point }
+  | { kind: "object"; id: string; field: keyof ObjectDims; at: Point };
+
+const OBJECT_FIELD_LABEL: Record<keyof ObjectDims, string> = {
+  widthM: "Width",
+  depthM: "Depth",
+  heightM: "Height",
+  rotation: "Rotation",
 };
 
 export default function Page() {
@@ -66,13 +82,16 @@ export default function Page() {
     [selectElement, clearSelection],
   );
 
-  // ── Intercept and Propose: two hardcoded paths ──────────────────────────
-  // 1. 4.55 popover → Propose Correction → Dimension Mismatch (North wall)
+  // ── Intercept and Propose ───────────────────────────────────────────────
+  // 1. Wall length (canvas label or inspector) → Change Measurement popover
+  //    → Propose Correction → Dimension Mismatch, value prefilled
   // 2. Insert → Object → any category → ghost_draft → tap the plan
   //    → Undocumented Element → <category>
+  // 3. Object → popover (width / depth / height / rotation) or rotate handle
+  //    → Object change, drawn as a red dashed ghost over the original
   const placing = store.interactionMode === "ghost_draft";
   const inserting = placing || draft?.intent === "missing-element";
-  const { startDraft, startGhostDraft, cancelDraft, notify } = store;
+  const { startDraft, startGhostDraft, cancelDraft, notify, proposeObjectChange, updateDraft } = store;
   // Insert → Note / Photo / Form: these never change the plan, so they're
   // allowed. Open the matching sidebar tab and say so.
   const [tabRequest, setTabRequest] = useState<TabRequest | null>(null);
@@ -82,10 +101,58 @@ export default function Page() {
     setTabRequest(kind === "form" ? { tab: "Forms" } : { tab: "Photos & Notes", focusNote: kind === "note" });
     notify(INSERT_OTHER_ALERT[kind], "hint");
   };
-  const onProposeWallLength = useCallback(
-    (wallId: string) => startDraft({ type: "wall", id: wallId }, "wall-length"),
-    [startDraft],
+  // One popover for every locked value; Propose Correction writes into the draft.
+  const [measure, setMeasure] = useState<MeasureTarget | null>(null);
+  const closeMeasure = useCallback(() => setMeasure(null), []);
+  const onDimensionTap = useCallback((wallId: string, at: Point) => setMeasure({ kind: "wall", wallId, at }), []);
+  const onMeasureWall = useCallback(
+    (wallId: string) => setMeasure({ kind: "wall", wallId, at: dimensionLabelAt(wallById(wallId)) }),
+    [],
   );
+  const onMeasureObject = useCallback(
+    (id: string, field: keyof ObjectDims) =>
+      setMeasure({ kind: "object", id, field, at: toPx(objectById(id).center) }),
+    [],
+  );
+  const onRotateObject = useCallback(
+    (id: string, rotation: number) => proposeObjectChange(id, { rotation }),
+    [proposeObjectChange],
+  );
+
+  const measureProps = (() => {
+    if (!measure) return null;
+    if (measure.kind === "wall") {
+      const plan = wallById(measure.wallId).lengthM;
+      const same = draft?.intent === "wall-length" && draft.anchor.id === measure.wallId;
+      return {
+        label: "Length",
+        planValue: plan,
+        value: (same && draft?.measuredM) || plan,
+        unit: "m" as const,
+        apply: (v: number) =>
+          same ? updateDraft({ measuredM: v }) : startDraft({ type: "wall", id: measure.wallId }, "wall-length", v),
+      };
+    }
+    const o = objectById(measure.id);
+    const same = draft?.intent === "object-change" && draft.anchor.id === measure.id;
+    return {
+      label: OBJECT_FIELD_LABEL[measure.field],
+      planValue: o[measure.field],
+      value: same ? draft!.proposed![measure.field] : o[measure.field],
+      unit: measure.field === "rotation" ? ("°" as const) : ("m" as const),
+      apply: (v: number) => proposeObjectChange(measure.id, { [measure.field]: v }),
+    };
+  })();
+
+  // Proposals drawn over objects: the open draft (red) wins over a sent report.
+  const objectProposals = useMemo(() => {
+    const out: Record<string, ObjectProposal> = {};
+    for (const e of [...store.escalations].reverse()) {
+      if (e.objectChange && e.target.type === "object") out[e.target.id] = { dims: e.objectChange.to, status: e.status };
+    }
+    if (draft?.intent === "object-change" && draft.proposed) out[draft.anchor.id] = { dims: draft.proposed, status: "draft" };
+    return out;
+  }, [store.escalations, draft]);
 
 
   const breadcrumbs = [
@@ -127,7 +194,9 @@ export default function Page() {
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
               markers={markers}
-              onProposeWallLength={onProposeWallLength}
+              onDimensionTap={onDimensionTap}
+              objectProposals={objectProposals}
+              onRotateObject={onRotateObject}
             />
 
             <LeftToolbar
@@ -142,6 +211,26 @@ export default function Page() {
               onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />
+
+            <AnimatePresence>
+              {measure && measureProps && (
+                <MeasurementPopover
+                  key={`${measure.kind}-${measure.kind === "wall" ? measure.wallId : `${measure.id}-${measure.field}`}`}
+                  at={measure.at}
+                  label={measureProps.label}
+                  value={measureProps.value}
+                  planValue={measureProps.planValue}
+                  unit={measureProps.unit}
+                  canvasWidth={CANVAS_W}
+                  canvasHeight={CANVAS_H}
+                  onClose={closeMeasure}
+                  onApply={(v) => {
+                    setMeasure(null);
+                    measureProps.apply(v);
+                  }}
+                />
+              )}
+            </AnimatePresence>
 
             <StatusToast
               toast={store.toast}
@@ -171,6 +260,9 @@ export default function Page() {
             draft={draft}
             escalations={store.escalations}
             onCancelDraft={cancelDraft}
+            onDraftChange={updateDraft}
+            onMeasureWall={onMeasureWall}
+            onMeasureObject={onMeasureObject}
             tabRequest={tabRequest}
             onTabRequestHandled={clearTabRequest}
             onSubmit={store.submitEscalation}

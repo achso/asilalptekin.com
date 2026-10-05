@@ -3,7 +3,7 @@
 import { AnimatePresence } from "framer-motion";
 import { AttachmentBadge } from "@/components/atoms/AttachmentBadge";
 import { FloatingAnchor } from "@/components/atoms/FloatingAnchor";
-import { CORNERS, ROOM, WALLS, WALL_THICKNESS, elementInfo } from "@/lib/floorplan";
+import { CORNERS, PLAN_OBJECTS, ROOM, WALLS, WALL_THICKNESS, elementInfo } from "@/lib/floorplan";
 import type { EscalationStatus, SelectedElement } from "@/lib/types";
 import { canvasBadgeFor } from "@/store/deviationMachine";
 import { EscalationPin } from "./EscalationPin";
@@ -21,6 +21,7 @@ const ALL_ELEMENTS: SelectedElement[] = [
   ...WALLS.map((w) => ({ type: "wall" as const, id: w.id })),
   ...CORNERS.map((c) => ({ type: "corner" as const, id: c.id })),
   { type: "room", id: ROOM.id },
+  ...PLAN_OBJECTS.map((o) => ({ type: "object" as const, id: o.id })),
 ];
 
 /** Centred on the wall's body (drawn half a thickness outside the room line). */
@@ -29,6 +30,7 @@ const OFFSET: Record<SelectedElement["type"], number> = {
   corner: 0,
   room: 0,
   ghost: 0,
+  object: 0,
 };
 
 export function ElementBadges({

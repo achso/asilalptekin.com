@@ -2,15 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Crosshair, X } from "lucide-react";
-import { memo, useCallback, useState } from "react";
+import { memo } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
-import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-import { wallById } from "@/lib/floorplan";
 import type { EscalationStatus, Point, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FloorPlan } from "./FloorPlan";
+import type { ObjectProposal } from "./PlanObjects";
 
 /**
  * CanvasArea (organism): the main work surface. A dot-grid background (CSS),
@@ -21,9 +20,11 @@ import { FloorPlan } from "./FloorPlan";
  * Memoised: with stable props from page.tsx it re-renders only when the
  * selection or the escalations change, not on toasts or sidebar updates.
  *
- * The canvas handles selection and status, plus the two hardcoded intercepts:
- *  - tapping the North wall's 4.55 dimension opens the Change Measurement
- *    popover; Propose Correction hands the wall to onProposeWallLength
+ * The canvas handles selection and status, plus the intercepts:
+ *  - tapping a wall's dimension label reports it (onDimensionTap); the page
+ *    shows the Change Measurement popover
+ *  - objects are selectable and rotatable; a rotation is a proposal
+ *    (onRotateObject) drawn as a red dashed ghost
  *  - in ghost_draft (after Insert → Object → a category) a tap inside the room
  *    drops the red dashed ghost, and an on-canvas banner says so until placed
  */
@@ -42,8 +43,9 @@ export type CanvasAreaProps = {
   /** Category picked in Insert → Object, shown in the placement banner. */
   ghostCategory?: string | null;
   markers?: { id: string; point: Point; status: EscalationStatus }[];
-  /** Change Measurement popover → Propose Correction. */
-  onProposeWallLength?: (wallId: string) => void;
+  onDimensionTap?: (wallId: string, at: Point) => void;
+  objectProposals?: Record<string, ObjectProposal | undefined>;
+  onRotateObject?: (objectId: string, rotation: number) => void;
   className?: string;
 };
 
@@ -58,13 +60,11 @@ export const CanvasArea = memo(function CanvasArea({
   onCancelPlacing,
   ghostCategory,
   markers,
-  onProposeWallLength,
+  onDimensionTap,
+  objectProposals,
+  onRotateObject,
   className,
 }: CanvasAreaProps) {
-  const [popover, setPopover] = useState<{ wallId: string; at: Point } | null>(null);
-  const onDimensionTap = useCallback((wallId: string, at: Point) => setPopover({ wallId, at }), []);
-  const closePopover = useCallback(() => setPopover(null), []);
-
   return (
     <main
       aria-label="Floor plan"
@@ -88,23 +88,9 @@ export const CanvasArea = memo(function CanvasArea({
         onPlace={onPlace}
         markers={markers}
         onDimensionTap={onDimensionTap}
+        objectProposals={objectProposals}
+        onRotateObject={onRotateObject}
       />
-
-      <AnimatePresence>
-        {popover && (
-          <MeasurementPopover
-            key="measurement"
-            at={popover.at}
-            valueM={wallById(popover.wallId).lengthM}
-            canvasWidth={CANVAS_W}
-            onClose={closePopover}
-            onPropose={() => {
-              setPopover(null);
-              onProposeWallLength?.(popover.wallId);
-            }}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Placement prompt: the canvas is in a different mode, so say so on the canvas. */}
       <AnimatePresence>

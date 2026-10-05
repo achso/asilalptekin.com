@@ -5,7 +5,19 @@ export type Point = { x: number; y: number };
  * "ghost" is the proposed element that isn't on the locked plan (placed with
  * Insert): it has no plan geometry, only its ghost position.
  */
-export type ElementType = "wall" | "corner" | "room" | "ghost";
+export type ElementType = "wall" | "corner" | "room" | "ghost" | "object";
+
+/** Size and orientation of a plan object (metres, degrees clockwise). */
+export type ObjectDims = { widthM: number; depthM: number; heightM: number; rotation: number };
+
+/** A piece of furniture / fixture drawn on the plan (selectable, never editable). */
+export type PlanObject = ObjectDims & {
+  id: string;
+  label: string;
+  kind: "counter" | "table" | "chair";
+  /** Centre, in plan metres. */
+  center: Point;
+};
 export type SelectedElement = { type: ElementType; id: string };
 
 
@@ -42,8 +54,10 @@ export type IssueType =
  *   missing-element → Insert → Object → any category → tap the plan → red
  *                     dashed ghost → Undocumented Element → <category>
  *                     (every category is the same trapdoor; only its name travels)
+ *   object-change   → select an object → change a value (popover) or rotate it
+ *                     → its proposed size / rotation, drawn as a red dashed ghost
  */
-export type DraftIntent = "wall-length" | "missing-element";
+export type DraftIntent = "wall-length" | "missing-element" | "object-change";
 
 export type Escalation = {
   id: string;
@@ -55,6 +69,8 @@ export type Escalation = {
    * or the length of the physical element that isn't on the plan (undocumented).
    */
   measuredM?: number;
+  /** Object change: the plan's values and the proposed ones. */
+  objectChange?: { from: ObjectDims; to: ObjectDims };
   /** Only for undocumented-element: the category picked in Insert → Object ("Plumbing"). */
   category?: string;
   /** Only for undocumented-element: where the ghost is, in plan metres. */
