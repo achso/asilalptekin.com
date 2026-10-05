@@ -30,16 +30,18 @@ import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviati
 
 // ── Variants ────────────────────────────────────────────────────────────────
 
+// The status outline is a real border (inside the card's box), not a ring:
+// a ring is drawn outside the box and the sidebar's scroll container clips it.
 const card = cva(
-  "w-full overflow-hidden rounded-2xl bg-white shadow-sm ring-2 transition-[box-shadow,opacity] duration-300",
+  "w-full overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition-[border-color,opacity] duration-300",
   {
     variants: {
       status: {
-        queued: "ring-transparent",
-        sending: "ring-transparent",
-        delivered: "ring-transparent",
-        in_review: "ring-amber-400",
-        resolved: "opacity-90 ring-emerald-500/60",
+        queued: "border-transparent",
+        sending: "border-transparent",
+        delivered: "border-transparent",
+        in_review: "border-amber-400",
+        resolved: "border-emerald-500/60",
       },
     },
   },
