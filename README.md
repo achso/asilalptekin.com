@@ -52,6 +52,14 @@ iPad Air / Pro 11" landscape) and scales to fit the window.
 
 ---
 
+> **Reviewer shortcut: skip the wait for the expert.** After sending a
+> report, **double-click (double-tap on iPad) the top part of its card** in
+> the right sidebar: the photo, title and *Ask* area, not the chevron (›) and
+> not the status row. Each double-click moves it one state on: Queued →
+> Sending → Delivered → In review → Resolved. On *Resolved*, press **Accept
+> Update** to merge it into the plan. Cards are listed under *Active
+> Escalations* on the room panel (tap empty canvas to get there).
+
 ## Demo script (≈ 60 seconds): Intercept and Propose
 
 The permit is approved, so the plan is in its **execution state**: the header
@@ -267,8 +275,9 @@ isn't sendable: the button reads *Add new length*.
 **Simulated backend.** Every report starts **queued** (saved on the iPad) and
 moves on by itself: **sending** after 1 s (or as soon as the iPad is back
 online), **delivered** 1.5 s later, then **in review** 3 s later if the remote
-expert is online (08:00–15:00 Munich). **Cheat for reviewers:** double-tap a
-card's header to force the next state (queued → sending → delivered → in
+expert is online (08:00–15:00 Munich). **Cheat for reviewers:** double-click
+(double-tap) the top part of a card (photo, title, *Ask*; not the chevron) to
+force the next state (queued → sending → delivered → in
 review → resolved) without waiting. Resolved reports stay in *Active
 Escalations* until accepted (below).
 
