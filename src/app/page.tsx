@@ -12,7 +12,7 @@ import { LOCKED_MESSAGE, LeftToolbar } from "@/components/organisms/LeftToolbar"
 import { RightSidebar } from "@/components/organisms/RightSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { TopBar } from "@/components/organisms/TopBar";
-import { PROJECT, dimensionLabelAt, elementInfo, objectById, toPx, wallById } from "@/lib/floorplan";
+import { PROJECT, dimensionLabelAt, elementInfo, objectById, toPx, wallById, wallSpotText } from "@/lib/floorplan";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
 import type { EscalationStatus, ObjectDims, Point, SelectedElement } from "@/lib/types";
@@ -71,13 +71,41 @@ export default function Page() {
     [escalationFor],
   );
   // Ghost walls of submitted Undocumented Element reports stay on the plan.
+  // A Structural element inserted at a wall's blue triangle is a new wall,
+  // drawn perpendicular from that spot (native Insert → Wall).
   const markers = useMemo(
     () =>
       store.escalations.flatMap((e) =>
-        e.marker ? [{ id: e.id, point: e.marker, status: e.status }] : [],
+        e.marker
+          ? [
+              {
+                id: e.id,
+                point: e.marker,
+                status: e.status,
+                spot: e.markerSpot,
+                perpendicular: !!e.markerSpot && e.category === "Structural",
+                lengthM: e.measuredM,
+              },
+            ]
+          : [],
       ),
     [store.escalations],
   );
+  const draftGhost = useMemo(
+    () =>
+      draft?.marker
+        ? {
+            point: draft.marker,
+            spot: draft.spot,
+            perpendicular: !!draft.spot && draft.category === "Structural",
+            lengthM: draft.measuredM,
+          }
+        : null,
+    [draft?.marker, draft?.spot, draft?.category, draft?.measuredM],
+  );
+  // The blue triangle: on the selected wall's tapped spot, or the spot the
+  // open ghost is tied to (it goes once the ghost is moved off it).
+  const tapSpot = draft ? (draft.spot ?? null) : store.wallSpot;
   const onSelect = useCallback(
     (el: SelectedElement | null) => (el ? selectElement(el.id) : clearSelection()),
     [selectElement, clearSelection],
@@ -235,8 +263,11 @@ export default function Page() {
               statusFor={statusFor}
               photoCountFor={store.standardPhotoCount}
               onSelect={onSelect}
+              onSelectWallAt={store.selectWallAt}
+              tapSpot={tapSpot}
               placing={placing}
               draftMarker={draft?.marker ?? null}
+              draftGhost={draftGhost}
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               ghostCategory={store.ghostCategory}
@@ -267,6 +298,11 @@ export default function Page() {
               onCancelInsert={() => (draft ? requestDiscard() : cancelDraft())}
               onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
+              spotLabel={
+                store.wallSpot && !draft
+                  ? `${wallById(store.wallSpot.wallId).label}, ${wallSpotText(store.wallSpot)}`
+                  : null
+              }
             />
 
             <AnimatePresence>

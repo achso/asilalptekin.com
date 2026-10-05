@@ -9,7 +9,7 @@ import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { VoiceMemoToggle, type VoiceMemo } from "@/components/molecules/VoiceMemoToggle";
-import { ISSUE_TYPES, PROJECT, ROOM, issueLabel, objectById, objectDims, wallById } from "@/lib/floorplan";
+import { ISSUE_TYPES, PROJECT, ROOM, issueLabel, objectById, objectDims, wallById, wallSpotText } from "@/lib/floorplan";
 import type { EscalationDraft, IssueType, ObjectDims } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Draft, draftLabel } from "@/store/useDeviationState";
@@ -279,10 +279,23 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onChange }: Esc
             <div className="flex min-h-14 items-center gap-3 rounded-xl bg-white px-3 py-2">
               <MapPinCheck size={22} className="shrink-0 text-mp-red" aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-semibold text-mp-ink">Placed on plan</span>
-                <span className="block text-[12px] leading-snug text-mp-muted">
-                  {marker.x.toFixed(2)} m from west · {marker.y.toFixed(2)} m from north · tap the plan to move
-                </span>
+                {draft.spot ? (
+                  <>
+                    <span className="block text-[15px] font-semibold text-mp-ink">
+                      At the marked spot · {wallById(draft.spot.wallId).label}
+                    </span>
+                    <span className="block text-[12px] leading-snug text-mp-muted">
+                      {wallSpotText(draft.spot)} · tap the plan to move
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block text-[15px] font-semibold text-mp-ink">Placed on plan</span>
+                    <span className="block text-[12px] leading-snug text-mp-muted">
+                      {marker.x.toFixed(2)} m from west · {marker.y.toFixed(2)} m from north · tap the plan to move
+                    </span>
+                  </>
+                )}
               </span>
             </div>
           )}

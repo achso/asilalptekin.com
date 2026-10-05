@@ -1,4 +1,4 @@
-import type { Corner, IssueType, ObjectState, PlanObject, Point, SelectedElement, Wall } from "./types";
+import type { Corner, IssueType, ObjectState, PlanObject, Point, SelectedElement, Wall, WallSpot } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -160,6 +160,37 @@ export function wallGeometry(wall: Wall) {
   const ny = ux;
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   return { a, b, ux, uy, nx, ny, len, mid };
+}
+
+// ── Tap spots on walls (the blue triangle) ──────────────────────────────────
+
+/** Project a canvas-px tap onto a wall: the spot along its inner face, kept off the corners. */
+export function wallSpotAt(wall: Wall, px: Point): WallSpot {
+  const g = wallGeometry(wall);
+  const along = (px.x - g.a.x) * g.ux + (px.y - g.a.y) * g.uy;
+  const m = Math.min(Math.max(along / PX_PER_M, 0.1), wall.lengthM - 0.1);
+  return { wallId: wall.id, offsetM: +m.toFixed(2) };
+}
+
+/** The spot on the wall's inner face, in canvas px, plus the inward normal. */
+export function wallSpotPx(spot: WallSpot) {
+  const g = wallGeometry(wallById(spot.wallId));
+  const s = spot.offsetM * PX_PER_M;
+  return { p: { x: g.a.x + g.ux * s, y: g.a.y + g.uy * s }, nx: g.nx, ny: g.ny, ux: g.ux, uy: g.uy };
+}
+
+/** Where a ghost inserted at a spot sits: against the wall, just inside the room (metres). */
+export function wallSpotGhost(spot: WallSpot): Point {
+  const { p, nx, ny } = wallSpotPx(spot);
+  const m = toMetres({ x: p.x + nx * 8, y: p.y + ny * 8 });
+  return { x: +m.x.toFixed(2), y: +m.y.toFixed(2) };
+}
+
+/** "1.80 m from the west end": the wall's start corner named by compass direction. */
+export function wallSpotText(spot: WallSpot) {
+  const { ux, uy } = wallSpotPx(spot);
+  const from = ux > 0.5 ? "west" : ux < -0.5 ? "east" : uy > 0.5 ? "north" : "south";
+  return `${spot.offsetM.toFixed(2)} m from the ${from} end`;
 }
 
 // ── Selectable elements ─────────────────────────────────────────────────────

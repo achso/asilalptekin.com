@@ -1,7 +1,7 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, PointerEvent } from "react";
 import { type DeviationState, isLockedState } from "@/store/deviationMachine";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +72,8 @@ export type CanvasWallProps = {
    * defers to an escalation pin (see canvasBadgeFor).
    */
   photoCount?: number;
-  onSelect?: () => void;
+  /** Pointer taps pass the event (FloorPlan reads the exact spot); keyboard passes none. */
+  onSelect?: (e?: PointerEvent<SVGGElement>) => void;
   className?: string;
 };
 
@@ -109,7 +110,7 @@ export function CanvasWall({
       }`}
       aria-pressed={selected}
       data-state={deviationState}
-      onPointerDown={onSelect}
+      onPointerDown={(e) => onSelect?.(e)}
       onKeyDown={onKeyDown}
       className={cn(
         // Keyboard focus ring only; a tap shouldn't leave a box around the wall.

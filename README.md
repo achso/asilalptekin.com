@@ -103,6 +103,23 @@ sidebar with the intent already filled in.
 5. Enter its **Measured Length** (*Length of physical wall* for Structural,
    *Length of element* otherwise).
 
+**Tied to a spot on a wall (native).** Tap a wall first: as in magicplan, the
+exact spot gets a **blue triangle** on the wall's inner face with a white notch
+through the wall, and the toolbar switches to the element tools (Insert, Add
+Corner, Add Wall, Split Room, Delete…). Tapping the wall again moves the spot.
+Insert → Object now says *Inserts at the marked spot: North wall, 1.80 m from
+the west end*, and picking a category skips step 4: the ghost lands on the spot
+and the draft opens at once, with *At the marked spot · North wall* in place
+of the coordinates.
+
+- **Structural** is drawn the way magicplan inserts a wall: a new wall running
+  **perpendicular** from the spot into the room, 1.50 m until measured, then
+  as long as the Measured Length typed (live). The host wall's dimension is
+  split at the spot (e.g. 4.14 | 0.41) and the length is labelled.
+- **Any other category** sits against the wall, parallel to it.
+- Tapping the plan moves the ghost off the spot (it's then a free ghost and
+  the triangle goes); ⌘Z puts it back on the spot.
+
 ### Path 3: "This object is a different size, or turned"
 
 1. Tap the **kitchen counter**, the **table** or the **chair**. It gets

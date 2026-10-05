@@ -89,6 +89,7 @@ export function LeftToolbar({
   onCancelInsert,
   onInsertOther,
   onLockedTool,
+  spotLabel,
   className,
 }: {
   mode: "room" | "element";
@@ -107,6 +108,8 @@ export function LeftToolbar({
   /** Note / Photo / Form: not plan edits; explained, not drafted. */
   onInsertOther: (kind: "note" | "photo" | "form") => void;
   onLockedTool?: () => void;
+  /** A wall spot is marked (blue triangle): insertions land there, e.g. "North wall, 1.80 m from the west end". */
+  spotLabel?: string | null;
   className?: string;
 }) {
   const tools = mode === "room" ? ROOM_TOOLS : ELEMENT_TOOLS;
@@ -198,6 +201,7 @@ export function LeftToolbar({
               />
             ) : (
               <CategoryGrid
+                spotLabel={spotLabel}
                 onBack={() => setMenu("root")}
                 onClose={close}
                 onPick={(c) => {
@@ -270,10 +274,12 @@ const CATEGORIES: { label: string; icon: LucideIcon }[] = [
 ];
 
 function CategoryGrid({
+  spotLabel,
   onBack,
   onClose,
   onPick,
 }: {
+  spotLabel?: string | null;
   onBack: () => void;
   onClose: () => void;
   onPick: (category: string) => void;
@@ -302,6 +308,14 @@ function CategoryGrid({
           <X size={18} strokeWidth={2.5} />
         </button>
       </div>
+      {spotLabel && (
+        <p data-spot-hint className="mb-2 flex items-center gap-2 rounded-xl bg-mp-blue-soft/15 px-3 py-2 text-[13px] leading-snug text-mp-ink">
+          <svg width="12" height="12" viewBox="0 0 12 12" className="shrink-0" aria-hidden>
+            <path d="M6 1 L11 10 H1 Z" fill="#1a7cf5" />
+          </svg>
+          <span className="min-w-0">Inserts at the marked spot: {spotLabel}</span>
+        </p>
+      )}
       <div role="menu" aria-label="All Objects" className="grid grid-cols-2 gap-2">
         {CATEGORIES.map((c) => (
           <button

@@ -12,9 +12,12 @@ import {
   toMetres,
   toPx,
   wallGeometry,
+  wallById,
+  wallSpotAt,
+  wallSpotPx,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
-import type { EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
+import type { EscalationStatus, Point, SelectedElement, Wall, WallSpot } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
 import { type ObjectProposal, PlanObjects } from "./PlanObjects";
@@ -41,12 +44,17 @@ type Props = {
   statusFor: (t: SelectedElement) => EscalationStatus | undefined;
   photoCountFor?: (t: SelectedElement) => number;
   onSelect: (t: SelectedElement | null) => void;
+  /** A tap on a wall: select it and mark the exact spot (native blue triangle). */
+  onSelectWallAt?: (spot: WallSpot) => void;
+  /** The marked spot to draw (on the selected wall, or the draft's tied spot). */
+  tapSpot?: WallSpot | null;
   /** ghost_draft: taps inside the room place / move the ghost wall instead of selecting. */
   placing?: boolean;
-  draftMarker?: Point | null;
+  /** The open draft's ghost (Insert → Object), drawn red and dashed. */
+  draftGhost?: GhostSpec | null;
   onPlace?: (p: Point) => void;
   /** Ghost walls of submitted proposals, drawn in their status colour. */
-  markers?: { id: string; point: Point; status: EscalationStatus }[];
+  markers?: (GhostSpec & { id: string; status: EscalationStatus })[];
   /** Tapping a wall's dimension label opens the Change Measurement popover. */
   onDimensionTap?: (wallId: string, at: Point) => void;
   /** Proposed size / rotation per object (open draft or sent report). */
@@ -72,8 +80,10 @@ export function FloorPlan({
   statusFor,
   photoCountFor,
   onSelect,
+  onSelectWallAt,
+  tapSpot,
   placing,
-  draftMarker,
+  draftGhost,
   onPlace,
   markers,
   onDimensionTap,
@@ -165,7 +175,15 @@ export function FloorPlan({
               deviationState={statusFor(target) ?? "idle"}
               photoCount={photoCountFor?.(target)}
               selected={sameElement(selected, target)}
-              onSelect={() => onSelect(target)}
+              onSelect={(e) => {
+                // Pointer tap: project it onto the wall. Keyboard: the wall's middle.
+                const ctm = e && (e.currentTarget as SVGGElement).ownerSVGElement?.getScreenCTM();
+                if (!onSelectWallAt) return onSelect(target);
+                const px = ctm
+                  ? new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse())
+                  : wallGeometry(w).mid;
+                onSelectWallAt(wallSpotAt(w, { x: px.x, y: px.y }));
+              }}
             />
             {w.openings?.map((o, i) => (
               <OpeningShape key={i} wall={w} opening={o} />
@@ -195,6 +213,8 @@ export function FloorPlan({
           </g>
         );
       })}
+
+      {tapSpot && <TapTriangle key={`${tapSpot.wallId}-${tapSpot.offsetM}`} spot={tapSpot} />}
 
       {/* Walls / corners proposed for removal: red dashed overlay (status colour once sent). */}
       {WALLS.map((w) => {
@@ -235,9 +255,9 @@ export function FloorPlan({
       })}
 
       {markers?.map((m) => (
-        <GhostWall key={m.id} at={toPx(m.point)} color={STATUS_STROKE[m.status]} />
+        <GhostWall key={m.id} ghost={m} color={STATUS_STROKE[m.status]} />
       ))}
-      {draftMarker && <GhostWall at={toPx(draftMarker)} color={GHOST_RED} draft />}
+      {draftGhost && <GhostWall ghost={draftGhost} color={GHOST_RED} draft />}
     </svg>
   );
 }
@@ -349,27 +369,165 @@ function OpeningShape({ wall, opening }: { wall: Wall; opening: NonNullable<Wall
 }
 
 /**
- * The proposed wall: a hardcoded 100 × 10 px rect (≈ 0.9 m) centred on the
- * tap. It's a proposal, not approved geometry, so it's red, dashed and faintly
+ * Where and how a proposed element is drawn. A free ghost (placed by a canvas
+ * tap) is a hardcoded 100 × 10 px rect (≈ 0.9 m) centred on the tap. One
+ * inserted at a wall's blue triangle is tied to that spot: a Structural one is
+ * a new wall running perpendicular from the spot into the room, as magicplan
+ * inserts walls (1.50 m until measured); any other category sits against the
+ * wall, parallel to it.
+ */
+export type GhostSpec = {
+  point: Point;
+  spot?: WallSpot;
+  /** Structural at a spot: a wall perpendicular to the host wall. */
+  perpendicular?: boolean;
+  /** The measured length, once entered (perpendicular walls grow to it). */
+  lengthM?: number | null;
+};
+
+/** magicplan's default length for an inserted wall. */
+const INSERTED_WALL_M = 1.5;
+
+/**
+ * The proposal is not approved geometry, so it's red, dashed and faintly
  * filled, never solid black. Submitted ones keep the dash in their status colour.
  */
 const GHOST_RED = "#EF4444";
-function GhostWall({ at, color, draft = false }: { at: Point; color: string; draft?: boolean }) {
+function GhostWall({ ghost, color, draft = false }: { ghost: GhostSpec; color: string; draft?: boolean }) {
+  const fill = color === GHOST_RED ? "rgba(239, 68, 68, 0.1)" : color;
+  const fillOpacity = color === GHOST_RED ? 1 : 0.12;
+  const box = ghostBox(ghost);
+  const sp = ghost.spot && wallSpotPx(ghost.spot);
   return (
-    <motion.rect
+    <g pointerEvents="none" data-ghost={draft ? "draft" : "submitted"} data-ghost-kind={ghost.perpendicular ? "wall" : ghost.spot ? "spot" : "free"}>
+      <motion.rect
+        initial={false}
+        animate={box}
+        transition={{ type: "spring", stiffness: 420, damping: 32 }}
+        stroke={color}
+        strokeDasharray="4 4"
+        strokeWidth={2}
+        fill={fill}
+        fillOpacity={fillOpacity}
+      />
+      {ghost.perpendicular && sp && (
+        <>
+          <SpotSplit spot={ghost.spot!} color={color} />
+          {ghost.lengthM ? (
+            <LengthTag
+              x={sp.p.x + sp.nx * (ghost.lengthM * PX_PER_M) / 2 + (Math.abs(sp.ny) > 0.5 ? 22 : 0)}
+              y={sp.p.y + sp.ny * (ghost.lengthM * PX_PER_M) / 2 + (Math.abs(sp.nx) > 0.5 ? 18 : 0)}
+              text={ghost.lengthM.toFixed(2)}
+              color={color}
+            />
+          ) : null}
+        </>
+      )}
+    </g>
+  );
+}
+
+/** The ghost's rect in canvas px (walls are axis-aligned, so a plain box). */
+function ghostBox(g: GhostSpec) {
+  if (g.spot && g.perpendicular) {
+    const { p, nx, ny, ux, uy } = wallSpotPx(g.spot);
+    const L = (g.lengthM || INSERTED_WALL_M) * PX_PER_M;
+    const t = 10;
+    const xs = [p.x - (ux * t) / 2, p.x + (ux * t) / 2, p.x + nx * L - (ux * t) / 2, p.x + nx * L + (ux * t) / 2];
+    const ys = [p.y - (uy * t) / 2, p.y + (uy * t) / 2, p.y + ny * L - (uy * t) / 2, p.y + ny * L + (uy * t) / 2];
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  }
+  const at = toPx(g.point);
+  const v = !!g.spot && Math.abs(wallSpotPx(g.spot).uy) > 0.5;
+  return { x: at.x - (v ? 5 : 50), y: at.y - (v ? 50 : 5), width: v ? 10 : 100, height: v ? 100 : 10 };
+}
+
+/** The host wall's dimension split at the spot (native: 1.26 | 3.17), just outside the wall. */
+function SpotSplit({ spot, color }: { spot: WallSpot; color: string }) {
+  const w = wallById(spot.wallId);
+  const g = wallGeometry(w);
+  const off = 28;
+  const pt = (m: number) => ({ x: g.a.x + g.ux * m * PX_PER_M - g.nx * off, y: g.a.y + g.uy * m * PX_PER_M - g.ny * off });
+  const a = pt(0);
+  const s = pt(spot.offsetM);
+  const b = pt(w.lengthM);
+  const tick = (q: Point) => (
+    <line x1={q.x - g.nx * 5} y1={q.y - g.ny * 5} x2={q.x + g.nx * 5} y2={q.y + g.ny * 5} />
+  );
+  const segs: [Point, Point, number][] = [
+    [a, s, spot.offsetM],
+    [s, b, w.lengthM - spot.offsetM],
+  ];
+  return (
+    <g data-spot-split stroke={color} strokeWidth={1}>
+      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeDasharray="4 3" />
+      {tick(a)}
+      {tick(s)}
+      {tick(b)}
+      {segs.map(([p, q, m], i) =>
+        m >= 0.35 ? (
+          <LengthTag
+            key={i}
+            x={(p.x + q.x) / 2}
+            y={(p.y + q.y) / 2}
+            text={m.toFixed(2)}
+            color={color}
+            vertical={Math.abs(g.uy) > 0.5}
+          />
+        ) : null,
+      )}
+    </g>
+  );
+}
+
+function LengthTag({ x, y, text, color, vertical }: { x: number; y: number; text: string; color: string; vertical?: boolean }) {
+  return (
+    <g transform={vertical ? `rotate(-90 ${x} ${y})` : undefined} stroke="none">
+      <rect x={x - 19} y={y - 8} width={38} height={16} rx={4} fill="#fff" />
+      <text x={x} y={y} fill={color} fontSize={12} fontWeight={600} textAnchor="middle" dominantBaseline="central">
+        {text}
+      </text>
+    </g>
+  );
+}
+
+/**
+ * magicplan's tap marker: the exact spot tapped on a wall gets a blue triangle
+ * on the wall's inner face, pointing at it, and a white notch through the
+ * wall. Insert then ties the new element to this spot.
+ */
+function TapTriangle({ spot }: { spot: WallSpot }) {
+  const { p, nx, ny, ux, uy } = wallSpotPx(spot);
+  const at = (n: number, u: number) => `${p.x + nx * n + ux * u},${p.y + ny * n + uy * u}`;
+  // The selected wall's body spans 3 px inside the room to thickness + 3 outside.
+  const inner = 3;
+  const outer = -(WALL_THICKNESS + 3);
+  const mid = (inner + outer) / 2;
+  return (
+    <motion.g
+      data-tap-spot={`${spot.wallId}:${spot.offsetM}`}
       pointerEvents="none"
-      data-ghost={draft ? "draft" : "submitted"}
-      width={100}
-      height={10}
-      initial={false}
-      animate={{ x: at.x - 50, y: at.y - 5 }}
-      transition={{ type: "spring", stiffness: 420, damping: 32 }}
-      stroke={color}
-      strokeDasharray="4 4"
-      strokeWidth={2}
-      fill={color === GHOST_RED ? "rgba(239, 68, 68, 0.1)" : color}
-      fillOpacity={color === GHOST_RED ? 1 : 0.12}
-    />
+      initial={{ opacity: 0, scale: 0.4 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 520, damping: 26 }}
+      style={{ transformOrigin: `${p.x}px ${p.y}px`, transformBox: "view-box" }}
+    >
+      {/* notch: an hourglass through the wall body */}
+      <polygon
+        points={`${at(inner, -4)} ${at(inner, 4)} ${at(mid, 0.8)} ${at(outer, 4)} ${at(outer, -4)} ${at(mid, -0.8)}`}
+        fill="#fff"
+      />
+      {/* triangle, tip on the inner face */}
+      <polygon
+        points={`${at(inner, 0)} ${at(inner + 15, -9)} ${at(inner + 15, 9)}`}
+        fill={BLUE_STRONG}
+        stroke="#fff"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+    </motion.g>
   );
 }
 

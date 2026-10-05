@@ -80,6 +80,8 @@ export type Escalation = {
   category?: string;
   /** Only for undocumented-element: where the ghost is, in plan metres. */
   marker?: Point;
+  /** The ghost was inserted at a tapped point on a wall (the native blue triangle). */
+  markerSpot?: WallSpot;
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */
   photoUrls: string[];
@@ -106,3 +108,10 @@ export type EscalationStatus = "queued" | "sending" | "delivered" | "in_review" 
 
 /** Photos & Notes attached to a plan element (the native tab's content). */
 export type ElementMedia = { photos: string[]; note: string };
+
+/**
+ * A point on a wall, as magicplan's blue tap triangle marks it: the wall and
+ * the distance along it from its start corner, in metres. Insert ties the new
+ * element to this spot.
+ */
+export type WallSpot = { wallId: string; offsetM: number };

@@ -6,9 +6,9 @@ import { memo } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-import type { EscalationStatus, Point, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, Point, SelectedElement, WallSpot } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { FloorPlan } from "./FloorPlan";
+import { FloorPlan, type GhostSpec } from "./FloorPlan";
 import type { ObjectProposal } from "./PlanObjects";
 
 /**
@@ -34,15 +34,19 @@ export type CanvasAreaProps = {
   /** Standard Photos & Notes count per element (yellow paperclip). */
   photoCountFor: (el: SelectedElement) => number;
   onSelect: (el: SelectedElement | null) => void;
+  /** Wall taps mark their exact spot (blue triangle), see FloorPlan. */
+  onSelectWallAt?: (spot: WallSpot) => void;
+  tapSpot?: WallSpot | null;
   /** Ghost wall placement (ghost_draft), see FloorPlan. */
   placing?: boolean;
   draftMarker?: Point | null;
+  draftGhost?: GhostSpec | null;
   onPlace?: (p: Point) => void;
   /** Leave ghost_draft before anything was placed. */
   onCancelPlacing?: () => void;
   /** Category picked in Insert → Object, shown in the placement banner. */
   ghostCategory?: string | null;
-  markers?: { id: string; point: Point; status: EscalationStatus }[];
+  markers?: (GhostSpec & { id: string; status: EscalationStatus })[];
   onDimensionTap?: (wallId: string, at: Point) => void;
   objectProposals?: Record<string, ObjectProposal | undefined>;
   onRotateObject?: (objectId: string, rotation: number) => void;
@@ -58,8 +62,11 @@ export const CanvasArea = memo(function CanvasArea({
   statusFor,
   photoCountFor,
   onSelect,
+  onSelectWallAt,
+  tapSpot,
   placing,
   draftMarker,
+  draftGhost,
   onPlace,
   onCancelPlacing,
   ghostCategory,
@@ -90,8 +97,10 @@ export const CanvasArea = memo(function CanvasArea({
         statusFor={statusFor}
         photoCountFor={photoCountFor}
         onSelect={onSelect}
+        onSelectWallAt={onSelectWallAt}
+        tapSpot={tapSpot}
         placing={placing}
-        draftMarker={draftMarker}
+        draftGhost={draftGhost}
         onPlace={onPlace}
         markers={markers}
         onDimensionTap={onDimensionTap}
