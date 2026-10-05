@@ -17,7 +17,7 @@ import { CANVAS_H, CANVAS_W } from "@/lib/layout";
 import { PANEL_W } from "@/lib/layout";
 import type { ObjectDims, Point, SelectedElement } from "@/lib/types";
 import type { TabRequest } from "@/lib/useTabRequest";
-import { useDeviationState } from "@/store/useDeviationState";
+import { DRAFT_OPEN_MESSAGE, useDeviationState } from "@/store/useDeviationState";
 
 /**
  * Main iPad layout shell (landscape). Owns the store and composes organisms:
@@ -97,22 +97,36 @@ export default function Page() {
   const [tabRequest, setTabRequest] = useState<TabRequest | null>(null);
   const clearTabRequest = useCallback(() => setTabRequest(null), []);
   const onInsertOther = (kind: "note" | "photo" | "form") => {
-    if (draft) cancelDraft(); // the panel is needed for the tab
+    if (draft) return notify(DRAFT_OPEN_MESSAGE, "hint"); // only ✕ / Send close a draft
     setTabRequest(kind === "form" ? { tab: "Forms" } : { tab: "Photos & Notes", focusNote: kind === "note" });
     notify(INSERT_OTHER_ALERT[kind], "hint");
   };
   // One popover for every locked value; Propose Correction writes into the draft.
   const [measure, setMeasure] = useState<MeasureTarget | null>(null);
   const closeMeasure = useCallback(() => setMeasure(null), []);
-  const onDimensionTap = useCallback((wallId: string, at: Point) => setMeasure({ kind: "wall", wallId, at }), []);
+  // While a draft is open, only its own element's values can be changed
+  // (it closes only via ✕ / Send), so other popovers explain instead of opening.
+  const draftAnchorId = draft?.anchor.id;
+  const openMeasure = useCallback(
+    (m: MeasureTarget) => {
+      const id = m.kind === "wall" ? m.wallId : m.id;
+      if (draftAnchorId && draftAnchorId !== id) return notify(DRAFT_OPEN_MESSAGE, "hint");
+      setMeasure(m);
+    },
+    [draftAnchorId, notify],
+  );
+  const onDimensionTap = useCallback(
+    (wallId: string, at: Point) => openMeasure({ kind: "wall", wallId, at }),
+    [openMeasure],
+  );
   const onMeasureWall = useCallback(
-    (wallId: string) => setMeasure({ kind: "wall", wallId, at: dimensionLabelAt(wallById(wallId)) }),
-    [],
+    (wallId: string) => openMeasure({ kind: "wall", wallId, at: dimensionLabelAt(wallById(wallId)) }),
+    [openMeasure],
   );
   const onMeasureObject = useCallback(
     (id: string, field: keyof ObjectDims) =>
-      setMeasure({ kind: "object", id, field, at: toPx(objectById(id).center) }),
-    [],
+      openMeasure({ kind: "object", id, field, at: toPx(objectById(id).center) }),
+    [openMeasure],
   );
   // 3b. Drag an object → its proposed position (shown visually, no numbers).
   const onMoveObject = useCallback(
@@ -212,8 +226,10 @@ export default function Page() {
               mode={selectedElement && selectedElement.type !== "room" ? "element" : "room"}
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
               inserting={inserting}
+              draftOpen={!!draft}
               onInsertCategory={startGhostDraft}
-              onCancelInsert={cancelDraft}
+              // Insert again stops placing; an open draft stays (only ✕ / Send close it).
+              onCancelInsert={() => (draft ? notify(DRAFT_OPEN_MESSAGE, "hint") : cancelDraft())}
               onInsertOther={onInsertOther}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />

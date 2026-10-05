@@ -34,7 +34,7 @@ export function ModalHeader({
   return (
     <header className={cn("flex items-center justify-between gap-3 px-4 py-3", className)}>
       {leading === "info" ? (
-        <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-lg bg-gray-100">
+        <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e6e6e9]">
           <Info size={22} strokeWidth={2} className="text-mp-ink" />
         </span>
       ) : (
@@ -50,9 +50,19 @@ export function ModalHeader({
         )}
       </div>
 
-      <HeaderButton label={closeLabel} onClick={onClose} hidden={!onClose}>
-        <X size={22} strokeWidth={2.5} className="text-[#6b6b70]" />
-      </HeaderButton>
+      {/* Same round close button as the room panel and inspector. */}
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={closeLabel}
+          className="grid size-10 shrink-0 place-items-center rounded-full bg-[#e6e6e9] text-[#6b6b70] active:bg-mp-line"
+        >
+          <X size={20} strokeWidth={2.25} />
+        </button>
+      ) : (
+        <span aria-hidden className="size-10 shrink-0" />
+      )}
     </header>
   );
 }

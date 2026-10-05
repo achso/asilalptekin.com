@@ -78,6 +78,7 @@ const ELEMENT_TOOLS: Tool[] = [
 export function LeftToolbar({
   mode,
   inserting,
+  draftOpen = false,
   onInsertCategory,
   onCancelInsert,
   onInsertOther,
@@ -87,6 +88,8 @@ export function LeftToolbar({
   mode: "room" | "element";
   /** ghost_draft is on, or its draft is open: Insert shows pressed. */
   inserting: boolean;
+  /** An escalation draft is open: Insert can't start another (only ✕ / Send close it). */
+  draftOpen?: boolean;
   /** The universal trapdoor: every category lands here. */
   onInsertCategory: (category: string) => void;
   onCancelInsert: () => void;
@@ -109,7 +112,8 @@ export function LeftToolbar({
     return () => document.removeEventListener("pointerdown", outside);
   }, [menu]);
   const onInsert = () => {
-    if (inserting) return onCancelInsert(); // pressed Insert again: stop placing
+    // Placing → stop placing. Draft open → explained by onCancelInsert, kept.
+    if (inserting || draftOpen) return onCancelInsert();
     setMenu((m) => (m ? null : "root"));
   };
 

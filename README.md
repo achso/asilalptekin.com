@@ -139,8 +139,10 @@ sidebar with the intent already filled in.
   **red hatched pattern** with a status pin; the ghost stays on the plan in
   its status colour. Both appear in **Active Escalations** on the room
   panel, and the contractor moves on.
-- While a draft is open, tapping another element on the canvas discards it
-  (a toast says so) and selects that element instead.
+- A draft closes **only** with its round **✕** (or by sending it). Stray taps
+  on the canvas, another element, a pin, another dimension or Insert never
+  throw it away; a hint says "Draft open: send it, or close it with ✕
+  first." Its own element stays editable (move, rotate, its values).
 
 **Canvas badges:** an element with standard Photos & Notes shows magicplan's
 yellow paperclip. If it's also escalated, only the escalation pin shows (red,

@@ -28,8 +28,9 @@ import {
  *
  *   selectedElement      null | { id, type }       what the contractor tapped
  *   escalationStatus     DeviationState            status for the selected element
- *   selectElement(id)    select a wall / corner / room by id; while a draft is
- *                        open for another element, also discards that draft
+ *   selectElement(id)    select a wall / corner / room / object by id. While a
+ *                        draft is open, nothing else can be selected: the draft
+ *                        closes only via its ✕ (or Send), never by a stray tap
  *   clearSelection()
  *
  * Intercept and Propose (two hardcoded Wizard-of-Oz paths, see DraftIntent):
@@ -124,6 +125,19 @@ const initialState: State = {
   toast: null,
 };
 
+/** Shown when something would replace or close an open draft (only ✕ / Send may). */
+export const DRAFT_OPEN_MESSAGE = "Draft open: send it, or close it with ✕ first.";
+
+/**
+ * Keep the open draft and say why. A hint shown in the last 1.5 s isn't
+ * re-triggered (no flicker while dragging); an older one is renewed, so
+ * repeated attempts always get an answer before it times out.
+ */
+const keepDraft = (state: State): State =>
+  state.toast?.text === DRAFT_OPEN_MESSAGE && Date.now() - state.toast.id < 1500
+    ? state
+    : { ...state, toast: toast(DRAFT_OPEN_MESSAGE, "hint") };
+
 /** Closing the pane also ends ghost drafting. */
 const NO_DRAFT = { draft: null, interactionMode: "select", ghostCategory: null } as const;
 
@@ -164,24 +178,16 @@ const SERVER_TOASTS: Partial<Record<EscalationStatus, (label: string) => [string
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "select": {
-      // The canvas drives selection at all times (non-modal inspector, as in
-      // magicplan). Tapping something else while a report is being drafted
-      // discards the draft and selects the new target in one update, so the
-      // sidebar swaps straight to that element (or the room panel).
+      // A draft is only closed with its ✕ (or by sending it): an accidental
+      // tap on the canvas, another element or a pin must never throw away
+      // the contractor's work. Taps on the draft's own element are fine.
       const anchor = state.draft?.anchor;
-      if (anchor) {
-        if (sameElement(anchor, action.element)) return state; // same element: keep drafting
-        return {
-          ...state,
-          ...NO_DRAFT,
-          selectedElement: action.element,
-          toast: toast(`Draft for ${draftLabel(anchor)} discarded.`, "hint"),
-        };
-      }
+      if (anchor) return sameElement(anchor, action.element) ? state : keepDraft(state);
       return { ...state, ...NO_DRAFT, selectedElement: action.element };
     }
 
     case "startDraft":
+      if (state.draft && !sameElement(state.draft.anchor, action.anchor)) return keepDraft(state);
       // Keep selection in sync with the anchor so the canvas highlights it.
       return {
         ...state,
@@ -197,6 +203,7 @@ function reducer(state: State, action: Action): State {
       if (open && open.intent === "object-change" && sameElement(open.anchor, anchor)) {
         return { ...state, draft: { ...open, proposed: { ...open.proposed!, ...action.patch } } };
       }
+      if (open) return keepDraft(state); // another draft is open: it stays
       return {
         ...state,
         ...NO_DRAFT,
@@ -214,6 +221,7 @@ function reducer(state: State, action: Action): State {
       return { ...state, draft: { ...state.draft, ...action.patch } };
 
     case "startGhost":
+      if (state.draft) return keepDraft(state);
       // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
       return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft", ghostCategory: action.category };
 

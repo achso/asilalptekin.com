@@ -178,9 +178,9 @@ function Inspector({
         <button
           onClick={onClear}
           aria-label="Close"
-          className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-mp-muted"
+          className="grid size-10 shrink-0 place-items-center rounded-full bg-[#e6e6e9] text-[#6b6b70] active:bg-mp-line"
         >
-          <X size={20} />
+          <X size={20} strokeWidth={2.25} />
         </button>
       </div>
 
