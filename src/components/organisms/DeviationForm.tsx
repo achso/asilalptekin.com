@@ -30,7 +30,10 @@ import { cn } from "@/lib/utils";
  *                      on the category (CATEGORY_MEASURES): a wall's length,
  *                      a door's width × height, an element's length × height
  *     Dimension Mismatch:
- *       NumericStepper → measured wall length vs plan
+ *       Wall (1D): one NumericStepper, "Measured Length"
+ *       Room (2D): two, "Measured Width" (north–south) + "Measured Length"
+ *                  (east–west); each starts empty (0.00) with the plan
+ *                  value underneath, and must be > 0
  *   PhotoEvidenceCapture → photos (≥ 1 required) + note, magicplan's Photos & Notes layout
  *   VoiceMemoToggle  → optional memo
  *
@@ -56,14 +59,17 @@ export function DeviationForm({
   draftMarker = null,
   onPlacingChange,
 }: DeviationFormProps) {
-  const { label, plannedM } = elementInfo(anchor);
+  const { label, plannedM, plannedWidthM } = elementInfo(anchor);
+  const isRoom = anchor.type === "room";
 
   const [issue, setIssue] = useState<IssueType | null>(null);
   const [category, setCategory] = useState<ElementCategory | null>(null);
   const [elementLength, setElementLength] = useState<number | null>(null);
   const [elementHeight, setElementHeight] = useState<number | null>(null);
   const lengthRef = useRef<HTMLDivElement>(null);
-  const [measured, setMeasured] = useState(plannedM ?? 0);
+  // Start empty: a real on-site reading is required, not the plan value.
+  const [measured, setMeasured] = useState<number | null>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [voiceMemo, setVoiceMemo] = useState<VoiceMemo | undefined>();
@@ -86,6 +92,18 @@ export function DeviationForm({
     return () => onPlacingChange?.(false);
   }, [placing, onPlacingChange]);
 
+  // Dimension Mismatch: a wall has one dimension, the room two. Every input
+  // shown must hold a reading > 0.
+  const showStepper = issue === "dimension-mismatch" && plannedM !== undefined;
+  const positive = (v: number | null) => v !== null && v > 0;
+  const dimensionMissing = !showStepper
+    ? null
+    : isRoom && !positive(measuredWidth)
+      ? "width"
+      : !positive(measured)
+        ? "length"
+        : null;
+
   // The structured step is done when the issue type has everything it needs.
   // Undocumented Element: category → location on the plan → length > 0.
   const issueMissing = !issue
@@ -98,14 +116,13 @@ export function DeviationForm({
           ? (measure?.primary.label.toLowerCase() ?? "length")
           : undocumented && needsHeight && !hasHeight
             ? "height"
-            : null;
+            : dimensionMissing;
   const issueDone = issueMissing === null;
   // Evidence (the camera) unlocks as soon as the category is chosen.
   const evidenceUnlocked = !!issue && (!undocumented || !!category);
   // The button names the next structured gap plus the photo, e.g. "Add length + photo".
   const missing = [issueMissing, !hasPhoto && "photo"].filter(Boolean) as string[];
   const canSend = missing.length === 0 && !recording;
-  const showStepper = issue === "dimension-mismatch" && plannedM !== undefined;
 
   const send = () => {
     if (!issue || !issueDone || !hasPhoto) return;
@@ -114,7 +131,9 @@ export function DeviationForm({
       category: undocumented ? (category ?? undefined) : undefined,
       marker: undocumented ? (draftMarker ?? undefined) : undefined,
       plannedM: showStepper ? plannedM : undefined,
-      measuredM: showStepper ? measured : undocumented ? (elementLength ?? undefined) : undefined,
+      measuredM: showStepper ? (measured ?? undefined) : undocumented ? (elementLength ?? undefined) : undefined,
+      plannedWidthM: showStepper && isRoom ? plannedWidthM : undefined,
+      measuredWidthM: showStepper && isRoom ? (measuredWidth ?? undefined) : undefined,
       heightM: undocumented && needsHeight ? (elementHeight ?? undefined) : undefined,
       photoUrls: photos,
       note: note.trim() || undefined,
@@ -136,7 +155,12 @@ export function DeviationForm({
       <ModalHeader
         leading="info"
         title="Report Deviation"
-        subtitle={`${label}${plannedM !== undefined ? ` · plan ${plannedM.toFixed(2)} m` : ""}`}
+        subtitle={
+          // Room: short name + both axes, so the subtitle fits without truncating.
+          isRoom && plannedM !== undefined && plannedWidthM !== undefined
+            ? `${PROJECT.room} · ${plannedM.toFixed(2)} × ${plannedWidthM.toFixed(2)} m`
+            : `${label}${plannedM !== undefined ? ` · plan ${plannedM.toFixed(2)} m` : ""}`
+        }
         onClose={onCancel}
         closeLabel="Cancel report"
         className="border-b border-mp-line"
@@ -207,12 +231,32 @@ export function DeviationForm({
                   </AnimatePresence>
                 </div>
               ) : id === "dimension-mismatch" && showStepper ? (
-                <NumericStepper
-                  label="Measured on site"
-                  value={measured}
-                  onChange={setMeasured}
-                  reference={plannedM}
-                />
+                isRoom ? (
+                  // Room (2D): both axes, stacked (side by side, the gloved
+                  // − / + buttons wouldn't fit), each against its own plan value.
+                  <div className="flex flex-col gap-2">
+                    <NumericStepper
+                      label="Measured Width"
+                      value={measuredWidth}
+                      onChange={setMeasuredWidth}
+                      reference={plannedWidthM}
+                    />
+                    <NumericStepper
+                      label="Measured Length"
+                      value={measured}
+                      onChange={setMeasured}
+                      reference={plannedM}
+                    />
+                  </div>
+                ) : (
+                  // Wall (1D): a single length.
+                  <NumericStepper
+                    label="Measured Length"
+                    value={measured}
+                    onChange={setMeasured}
+                    reference={plannedM}
+                  />
+                )
               ) : null
             }
           />

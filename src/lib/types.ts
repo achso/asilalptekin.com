@@ -62,6 +62,9 @@ export type Escalation = {
    * dimension-mismatch, the physical element's length for undocumented-element.
    */
   measuredM?: number;
+  /** Rooms only (dimension-mismatch on the floor): the second axis, north–south. */
+  plannedWidthM?: number;
+  measuredWidthM?: number;
   /** Only for undocumented-element, if its category has a height (see CATEGORY_MEASURES). */
   heightM?: number;
   /** Only for undocumented-element: where it is, in plan metres (Ghost Marker). */

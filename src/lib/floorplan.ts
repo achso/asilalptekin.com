@@ -194,6 +194,8 @@ export type ElementInfo = {
   summary: string;
   /** Planned length, if the element has one (enables the dimension stepper). */
   plannedM?: number;
+  /** Rooms only: planned width (north–south); the room is checked on both axes. */
+  plannedWidthM?: number;
 };
 
 /** Everything the UI needs to describe a selected element, whatever its type. */
@@ -213,6 +215,9 @@ export function elementInfo(el: SelectedElement): ElementInfo {
       return {
         label: ROOM.label,
         summary: `${ROOM.stats.floorArea} · perimeter ${ROOM.stats.perimeter}`,
+        // Length runs east–west, width north–south (4.55 × 3.30 m).
+        plannedM: ROOM.widthM,
+        plannedWidthM: ROOM.depthM,
       };
     }
   }

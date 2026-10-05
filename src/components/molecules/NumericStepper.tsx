@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
  * the formatted value on blur. Values are clamped to [min, max].
  *
  * `value` may be null (nothing measured yet): the field then shows the
- * placeholder ("0.00"), and + starts from 0. `hint` replaces the plan-delta
+ * placeholder ("0.00", or the plan value), and − / + start from the
+ * reference if there is one, else from 0. `hint` replaces the plan-delta
  * line when there's no reference (e.g. "Length of physical wall").
  */
 export type NumericStepperProps = {
@@ -65,7 +66,7 @@ export function NumericStepper({
 
   const clamp = (v: number) => Math.min(max, Math.max(min, +v.toFixed(2)));
   const nudge = (dir: 1 | -1) => {
-    const next = clamp((value ?? 0) + dir * step);
+    const next = clamp((value ?? reference ?? 0) + dir * step);
     onChange(next);
     setDraft(next.toFixed(2));
   };
@@ -133,10 +134,12 @@ export function NumericStepper({
           aria-live="polite"
           className={cn(
             "mt-2 whitespace-nowrap text-center text-[12px] font-medium tabular-nums",
-            delta === 0 ? "text-mp-muted" : "text-mp-red",
+            value === null || delta === 0 ? "text-mp-muted" : "text-mp-red",
           )}
         >
-          {delta === 0
+          {value === null
+            ? `Plan ${reference.toFixed(2)} ${unit}`
+            : delta === 0
             ? `Same as plan (${reference.toFixed(2)} ${unit})`
             : `${delta > 0 ? "+" : "−"}${Math.abs(Math.round(delta * 100))} cm vs plan (${reference.toFixed(2)} ${unit})`}
         </div>

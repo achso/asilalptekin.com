@@ -108,9 +108,14 @@ shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
        3.12 m ceiling. Everything shown is required. The report card reads
        e.g. "North wall · Doors · 0.90 m wide · 2.05 m high", and the marker
        stays on the plan in the report's status colour.
-     - *Dimension Mismatch* reveals **Measured on site**: tap the value to
-       type a laser reading on the iPad numpad (e.g. 4.12), or nudge it with
-       − / + in 5 cm steps.
+     - *Dimension Mismatch* adapts to what's selected: a wall gets one
+       input, **Measured Length**; the whole room gets two, **Measured
+       Width** (north–south) and **Measured Length** (east–west). They start
+       empty (0.00) with the plan value underneath; tap to type a laser
+       reading on the iPad numpad (e.g. 4.12), or nudge with − / + in 5 cm
+       steps (starting from the plan value). Every input shown needs a
+       reading above 0. The card reads "4.55 → 4.35 m" for a wall and
+       "4.55 × 3.30 → 4.60 × 3.30 m" for the room.
    - **Evidence (at least one photo required).** Unlocks once the issue type
      (and its category) is set. magicplan's own Photos &
      Notes layout: a + tile (opens the iPad's rear camera), up to 7 photos and

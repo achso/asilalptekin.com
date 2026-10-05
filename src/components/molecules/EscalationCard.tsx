@@ -85,7 +85,8 @@ export type EscalationCardProps = {
   blocking?: boolean;
   /** When `status` last changed (ms epoch); adds "Opened by Munich 13:42". */
   statusChangedAt?: number;
-  dimension?: { plannedM: number; measuredM: number };
+  /** Wall: one length. Room: length × width (plannedWidthM / measuredWidthM). */
+  dimension?: { plannedM: number; measuredM: number; plannedWidthM?: number; measuredWidthM?: number };
   /** Undocumented Element: size measured on site (see CATEGORY_MEASURES). */
   lengthM?: number;
   heightM?: number;
@@ -162,9 +163,11 @@ export function EscalationCard({
           {(dimension || lengthM !== undefined || voiceMemoSeconds !== undefined) && (
             <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
               {dimension && (
-                <span className="flex items-center gap-1 font-medium text-mp-ink">
-                  <Ruler size={12} /> {dimension.plannedM.toFixed(2)} →{" "}
-                  {dimension.measuredM.toFixed(2)} m
+                <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
+                  <Ruler size={12} />
+                  {dimension.plannedWidthM !== undefined && dimension.measuredWidthM !== undefined
+                    ? `${dimension.plannedM.toFixed(2)} × ${dimension.plannedWidthM.toFixed(2)} → ${dimension.measuredM.toFixed(2)} × ${dimension.measuredWidthM.toFixed(2)} m`
+                    : `${dimension.plannedM.toFixed(2)} → ${dimension.measuredM.toFixed(2)} m`}
                 </span>
               )}
               {!dimension && lengthM !== undefined && (
@@ -288,7 +291,12 @@ export function toEscalationCardProps(
     blocking: e.blocking,
     dimension:
       e.plannedM !== undefined && e.measuredM !== undefined
-        ? { plannedM: e.plannedM, measuredM: e.measuredM }
+        ? {
+            plannedM: e.plannedM,
+            measuredM: e.measuredM,
+            plannedWidthM: e.plannedWidthM,
+            measuredWidthM: e.measuredWidthM,
+          }
         : undefined,
     lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
     heightM: e.issueType === "undocumented-element" ? e.heightM : undefined,
