@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { elementById, elementInfo } from "@/lib/floorplan";
+import { PROJECT, elementById, elementInfo } from "@/lib/floorplan";
 import type {
+  DraftIntent,
+  ElementCategory,
   ElementMedia,
   Escalation,
   EscalationDraft,
@@ -26,15 +28,18 @@ import {
  *
  *   selectedElement      null | { id, type }       what the contractor tapped
  *   escalationStatus     DeviationState            status for the selected element
- *   selectElement(id)    select a wall / corner / room by id; while a report is
- *                        open for another element, also cancels that draft
+ *   selectElement(id)    select a wall / corner / room by id; while a draft is
+ *                        open for another element, also discards that draft
  *   clearSelection()
- *   startReport(anchor)  open the DeviationForm anchored to { id, type }
- *   cancelReport()       discard the form, keep the selection
- *   submitEscalation(d)  fire-and-forget: closes the form, uploads in background
- *   setPlacing(on)       Undocumented Element: canvas taps place the Ghost Marker
- *                        instead of changing the selection (off clears the marker)
- *   placeDraftMarker(p)  drop / move the Ghost Marker at p (plan metres)
+ *
+ * Intercept and Propose: the plan is locked, so CAD actions become proposals.
+ *   draft                { anchor, intent, marker? } | null: the open EscalationDraftPane
+ *   interactionMode      "select" | "ghost_draft" (canvas taps place / move a Ghost Marker)
+ *   startDraft(a, i)     Delete… / Set Size / a tapped dimension → open the pane
+ *   startGhostDraft(i)   Add Wall / Insert → ghost_draft; the pane opens on the first tap
+ *   placeGhost(p)        drop (first tap) or move the Ghost Marker at p (plan metres)
+ *   cancelDraft()        discard the draft (and leave ghost_draft), keep the selection
+ *   submitEscalation(d)  fire-and-forget: closes the pane, uploads in background
  *   revokeEscalation()   optimistic; FAILS while in_review (race guard, see below)
  *   mockExpertReview()   the expert opens the selected (or newest) report → in_review
  *   mediaFor(el) / setMediaFor(el, m) / standardPhotoCount(el)
@@ -68,12 +73,12 @@ export type RevokeResult = { ok: true } | { ok: false; reason: string };
 
 type State = {
   selectedElement: SelectedElement | null;
-  /** Element the open DeviationForm is anchored to (null = form closed). */
-  captureAnchor: SelectedElement | null;
-  /** While true, canvas taps place the Ghost Marker (Undocumented Element). */
-  placing: boolean;
-  /** Where the undocumented element is, in plan metres; null = not placed yet. */
-  draftMarker: Point | null;
+  /** The open escalation draft (null = pane closed). */
+  draft: Draft | null;
+  /** ghost_draft: canvas taps place / move the Ghost Marker instead of selecting. */
+  interactionMode: InteractionMode;
+  /** Add Wall / Insert intent waiting for its first canvas tap. */
+  pendingGhost: Extract<DraftIntent, { kind: "insert" }> | null;
   escalations: Escalation[];
   /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
   media: Record<string, ElementMedia>;
@@ -84,10 +89,10 @@ type State = {
 
 type Action =
   | { type: "select"; element: SelectedElement | null }
-  | { type: "startReport"; anchor: SelectedElement }
-  | { type: "cancelReport" }
-  | { type: "setPlacing"; on: boolean }
-  | { type: "placeMarker"; point: Point }
+  | { type: "startDraft"; anchor: SelectedElement; intent: DraftIntent }
+  | { type: "startGhost"; intent: Extract<DraftIntent, { kind: "insert" }> }
+  | { type: "placeGhost"; point: Point }
+  | { type: "cancelDraft" }
   | { type: "submit"; escalation: Escalation }
   /** Munich / server side. `force` = dev-tools override that ignores the transition table. */
   | { type: "serverStatus"; id: string; status: EscalationStatus; force?: boolean }
@@ -101,9 +106,9 @@ type Action =
 
 const initialState: State = {
   selectedElement: null,
-  captureAnchor: null,
-  placing: false,
-  draftMarker: null,
+  draft: null,
+  interactionMode: "select",
+  pendingGhost: null,
   escalations: [],
   media: {},
   pendingRevokes: {},
@@ -111,8 +116,19 @@ const initialState: State = {
   toast: null,
 };
 
-/** Closing the form also ends marker placement. */
-const NO_DRAFT = { captureAnchor: null, placing: false, draftMarker: null } as const;
+/** Closing the pane also ends ghost drafting. */
+const NO_DRAFT = { draft: null, interactionMode: "select", pendingGhost: null } as const;
+
+export type InteractionMode = "select" | "ghost_draft";
+/** The open escalation draft: what was intercepted, where. */
+export type Draft = { anchor: SelectedElement; intent: DraftIntent; marker?: Point };
+
+/**
+ * Label for a draft's target. A ghost is "in the Music Room", not an element;
+ * room-level proposals (ceiling height, room size) use the short room name too.
+ */
+export const draftLabel = (anchor: SelectedElement) =>
+  anchor.type === "ghost" || anchor.type === "room" ? PROJECT.room : elementInfo(anchor).label;
 
 const toast = (text: string, tone: ToastTone) => ({ id: Date.now() + Math.random(), text, tone });
 
@@ -135,33 +151,53 @@ function reducer(state: State, action: Action): State {
       // magicplan). Tapping something else while a report is being drafted
       // discards the draft and selects the new target in one update, so the
       // sidebar swaps straight to that element (or the room panel).
-      const anchor = state.captureAnchor;
+      const anchor = state.draft?.anchor;
       if (anchor) {
         if (sameElement(anchor, action.element)) return state; // same element: keep drafting
         return {
           ...state,
           ...NO_DRAFT,
           selectedElement: action.element,
-          toast: toast(`Report draft for ${elementInfo(anchor).label} discarded.`, "hint"),
+          toast: toast(`Draft for ${draftLabel(anchor)} discarded.`, "hint"),
         };
       }
-      return { ...state, selectedElement: action.element };
+      return { ...state, ...NO_DRAFT, selectedElement: action.element };
     }
 
-    case "startReport":
+    case "startDraft":
       // Keep selection in sync with the anchor so the canvas highlights it.
-      return { ...state, ...NO_DRAFT, captureAnchor: action.anchor, selectedElement: action.anchor };
+      return {
+        ...state,
+        ...NO_DRAFT,
+        draft: { anchor: action.anchor, intent: action.intent },
+        selectedElement: action.anchor,
+      };
 
-    case "cancelReport":
+    case "startGhost":
+      // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
+      return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft", pendingGhost: action.intent };
+
+    case "placeGhost": {
+      if (state.interactionMode !== "ghost_draft") return state;
+      // Moving an already placed ghost.
+      if (state.draft?.anchor.type === "ghost") {
+        return { ...state, draft: { ...state.draft, marker: action.point } };
+      }
+      if (!state.pendingGhost) return state;
+      // First tap: the proposal now has a place, so the pane opens.
+      return {
+        ...state,
+        pendingGhost: null,
+        draft: {
+          anchor: { type: "ghost", id: `ghost-${Date.now()}` },
+          intent: state.pendingGhost,
+          marker: action.point,
+        },
+      };
+    }
+
+    case "cancelDraft":
       return { ...state, ...NO_DRAFT };
-
-    case "setPlacing":
-      if (!state.captureAnchor && action.on) return state;
-      return { ...state, placing: action.on, draftMarker: action.on ? state.draftMarker : null };
-
-    case "placeMarker":
-      if (!state.placing) return state;
-      return { ...state, draftMarker: action.point };
 
     case "submit": {
       const e = action.escalation;
@@ -169,8 +205,12 @@ function reducer(state: State, action: Action): State {
         ...state,
         ...NO_DRAFT,
         selectedElement: null,
-        // A resolved element can be reported again; the new report replaces the old one.
-        escalations: [e, ...state.escalations.filter((x) => !sameElement(x.target, e.target))],
+        // Several open proposals can share an element (e.g. a wall's length and
+        // a missing window); a new one only replaces a resolved one there.
+        escalations: [
+          e,
+          ...state.escalations.filter((x) => !(sameElement(x.target, e.target) && x.status === "resolved")),
+        ],
         toast: toast(`${e.targetLabel} sent for review. You can move on.`, "success"),
       };
     }
@@ -338,27 +378,30 @@ export function useDeviationState() {
   }, []);
 
   const clearSelection = useCallback(() => dispatch({ type: "select", element: null }), []);
-  const startReport = useCallback(
-    (anchor: SelectedElement) => dispatch({ type: "startReport", anchor }),
+  const startDraft = useCallback(
+    (anchor: SelectedElement, intent: DraftIntent) => dispatch({ type: "startDraft", anchor, intent }),
     [],
   );
-  const cancelReport = useCallback(() => dispatch({ type: "cancelReport" }), []);
-  const setPlacing = useCallback((on: boolean) => dispatch({ type: "setPlacing", on }), []);
-  const placeDraftMarker = useCallback(
-    (point: Point) => dispatch({ type: "placeMarker", point }),
+  const startGhostDraft = useCallback(
+    (category: ElementCategory | null, via: "insert" | "add-wall") =>
+      dispatch({ type: "startGhost", intent: { kind: "insert", category, via } }),
     [],
   );
+  const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
+  const cancelDraft = useCallback(() => dispatch({ type: "cancelDraft" }), []);
 
   const submitEscalation = useCallback(
     (draft: EscalationDraft) => {
-      const anchor = stateRef.current.captureAnchor;
-      if (!anchor) return;
+      const open = stateRef.current.draft;
+      if (!open) return;
+      const anchor = open.anchor;
       const now = Date.now();
       const escalation: Escalation = {
         ...draft,
+        marker: open.marker,
         id: `esc-${now}`,
         target: anchor,
-        targetLabel: elementInfo(anchor).label,
+        targetLabel: draftLabel(anchor),
         createdAt: now,
         status: "sending",
         statusChangedAt: now,
@@ -447,9 +490,9 @@ export function useDeviationState() {
   return {
     // state
     selectedElement: state.selectedElement,
-    captureAnchor: state.captureAnchor,
-    placing: state.placing,
-    draftMarker: state.draftMarker,
+    draft: state.draft,
+    interactionMode: state.interactionMode,
+    pendingGhost: state.pendingGhost,
     escalations: state.escalations,
     pendingRevokes: state.pendingRevokes,
     demo: state.demo,
@@ -465,10 +508,10 @@ export function useDeviationState() {
     // actions
     selectElement,
     clearSelection,
-    startReport,
-    cancelReport,
-    setPlacing,
-    placeDraftMarker,
+    startDraft,
+    startGhostDraft,
+    placeGhost,
+    cancelDraft,
     submitEscalation,
     revokeEscalation,
     mockExpertReview,

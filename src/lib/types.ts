@@ -1,7 +1,11 @@
 export type Point = { x: number; y: number };
 
-/** The plan element a deviation is anchored to: what the contractor tapped. */
-export type ElementType = "wall" | "corner" | "room";
+/**
+ * The plan element a deviation is anchored to: what the contractor tapped.
+ * "ghost" is a proposed element that isn't on the locked plan (placed with
+ * Add Wall / Insert): it has no geometry, only its Ghost Marker position.
+ */
+export type ElementType = "wall" | "corner" | "room" | "ghost";
 export type SelectedElement = { type: ElementType; id: string };
 
 
@@ -50,6 +54,24 @@ export type ElementCategory =
   | "outdoors"
   | "hvac";
 
+/** Locked CAD tools that open an escalation draft instead of editing. */
+export type InterceptTool = "insert" | "add-wall" | "set-size" | "delete" | "sidebar";
+
+/** Dimensions the contractor can propose a change to. */
+export type DimensionField = "wall-length" | "ceiling-height" | "room-size";
+
+/**
+ * What the contractor tried to do on the locked plan, captured as the
+ * proposal's intent ("Intercept and Propose").
+ *   insert    → Undocumented Element (Add Wall presets Structural)
+ *   delete    → Element Not on Site
+ *   dimension → Dimension Mismatch on that field
+ */
+export type DraftIntent =
+  | { kind: "insert"; category: ElementCategory | null; via: "insert" | "add-wall" }
+  | { kind: "delete"; via: "delete" }
+  | { kind: "dimension"; field: DimensionField; via: "set-size" | "sidebar" };
+
 export type Escalation = {
   id: string;
   target: SelectedElement;
@@ -67,6 +89,8 @@ export type Escalation = {
   measuredWidthM?: number;
   /** Only for undocumented-element, if its category has a height (see CATEGORY_MEASURES). */
   heightM?: number;
+  /** Dimension Mismatch: which dimension was challenged. */
+  dimensionField?: DimensionField;
   /** Only for undocumented-element: where it is, in plan metres (Ghost Marker). */
   marker?: Point;
   plannedM?: number;
@@ -82,7 +106,7 @@ export type Escalation = {
 };
 
 /**
- * What the DeviationForm submits. The store adds the anchor, id, timestamps
+ * What the EscalationDraftPane submits. The store adds the anchor, id, timestamps
  * and lifecycle status, so the form can't get those wrong.
  */
 export type EscalationDraft = Omit<

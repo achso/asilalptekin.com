@@ -7,8 +7,9 @@ import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { Switch } from "@/components/atoms/Switch";
 import { EscalationCard, type EscalationCardProps } from "@/components/molecules/EscalationCard";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
+import { ProposableValue } from "@/components/molecules/ProposableValue";
 import { PROJECT, ROOM } from "@/lib/floorplan";
-import type { ElementMedia } from "@/lib/types";
+import type { DimensionField, ElementMedia } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,8 +21,9 @@ import { cn } from "@/lib/utils";
  *
  * Execution phase: the permit is approved and the budget locked, so every
  * property is read-only, always. No steppers, no chevrons, disabled inputs and
- * switch, Add New Area disabled. A note at the bottom points to the one action
- * that is open: tap the room or a wall and escalate.
+ * switch, Add New Area disabled. Ceiling Height is the exception in kind, not
+ * in permission: tapping it doesn't edit, it intercepts the attempt and opens
+ * a Dimension Mismatch draft for it ("Intercept and Propose").
  *
  * Unresolved escalations render as full EscalationCards at the top of the
  * Details tab (photo, status, Revoke), with no extra click to reach them.
@@ -42,6 +44,8 @@ export type RoomDefaultSidebarProps = {
   /** Photos & Notes tab content. Uncontrolled (local state) if omitted. */
   media?: ElementMedia;
   onMediaChange?: (m: ElementMedia) => void;
+  /** Tapping a locked dimension proposes a change to it. Omit for a plain read-only value. */
+  onProposeDimension?: (field: DimensionField) => void;
   onClose?: () => void;
   className?: string;
 };
@@ -66,6 +70,7 @@ export function RoomDefaultSidebar({
   escalations = [],
   media: mediaProp,
   onMediaChange,
+  onProposeDimension,
   onClose,
   className,
 }: RoomDefaultSidebarProps) {
@@ -163,8 +168,14 @@ export function RoomDefaultSidebar({
             <SectionHeader title="Dimensions" />
             <Group>
               <Row label="Ceiling Height">
-                {/* Read-only: plain value, no up/down stepper */}
-                <ReadOnlyValue>{ceilingHeight}</ReadOnlyValue>
+                {/* Read-only: no stepper. Tapping it proposes a change instead. */}
+                {onProposeDimension ? (
+                  <ProposableValue label="Ceiling Height" onPropose={() => onProposeDimension("ceiling-height")}>
+                    {ceilingHeight}
+                  </ProposableValue>
+                ) : (
+                  <ReadOnlyValue>{ceilingHeight}</ReadOnlyValue>
+                )}
               </Row>
               <Row label="Living Area (%)">
                 <DisabledInput label="Living Area (%)" value={String(livingAreaPct)} className="w-[150px]" />
@@ -230,8 +241,8 @@ export function RoomDefaultSidebar({
             <p className="mt-5 flex gap-2 px-1 text-[12px] leading-snug text-mp-muted">
               <Lock size={14} className="mt-px shrink-0" aria-hidden />
               <span>
-                Properties are read-only during the execution phase. To report a discrepancy, tap
-                the room or wall to escalate.
+                Properties are read-only during the execution phase. Tap a dimension, or use Insert,
+                Add Wall or Delete, to propose a change to the remote expert.
               </span>
             </p>
           </div>

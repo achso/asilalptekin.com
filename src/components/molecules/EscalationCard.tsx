@@ -3,7 +3,7 @@
 import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, ChevronRight, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
-import { CATEGORY_MEASURES, categoryLabel, issueLabel } from "@/lib/floorplan";
+import { CATEGORY_MEASURES, DIMENSION_FIELDS, categoryLabel, issueLabel } from "@/lib/floorplan";
 import type { Escalation, EscalationStatus, IssueType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
@@ -155,7 +155,7 @@ export function EscalationCard({
                 Blocking
               </span>
             )}
-            <span className="min-w-0 max-w-full truncate whitespace-nowrap text-[15px] font-semibold leading-tight">{title}</span>
+            <span className="max-w-full truncate whitespace-nowrap text-[15px] font-semibold leading-tight">{title}</span>
           </div>
           {targetLabel && <div className="truncate text-[13px] text-mp-muted">{targetLabel}</div>}
           {note && <div className="line-clamp-2 text-[12px] italic text-mp-muted">“{note}”</div>}
@@ -283,8 +283,14 @@ export function toEscalationCardProps(
     issueType: e.issueType,
     timestamp: e.createdAt,
     statusChangedAt: e.statusChangedAt,
-    // "North wall · Plumbing": the category rides on the anchor line.
-    targetLabel: e.category ? `${e.targetLabel} · ${categoryLabel(e.category)}` : e.targetLabel,
+    // What the proposal is about rides on the anchor line:
+    // "Music Room · Plumbing", "North wall · Wall Length".
+    targetLabel: e.category
+      ? `${e.targetLabel} · ${categoryLabel(e.category)}`
+      : e.dimensionField
+        ? // The room is implied for room-level dimensions; keep the line short.
+          `${e.target.type === "room" ? "Room" : e.targetLabel} · ${DIMENSION_FIELDS[e.dimensionField].label}`
+        : e.targetLabel,
     photoUrl: e.photoUrls[0],
     photoCount: e.photoUrls.length,
     note: e.note,

@@ -28,6 +28,7 @@ const OFFSET: Record<SelectedElement["type"], number> = {
   wall: -WALL_THICKNESS / 2,
   corner: 0,
   room: 0,
+  ghost: 0,
 };
 
 export function ElementBadges({

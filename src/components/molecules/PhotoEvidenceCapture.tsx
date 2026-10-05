@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
  *
  * The native magicplan "Photos & Notes" layout, reused as evidence capture:
  * a 4-column grid (add tile + 7 slots) and a free-text note. Used by every
- * "Photos & Notes" tab and by the DeviationForm's evidence step.
+ * "Photos & Notes" tab and by the EscalationDraftPane's evidence step.
  *
- * Controlled: the parent owns `photos` and `note`. The DeviationForm keeps
+ * Controlled: the parent owns `photos` and `note`. The EscalationDraftPane keeps
  * its submit disabled until `photos.length >= 1`; this component makes that
  * next step obvious (the add tile has a blue border while no photo exists).
  *

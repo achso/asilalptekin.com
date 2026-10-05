@@ -5,11 +5,11 @@ import { useState } from "react";
 import { Info, Loader2, Lock, X } from "lucide-react";
 import { ROOM, elementInfo, wallById } from "@/lib/floorplan";
 import type {
+  DimensionField,
   ElementMedia,
   Escalation,
   EscalationDraft,
   EscalationStatus,
-  Point,
   SelectedElement,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -17,21 +17,21 @@ import { isActive } from "@/store/deviationMachine";
 import { EscalationCard, toEscalationCardProps } from "@/components/molecules/EscalationCard";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
-import { DeviationForm } from "./DeviationForm";
+import { ProposableValue } from "@/components/molecules/ProposableValue";
+import type { Draft } from "@/store/useDeviationState";
+import { EscalationDraftPane } from "./EscalationDraftPane";
 import { RoomDefaultSidebar } from "./RoomDefaultSidebar";
 
 type Props = {
   selected: SelectedElement | null;
   selectedEscalation?: Escalation;
-  /** Element the DeviationForm is anchored to; non-null switches the panel to the form. */
-  captureAnchor: SelectedElement | null;
+  /** The intercepted proposal; non-null switches the panel to the EscalationDraftPane. */
+  draft: Draft | null;
   escalations: Escalation[];
-  onReport: (anchor: SelectedElement) => void;
-  onCancelReport: () => void;
+  /** A locked dimension was tapped: intercept it as a Dimension Mismatch draft. */
+  onProposeDimension: (anchor: SelectedElement, field: DimensionField) => void;
+  onCancelDraft: () => void;
   onSubmit: (draft: EscalationDraft) => void;
-  /** Ghost Marker for Undocumented Element (store-owned, placed on the canvas). */
-  draftMarker: Point | null;
-  onPlacingChange: (on: boolean) => void;
   onFocus: (t: SelectedElement) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
@@ -52,11 +52,18 @@ type Mode = "summary" | "inspector" | "form";
  *                                            EscalationCard(s) on top while any are unresolved
  *  - inspector (wall/corner/room selected) → Details / Photos & Notes / Forms, plus
  *                                            the element's EscalationCard if reported
- *  - form      (Report Deviation tapped)   → DeviationForm takes over the panel
+ *  - form      (an intercepted action)     → EscalationDraftPane slides in
+ *
+ * Locked dimensions (wall length, ceiling height, room size) are tappable:
+ * the edit is intercepted into a Dimension Mismatch draft for that dimension.
  */
 export function RightSidebar(props: Props) {
-  const { selected, captureAnchor } = props;
-  const mode: Mode = captureAnchor ? "form" : selected ? "inspector" : "summary";
+  const { selected, draft } = props;
+  const mode: Mode = draft ? "form" : selected ? "inspector" : "summary";
+  // A new intent (or target) remounts the pane so its inputs start fresh.
+  const draftKey = draft
+    ? `form-${draft.anchor.id}-${draft.intent.kind}-${draft.intent.kind === "dimension" ? draft.intent.field : ""}`
+    : "";
 
   // Photos & Notes live in the store (the canvas shows a paperclip for them).
   // The room panel and the floor share the room's entry.
@@ -74,27 +81,21 @@ export function RightSidebar(props: Props) {
           popLayout's synchronous layout measurement. */}
       <AnimatePresence initial={false}>
         <motion.div
-          key={mode === "summary" ? "summary" : `${mode}-${selected?.id}`}
+          key={mode === "summary" ? "summary" : mode === "form" ? draftKey : `${mode}-${selected?.id}`}
           initial={{ opacity: 0, x: mode === "form" ? 40 : 16 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: mode === "form" ? 40 : -16 }}
           transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
           className="absolute inset-0 flex flex-col will-change-transform"
         >
-          {mode === "form" && captureAnchor ? (
-            <DeviationForm
-              anchor={captureAnchor}
-              onCancel={props.onCancelReport}
-              onSubmit={props.onSubmit}
-              draftMarker={props.draftMarker}
-              onPlacingChange={props.onPlacingChange}
-            />
+          {mode === "form" && draft ? (
+            <EscalationDraftPane draft={draft} onCancel={props.onCancelDraft} onSubmit={props.onSubmit} />
           ) : mode === "inspector" && selected ? (
             <Inspector
               target={selected}
               escalation={props.selectedEscalation}
               pendingRevoke={props.pendingRevoke}
-              onReport={props.onReport}
+              onProposeDimension={(field) => props.onProposeDimension(selected, field)}
               onClear={props.onClear}
               onRevoke={props.onRevoke}
               media={mediaFor(selected)}
@@ -105,6 +106,7 @@ export function RightSidebar(props: Props) {
               className="w-full"
               media={mediaFor(roomEl)}
               onMediaChange={setMediaFor(roomEl)}
+              onProposeDimension={(field) => props.onProposeDimension(roomEl, field)}
               // Full cards (photo, status, Revoke) for every unresolved report, newest first.
               // Tapping a card selects its element on the plan.
               escalations={activeEscalations.map((e) => ({
@@ -129,7 +131,7 @@ function Inspector({
   target,
   escalation,
   pendingRevoke,
-  onReport,
+  onProposeDimension,
   onClear,
   onRevoke,
   media,
@@ -138,7 +140,7 @@ function Inspector({
   target: SelectedElement;
   escalation?: Escalation;
   pendingRevoke?: Escalation;
-  onReport: (anchor: SelectedElement) => void;
+  onProposeDimension: (field: DimensionField) => void;
   onClear: () => void;
   onRevoke: (id: string) => void;
   media: ElementMedia;
@@ -184,7 +186,7 @@ function Inspector({
           </div>
         ) : null}
 
-        {tab === "Details" && <DetailsTab target={target} />}
+        {tab === "Details" && <DetailsTab target={target} onProposeDimension={onProposeDimension} />}
         {tab === "Photos & Notes" && (
           <PhotoEvidenceCapture
             photos={media.photos}
@@ -203,13 +205,25 @@ function Inspector({
   );
 }
 
-function DetailsTab({ target }: { target: SelectedElement }) {
+function DetailsTab({
+  target,
+  onProposeDimension,
+}: {
+  target: SelectedElement;
+  onProposeDimension: (field: DimensionField) => void;
+}) {
   return (
     <div className="flex flex-col gap-4">
       <Group title="Dimensions">
-        {dimensionRows(target).map(([k, v]) => (
-          <Row key={k} label={k}>
-            <LockedValue>{v}</LockedValue>
+        {dimensionRows(target).map(({ label, value, field }) => (
+          <Row key={label} label={label}>
+            {field ? (
+              <ProposableValue label={label} onPropose={() => onProposeDimension(field)}>
+                {value}
+              </ProposableValue>
+            ) : (
+              <LockedValue>{value}</LockedValue>
+            )}
           </Row>
         ))}
       </Group>
@@ -222,29 +236,35 @@ function DetailsTab({ target }: { target: SelectedElement }) {
       )}
       <p className="flex gap-2 text-[12px] leading-snug text-mp-muted">
         <Lock size={14} className="mt-0.5 shrink-0" />
-        Geometry is read-only because the permit is approved. If what you see on site is different,
-        report a deviation and the office will revise the plan.
+        Geometry is read-only because the permit is approved. Tap a dimension that doesn&apos;t match
+        the site to propose a change to the remote expert.
       </p>
     </div>
   );
 }
 
-function dimensionRows(target: SelectedElement): [string, string][] {
+/** Rows with a `field` are proposable (tap → Dimension Mismatch draft); the rest are derived. */
+function dimensionRows(target: SelectedElement): { label: string; value: string; field?: DimensionField }[] {
   switch (target.type) {
     case "wall": {
       const w = wallById(target.id);
       return [
-        ["Length", `${w.lengthM.toFixed(2)} m`],
-        ["Openings", String(w.openings?.length ?? 0)],
+        { label: "Length", value: `${w.lengthM.toFixed(2)} m`, field: "wall-length" },
+        { label: "Openings", value: String(w.openings?.length ?? 0) },
       ];
     }
     case "corner":
-      return [["Angle", "90°"]];
+      return [{ label: "Angle", value: "90°" }];
     case "room":
       return [
-        ["Floor area", ROOM.stats.floorArea],
-        ["Perimeter", ROOM.stats.perimeter],
+        { label: "Width", value: `${ROOM.depthM.toFixed(2)} m`, field: "room-size" },
+        { label: "Length", value: `${ROOM.widthM.toFixed(2)} m`, field: "room-size" },
+        { label: "Ceiling Height", value: `${ROOM.ceilingM.toFixed(2)} m`, field: "ceiling-height" },
+        { label: "Floor area", value: ROOM.stats.floorArea },
+        { label: "Perimeter", value: ROOM.stats.perimeter },
       ];
+    case "ghost":
+      return [];
   }
 }
 

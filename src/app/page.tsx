@@ -1,23 +1,17 @@
 "use client";
 
-import { AnimatePresence } from "framer-motion";
 import { useCallback, useMemo } from "react";
-import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
 import { CanvasArea } from "@/components/organisms/CanvasArea";
 import { DeviceStatusBar } from "@/components/organisms/DeviceStatusBar";
 import { DevToolsPanel, useDevToolsToggle } from "@/components/organisms/DevToolsPanel";
 import { IPadFrame } from "@/components/organisms/IPadFrame";
-import {
-  LOCKED_MESSAGE,
-  LOCKED_MESSAGE_NO_SELECTION,
-  LeftToolbar,
-} from "@/components/organisms/LeftToolbar";
+import { LOCKED_MESSAGE, LeftToolbar } from "@/components/organisms/LeftToolbar";
 import { RightSidebar } from "@/components/organisms/RightSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { TopBar } from "@/components/organisms/TopBar";
-import { PROJECT, elementInfo } from "@/lib/floorplan";
+import { PROJECT, ROOM, elementInfo } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
-import type { SelectedElement } from "@/lib/types";
+import type { DimensionField, SelectedElement } from "@/lib/types";
 import { useDeviationState } from "@/store/useDeviationState";
 
 /**
@@ -27,8 +21,8 @@ import { useDeviationState } from "@/store/useDeviationState";
  *   │ DeviceStatusBar                                              │
  *   │ TopBar: breadcrumbs · 🔒 Locked (Permit Approved) · expert   │
  *   ├───────────────────────────────────────────┬──────────────────┤
- *   │ LeftToolbar ┐  ← Report Deviation (sole   │                  │
- *   │ (overlay)   │    entry point) CanvasArea  │   RightSidebar   │
+ *   │ LeftToolbar ┐  Insert / Add Wall / Set    │                  │
+ *   │ (overlay)   │  Size / Delete → proposals  │   RightSidebar   │
  *   │             ┘      (dot grid + plan)      │   (350px)        │
  *   │              StatusToast                  │                  │
  *   └───────────────────────────────────────────┴──────────────────┘
@@ -40,7 +34,8 @@ import { useDeviationState } from "@/store/useDeviationState";
 export default function Page() {
   const store = useDeviationState();
   const dev = useDevToolsToggle();
-  const { selectedElement, captureAnchor, selectedEscalation } = store;
+  const { selectedElement, draft, selectedEscalation } = store;
+  const roomEl: SelectedElement = { type: "room", id: ROOM.id };
 
   const selectedPending = selectedElement ? store.pendingRevokeFor(selectedElement) : undefined;
 
@@ -55,7 +50,7 @@ export default function Page() {
   const markers = useMemo(
     () =>
       store.escalations.flatMap((e) =>
-        e.marker ? [{ id: e.id, point: e.marker, status: e.status }] : [],
+        e.marker ? [{ id: e.id, point: e.marker, status: e.status, category: e.category }] : [],
       ),
     [store.escalations],
   );
@@ -64,11 +59,26 @@ export default function Page() {
     [selectElement, clearSelection],
   );
 
-  // Report Deviation (top of the LeftToolbar, the only entry point) must be
-  // anchored to geometry: only offered for a selected element, never while a
-  // revoke is in flight. While its form is open it stays mounted as the
-  // pressed "current mode", so the toolbar doesn't shift.
-  const actionElement = selectedPending ? null : (captureAnchor ?? selectedElement);
+  // ── Intercept and Propose ───────────────────────────────────────────────
+  // The locked toolbar's tools never edit; each opens a proposal draft.
+  const placing = store.interactionMode === "ghost_draft";
+  const activeTool = store.pendingGhost?.via ?? draft?.intent.via ?? null;
+  const { startDraft, startGhostDraft, cancelDraft, notify } = store;
+  const onProposeDimension = useCallback(
+    (anchor: SelectedElement, field: DimensionField) =>
+      startDraft(anchor, { kind: "dimension", field, via: "sidebar" }),
+    [startDraft],
+  );
+  const toolbar = {
+    onInsert: (c: Parameters<typeof startGhostDraft>[0]) => startGhostDraft(c, "insert"),
+    // Tapping the pressed Add Wall again leaves ghost drafting.
+    onAddWall: () => (activeTool === "add-wall" ? cancelDraft() : startGhostDraft("structural", "add-wall")),
+    onSetSize: () => startDraft(roomEl, { kind: "dimension", field: "room-size", via: "set-size" }),
+    onDelete: () =>
+      selectedElement && (selectedElement.type === "wall" || selectedElement.type === "corner")
+        ? startDraft(selectedElement, { kind: "delete", via: "delete" })
+        : notify("Select the wall or corner that isn't on site, then tap Delete.", "hint"),
+  };
 
   const breadcrumbs = [
     PROJECT.floor,
@@ -103,35 +113,25 @@ export default function Page() {
               statusFor={statusFor}
               photoCountFor={store.standardPhotoCount}
               onSelect={onSelect}
-              placing={store.placing}
-              draftMarker={store.draftMarker}
-              onPlace={store.placeDraftMarker}
+              placing={placing}
+              draftMarker={draft?.marker ?? null}
+              draftCategory={
+                (draft?.intent.kind === "insert" ? draft.intent.category : store.pendingGhost?.category) ?? null
+              }
+              onPlace={store.placeGhost}
+              onCancelPlacing={cancelDraft}
               markers={markers}
             />
 
             <LeftToolbar
               // Room view (nothing or the floor selected) → room-level actions;
-              // a wall or corner selected → element drafting tools. All locked.
+              // a wall or corner selected → element drafting tools. Locked, but
+              // Insert / Add Wall / Set Size / Delete are intercepted into proposals.
               mode={selectedElement && selectedElement.type !== "room" ? "element" : "room"}
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
-              onLockedTool={() =>
-                store.notify(selectedElement ? LOCKED_MESSAGE : LOCKED_MESSAGE_NO_SELECTION, "locked")
-              }
-              reportSlot={
-                <AnimatePresence>
-                  {actionElement && (
-                    <ReportDeviationAction
-                      // Stable key: switching wall → floor updates the button in place
-                      // instead of replaying exit + enter (which stacked two buttons).
-                      key="report-deviation-action"
-                      selectedElement={actionElement}
-                      deviationState={store.escalationStatus}
-                      onReport={store.startReport}
-                      active={!!captureAnchor}
-                    />
-                  )}
-                </AnimatePresence>
-              }
+              activeTool={activeTool}
+              {...toolbar}
+              onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />
 
             <StatusToast
@@ -154,18 +154,16 @@ export default function Page() {
             />
           </div>
 
-          {/* Swaps: empty state / Active Escalations ↔ inspector ↔ DeviationForm */}
+          {/* Swaps: room panel / Active Escalations ↔ inspector ↔ EscalationDraftPane */}
           <RightSidebar
             selected={selectedElement}
             selectedEscalation={selectedEscalation}
             pendingRevoke={selectedPending?.escalation}
-            captureAnchor={captureAnchor}
+            draft={draft}
             escalations={store.escalations}
-            onReport={store.startReport}
-            onCancelReport={store.cancelReport}
+            onProposeDimension={onProposeDimension}
+            onCancelDraft={cancelDraft}
             onSubmit={store.submitEscalation}
-            draftMarker={store.draftMarker}
-            onPlacingChange={store.setPlacing}
             onFocus={(el) => store.selectElement(el.id)}
             onClear={store.clearSelection}
             onRevoke={(id) => store.revokeEscalation(id)}

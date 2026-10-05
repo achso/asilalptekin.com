@@ -13,10 +13,9 @@ import { EscalationPin } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 import { CategoryChips } from "@/components/molecules/CategoryChips";
-import { IssueTypePicker } from "@/components/molecules/IssueTypePicker";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
-import { ReportDeviationAction } from "@/components/molecules/ReportDeviationAction";
+import { ProposableValue } from "@/components/molecules/ProposableValue";
 import { VoiceMemoToggle } from "@/components/molecules/VoiceMemoToggle";
 import { RoomDefaultSidebar } from "@/components/organisms/RoomDefaultSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
@@ -166,9 +165,6 @@ export default function SandboxPage() {
             </div>
           </Specimen>
 
-          <Specimen title="IssueTypePicker" note="Grouped list: bold title + description per type; selected row blue with a check. Undocumented Element expands its category chips inline.">
-            <IssueTypePickerDemo onChange={(v) => record(`IssueTypePicker → ${v}`)} />
-          </Specimen>
           <Specimen title="CategoryChips" note="Object Category quick-select: native All Objects top level, 3-column glove-sized tiles, single-select (blue-50 + blue-500 border).">
             <CategoryChipsDemo onChange={(v) => record(`CategoryChips → ${v}`)} />
           </Specimen>
@@ -207,27 +203,14 @@ export default function SandboxPage() {
         >
           <div className="grid gap-6 md:grid-cols-2">
             <Specimen
-              title="ReportDeviationAction"
-              note="Sole entry point, top of the LeftToolbar. Only rendered when an element is selected and it is idle (or resolved)."
+              title="ProposableValue"
+              note="Intercept and Propose: a locked dimension stays read-only, but a tap opens a Dimension Mismatch draft for it."
             >
-              <div className="flex flex-wrap items-end gap-6">
-                <Labeled label="selectedElement = wall">
-                  <ReportDeviationAction
-                    selectedElement={NORTH_WALL}
-                    deviationState="idle"
-                    onReport={(a) => record(`onReport(${JSON.stringify(a)})`)}
-                  />
-                </Labeled>
-                <Labeled label="selectedElement = null">
-                  <div className="flex h-14 items-center rounded-xl border border-dashed border-gray-300 px-4 text-xs text-gray-400">
-                    renders nothing
-                    <ReportDeviationAction
-                        selectedElement={null}
-                      deviationState="idle"
-                      onReport={() => undefined}
-                    />
-                  </div>
-                </Labeled>
+              <div className="flex items-center justify-between gap-6 rounded-2xl bg-white px-4 py-2" style={{ width: PANEL_W - 40 }}>
+                <span className="text-[16px]">Ceiling Height</span>
+                <ProposableValue label="Ceiling Height" onPropose={() => record("onPropose(ceiling-height)")}>
+                  3.12 m
+                </ProposableValue>
               </div>
             </Specimen>
 
@@ -321,7 +304,7 @@ export default function SandboxPage() {
                   toast={{
                     id: 2,
                     tone: "locked",
-                    text: "Plan locked for execution. Use 'Report Deviation' to alert the remote expert.",
+                    text: "Plan locked for execution. Insert, Add Wall, Set Size and Delete open a proposal for the remote expert.",
                   }}
                 />
               </Labeled>
@@ -517,25 +500,6 @@ function CategoryChipsDemo({ onChange }: { onChange: (v: ElementCategory) => voi
           setValue(v);
           onChange(v);
         }}
-      />
-    </div>
-  );
-}
-
-function IssueTypePickerDemo({ onChange }: { onChange: (v: IssueType) => void }) {
-  const [value, setValue] = useState<IssueType | null>("undocumented-element");
-  const [category, setCategory] = useState<ElementCategory | null>(null);
-  return (
-    <div className="rounded-xl bg-mp-panel p-4" style={{ width: PANEL_W }}>
-      <IssueTypePicker
-        value={value}
-        onChange={(v) => {
-          setValue(v);
-          onChange(v);
-        }}
-        renderDetail={(id) =>
-          id === "undocumented-element" ? <CategoryChips value={category} onChange={setCategory} /> : null
-        }
       />
     </div>
   );

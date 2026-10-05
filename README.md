@@ -2,7 +2,9 @@
 
 A browser-based iPad app (landscape) that lets a contractor on site flag a
 space problem **directly on the floor plan** and send it to the remote expert
-in Munich: one-way, fire-and-forget, so they never wait on a reply.
+in Munich: one-way, fire-and-forget, so they never wait on a reply. The plan
+is locked, so ordinary CAD actions (Insert, Add Wall, Delete…, editing a
+dimension) are intercepted and turned into proposals.
 
 > Take-home for the magicplan Product Designer challenge.
 > Built with Next.js 15, React 19, Tailwind CSS v4 and Framer Motion.
@@ -53,83 +55,61 @@ iPad Air / Pro 11" landscape) and scales to fit the window.
 
 ---
 
-## Demo script (≈ 60 seconds)
+## Demo script (≈ 60 seconds): Intercept and Propose
 
 The permit is approved, so the plan is in its **execution state**: the header
-shows **🔒 Locked (Permit Approved)** and the geometry is read-only.
+shows **🔒 Locked (Permit Approved)** and the geometry is read-only. There is
+no separate "Report Deviation" button. The contractor does what they'd do in
+magicplan anyway, the locked plan **intercepts** it, and an **Escalation
+Draft** slides into the right sidebar with the intent already filled in. They
+never pick an issue type from a list.
 
-1. **Try a tool in the left toolbar.** In the room view it shows magicplan's
-   room actions (Insert, Set Size, Edit Layout, Duplicate, Delete). With a wall
-   or corner selected it shows the drafting tools (Insert, Add Corner, Add
-   Wall, Split Room, Delete). All of them are disabled; tapping one shows a
-   toast explaining that the plan is locked for execution.
-2. **Nothing is selected yet, so there's no Report Deviation button.** A
-   report has to be anchored to geometry. The sidebar shows the **Music Room**
-   panel (statistics, dimensions, affected areas, general), read-only
-   throughout the execution phase: no steppers or chevrons, disabled inputs
-   and switch, and a note on how to escalate. While any report is unresolved,
-   its full **EscalationCard** (photo, issue, status, Revoke) sits at the top
-   of that panel, with no extra click to reach the ticket.
-3. **Tap a wall, a corner, or the floor (the whole room).** It highlights, the
-   sidebar shows the read-only **Details / Photos & Notes / Forms** inspector,
-   and **📍 Report Deviation** animates in at the top of the left toolbar, the
-   only entry point. Nothing floats over the plan. The button hands the anchor
-   (`{ type, id }`) to the form.
-4. Tap **Report Deviation**. The button stays in place as the pressed,
-   current mode (the toolbar never shifts). The canvas keeps driving
-   selection: tapping another wall, corner, the floor or empty canvas discards
-   the draft (a toast says so) and shows that element instead. The right
-   sidebar becomes the **Escalation Form**,
-   and the canvas stays visible with the wall highlighted. Nothing needs a
-   keyboard:
-   - **Issue type:** four options, each a bold title with a one-line
-     description: Dimension Mismatch, Undocumented Element, Element Not on
-     Site, Site Condition Hazard (unsafe environment, water damage, wrong
-     materials; deliberately non-geometric so it never overlaps a category). Follow-ups expand inline under the chosen row:
-     - *Undocumented Element* reveals **Object Category**: a 3-column grid
-       of glove-sized tiles with magicplan's own "All Objects" top-level
-       categories and isometric glyphs (Annotations, Doors, Windows,
-       Structural, Plumbing, Appliances, Cabinets, Furniture, Electrical,
-       Outdoors, HVAC). One tap, no sub-menus; the photo carries the
-       specifics. Then **Location**: the canvas switches to placement mode
-       ("Tap the plan where it is") and a tap inside the room drops a dashed
-       blue **Ghost Marker** (tap again to move it; the form shows its
-       distance from the west and north walls). Once it's placed,
-       **Measured on site** expands, and what it asks for depends on the
-       category:
-       - Structural: *Length of physical wall* only (walls run floor to ceiling).
-       - Doors, Windows, Appliances, Cabinets: *Width* + *Height*.
-       - Plumbing, Electrical, Furniture, HVAC: *Length* + *Height* (boxed-in
-         pipes or ducts stop below the ceiling, and that height decides what
-         still fits).
-       - Annotations, Outdoors: *Length* only.
+| What the contractor does | Becomes |
+|---|---|
+| **Insert** → native *All Objects* menu → a category, then tap the plan | Undocumented Element, category preset, at that spot |
+| **Add Wall** (wall selected), then tap the plan | Undocumented Element, preset to Structural |
+| **Delete…** with a wall or corner selected | Element Not on Site for that element |
+| **Set Size** (room view) | Dimension Mismatch on the room: Measured Width + Measured Length |
+| Tap a locked dimension (✎) in the sidebar: wall Length, room Width / Length, Ceiling Height | Dimension Mismatch on exactly that dimension |
 
-       Fields start empty (placeholder 0.00 m); heights are capped at the
-       3.12 m ceiling. Everything shown is required. The report card reads
-       e.g. "North wall · Doors · 0.90 m wide · 2.05 m high", and the marker
-       stays on the plan in the report's status colour.
-     - *Dimension Mismatch* adapts to what's selected: a wall gets one
-       input, **Measured Length**; the whole room gets two, **Measured
-       Width** (north–south) and **Measured Length** (east–west). They start
-       empty (0.00) with the plan value underneath; tap to type a laser
-       reading on the iPad numpad (e.g. 4.12), or nudge with − / + in 5 cm
-       steps (starting from the plan value). Every input shown needs a
-       reading above 0. The card reads "4.55 → 4.35 m" for a wall and
-       "4.55 × 3.30 → 4.60 × 3.30 m" for the room.
-   - **Evidence (at least one photo required).** Unlocks once the issue type
-     (and its category) is set. magicplan's own Photos &
-     Notes layout: a + tile (opens the iPad's rear camera), up to 7 photos and
-     a free-text note. On a laptop, use *"No camera? Use demo photo"*.
-   - **Record Voice Memo (optional).** Tap to talk, tap to stop.
-   - **Work is blocked here** toggle.
-   - **Send to review** stays disabled until the issue type (plus category,
-     location and length for Undocumented Element) and a photo are provided.
-     Its label names the next gap: "Add location + photo",
-     "Add width + photo", "Add height + photo".
-5. After sending, the form closes **right away**. The wall locks in a **red
-   hatched pattern** with a compact **status pin** (red lock) on the wall
-   (Sending → Delivered), and it appears in **Active Escalations**. The
-   contractor moves on.
+Edit Layout, Duplicate, Add Corner and Split Room have no on-site meaning:
+they stay locked, and a tap explains why.
+
+1. **Insert → Plumbing.** The menu is magicplan's own category list, top level
+   only. The canvas switches to `ghost_draft`: a red prompt says *Tap where
+   the Plumbing item is* (✕ cancels). Tap inside the room and a red, dashed,
+   semi-transparent **Ghost Object** with the plumbing glyph drops there.
+   Tap again to move it.
+2. The **Escalation Draft** opens: *Proposing · New Plumbing*. Category is
+   preselected (changeable), Location shows the distances from the west and
+   north walls, and *Measured on site* asks for what that category needs:
+   - Structural: length of the physical wall (walls run floor to ceiling).
+   - Doors, Windows, Appliances, Cabinets: width + height.
+   - Plumbing, Electrical, Furniture, HVAC: length + height (boxed-in pipes or
+     ducts stop below the ceiling, and that height decides what still fits).
+   - Annotations, Outdoors: length.
+
+   Fields start empty (0.00); heights are capped at the 3.12 m ceiling.
+3. **Evidence (at least one photo) is mandatory** for every proposal: the +
+   tile opens the iPad's rear camera; on a laptop use *"No camera? Use demo
+   photo"*. Voice memo is optional; *Work is blocked here* is on by default.
+4. **Send to review** stays disabled until everything is there, and its label
+   names the next gap ("Add height + photo"). Budget (€40k), permit status
+   and a plan snapshot are attached automatically and shown above it.
+5. After sending, the pane closes **right away**. The Ghost Object stays on
+   the plan in its status colour; a challenged wall locks in a **red hatched
+   pattern** with a status pin. The proposal appears in **Active
+   Escalations**, and the contractor moves on.
+6. **Tap Ceiling Height (✎) in the Music Room panel**: *Proposing · Dimension
+   Change · Ceiling Height · plan 3.12 m*, one *Measured Ceiling Height*
+   input. Select a wall and tap its Length for *Wall Length*; **Set Size**
+   asks for the room's width and length, each against its plan value.
+7. **Select the east wall → Delete…**: *Proposing · Element Not on Site*.
+   Only a photo is needed. The wall stays on the plan.
+
+While a draft is open, tapping another element on the canvas discards it (a
+toast says so) and selects that element instead. One element can carry
+several open proposals (e.g. a wall's length and a missing element).
 
 **Canvas badges:** an element with standard Photos & Notes shows magicplan's
 yellow paperclip. If it's also escalated, only the escalation pin shows (red,
@@ -168,7 +148,7 @@ expert-side status between **Delivered / In Review / Resolved**, and has:
 
 **Demonstrating the race condition:**
 
-1. Report a wall and wait for **Delivered**.
+1. Send a proposal (e.g. Delete… on a wall) and wait for **Delivered**.
 2. Tap **Revoke Escalation**. The wall unlocks right away (optimistic update),
    and the panel counts down while the revoke is "in flight".
 3. Before the countdown ends, tap **In Review** in Dev Tools.
@@ -191,9 +171,9 @@ state.
   resolved, plus `ToolButton`, `Switch` and `StepLabel`.
 - **Molecules:** `EscalationCard` in all four states (sending, delivered, in
   review, resolved),
-  `IssueTypePicker` (with inline category), `CategoryChips`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
+  `CategoryChips`, `NumericStepper`, `PhotoEvidenceCapture`, `VoiceMemoToggle` and
   `ExpertAvailability`.
-- **UI Elements:** `ReportDeviationAction`, `LockedBadge`, the compact `EscalationPin`,
+- **UI Elements:** `ProposableValue` (a locked dimension you can challenge), `LockedBadge`, the compact `EscalationPin`,
   the yellow `AttachmentBadge` paperclip, the `GhostMarker`, `ElementBadges` precedence in context,
   and every `StatusToast` variant.
 
@@ -210,19 +190,20 @@ src/
 │   ├── sandbox/page.tsx          isolated component workbench
 │   ├── layout.tsx, globals.css   viewport meta, Tailwind theme tokens
 ├── store/
-│   ├── useDeviationState.ts      escalation workflow store (selection, submit,
-│   │                             revoke with race guard, mock expert review)
+│   ├── useDeviationState.ts      escalation workflow store (selection, intercepted
+│   │                             drafts + ghost_draft mode, submit, revoke with race
+│   │                             guard, mock expert review)
 │   └── deviationMachine.ts       lifecycle: transition table, revoke rule, labels
 ├── components/
 │   ├── atoms/                    CanvasWall, FloatingAnchor, LockedBadge, ToolButton,
 │   │                             IconButton, Switch, StepLabel, ObjectCategoryIcon,
 │   │                             GhostMarker
-│   ├── molecules/                EscalationCard, ReportDeviationAction, EscalationPin,
-│   │                             IssueTypePicker, CategoryChips, NumericStepper,
-│   │                             PhotoEvidenceCapture,
+│   ├── molecules/                EscalationCard, EscalationPin, ProposableValue,
+│   │                             CategoryChips, NumericStepper, PhotoEvidenceCapture,
 │   │                             VoiceMemoToggle, CanvasControls, ExpertAvailability
 │   └── organisms/                TopBar, DeviceStatusBar, LeftToolbar, CanvasArea,
-│                                 FloorPlan, RightSidebar, DeviationForm, StatusToast,
+│                                 FloorPlan, RightSidebar, EscalationDraftPane,
+│                                 RoomDefaultSidebar, StatusToast,
 │                                 DevToolsPanel, IPadFrame
 └── lib/                          floor plan data + geometry, types, layout constants,
                                   hooks (voice recorder, Munich cutoff), cn() helper

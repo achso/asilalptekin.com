@@ -1,4 +1,4 @@
-import type { Corner, ElementCategory, IssueType, Point, SelectedElement, Wall } from "./types";
+import type { Corner, DimensionField, ElementCategory, IssueType, Point, SelectedElement, Wall } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -131,6 +131,29 @@ export const CATEGORY_MEASURES: Record<ElementCategory, CategoryMeasure> = {
 export const categoryLabel = (id: ElementCategory) =>
   ELEMENT_CATEGORIES.find((c) => c.id === id)?.label ?? id;
 
+/** Proposable dimensions: label and plan value(s). Room size has two axes. */
+export const DIMENSION_FIELDS: Record<
+  DimensionField,
+  { label: string; inputs: { key: "primary" | "width"; label: string; plannedM: (el: SelectedElement) => number }[] }
+> = {
+  "wall-length": {
+    label: "Wall Length",
+    inputs: [{ key: "primary", label: "Measured Length", plannedM: (el) => wallById(el.id).lengthM }],
+  },
+  "ceiling-height": {
+    label: "Ceiling Height",
+    inputs: [{ key: "primary", label: "Measured Ceiling Height", plannedM: () => ROOM.ceilingM }],
+  },
+  "room-size": {
+    label: "Room Size",
+    // Width runs north–south (3.30), length east–west (4.55).
+    inputs: [
+      { key: "width", label: "Measured Width", plannedM: () => ROOM.depthM },
+      { key: "primary", label: "Measured Length", plannedM: () => ROOM.widthM },
+    ],
+  },
+};
+
 export const cornerById = (id: string) => CORNERS.find((c) => c.id === id)!;
 export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;
 
@@ -211,6 +234,8 @@ export function elementInfo(el: SelectedElement): ElementInfo {
     }
     case "corner":
       return { label: cornerById(el.id).label, summary: "Corner · 90°" };
+    case "ghost":
+      return { label: PROJECT.room, summary: "Proposed element (not on the plan)" };
     case "room": {
       return {
         label: ROOM.label,
@@ -239,6 +264,8 @@ export function elementAnchor(el: SelectedElement): { p: Point; inward: Point } 
       const d = Math.hypot(centre.x - p.x, centre.y - p.y);
       return { p, inward: { x: (centre.x - p.x) / d, y: (centre.y - p.y) / d } };
     }
+    case "ghost":
+      return { p: centre, inward: { x: 0, y: 1 } };
     case "room":
       // Anchor near the top of the floor so the badge/button sit on open floor.
       return { p: { x: centre.x, y: centre.y - 40 }, inward: { x: 0, y: 1 } };

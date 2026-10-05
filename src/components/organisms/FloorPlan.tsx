@@ -14,7 +14,7 @@ import {
   wallGeometry,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
-import type { EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
+import type { ElementCategory, EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
 import { GhostMarker } from "@/components/atoms/GhostMarker";
@@ -40,12 +40,13 @@ type Props = {
   statusFor: (t: SelectedElement) => EscalationStatus | undefined;
   photoCountFor?: (t: SelectedElement) => number;
   onSelect: (t: SelectedElement | null) => void;
-  /** Ghost Marker placement mode: taps inside the room place the marker instead of selecting. */
+  /** ghost_draft: taps inside the room place / move the Ghost Object instead of selecting. */
   placing?: boolean;
   draftMarker?: Point | null;
+  draftCategory?: ElementCategory | null;
   onPlace?: (p: Point) => void;
-  /** Markers of submitted Undocumented Element reports, drawn in their status colour. */
-  markers?: { id: string; point: Point; status: EscalationStatus }[];
+  /** Ghost Objects of submitted proposals, drawn in their status colour. */
+  markers?: { id: string; point: Point; status: EscalationStatus; category?: ElementCategory }[];
 };
 
 const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
@@ -65,6 +66,7 @@ export function FloorPlan({
   onSelect,
   placing,
   draftMarker,
+  draftCategory,
   onPlace,
   markers,
 }: Props) {
@@ -170,9 +172,9 @@ export function FloorPlan({
       })}
 
       {markers?.map((m) => (
-        <GhostMarker key={m.id} at={toPx(m.point)} color={STATUS_STROKE[m.status]} />
+        <GhostMarker key={m.id} at={toPx(m.point)} color={STATUS_STROKE[m.status]} category={m.category} />
       ))}
-      {draftMarker && <GhostMarker at={toPx(draftMarker)} color={BLUE_STRONG} draft />}
+      {draftMarker && <GhostMarker at={toPx(draftMarker)} color={RED} category={draftCategory} draft />}
     </svg>
   );
 }
