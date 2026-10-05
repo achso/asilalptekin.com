@@ -174,6 +174,13 @@ reviews it.
     lands in the note (simulated speech-to-text, e.g. *"The physical wall is
     20cm shorter than the locked plan indicates. Requesting permission to
     proceed."*). The same note field is in every Photos & Notes tab.
+  - **Voice memo** (optional, `VoiceMemoCard`): a WhatsApp-style voice note,
+    mocked (no audio, no speech-to-text API). *Add Voice Memo* → a recording
+    pill (pulsing red dot, timer counting up, **Stop**) → a gray bubble with
+    play, a waveform and the duration, plus a green **Transcribe** link → the
+    bubble grows and the transcript fades in. Play runs a mock playback (the
+    waveform fills); the trash icon deletes it. The memo's length shows on
+    the sent card, and the ticket has a *Voice memo* row with the transcript.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
   - **Priority** (UX audit #5, renamed in round 2): what the contractor is

@@ -12,6 +12,7 @@ import { EscalationPin } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
+import { VoiceMemoCard } from "@/components/molecules/VoiceMemoCard";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
 import { RoomDefaultSidebar } from "@/components/organisms/RoomDefaultSidebar";
@@ -178,6 +179,11 @@ export default function SandboxPage() {
               note="magicplan's Photos & Notes layout: add tile (blue border until the first photo) + 7 slots, then a Smart Note (type, or tap the mic: simulated speech-to-text). Camera on iPad; demo photo on desktop."
             >
               <PhotoEvidenceDemo onPhotoAdded={(n) => record(`PhotoEvidenceCapture onPhotoAdded → ${n} photo(s)`)} />
+            </Specimen>
+            <Specimen title="VoiceMemoCard" note="WhatsApp-style voice note, mocked: idle → recording (timer, Stop) → recorded (play, waveform, Transcribe) → transcribed.">
+              <div style={{ width: CARD_W }}>
+                <VoiceMemoCard onChange={(m) => record(`VoiceMemoCard → ${m ? `${m.durationS}s${m.transcript ? ", transcribed" : ""}` : "deleted"}`)} />
+              </div>
             </Specimen>
           </div>
         </Section>

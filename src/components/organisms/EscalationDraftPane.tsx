@@ -7,6 +7,7 @@ import { StepLabel } from "@/components/atoms/StepLabel";
 import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { DEFAULT_DICTATION, PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
+import { VoiceMemoCard, type VoiceMemoValue } from "@/components/molecules/VoiceMemoCard";
 import {
   ASKS,
   ISSUE_TYPES,
@@ -112,6 +113,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
   const setMeasured = (v: number) => onChange({ measuredM: v });
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState("");
+  const [voiceMemo, setVoiceMemo] = useState<VoiceMemoValue | null>(null);
   // Priority: an explicit choice, defaulting to "Can continue" (UX audit #5).
   const [blocking, setBlocking] = useState(false);
   const [ask, setAsk] = useState<AskId | null>(null);
@@ -152,6 +154,7 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
       objectChange: keep && isObject && plan && proposed ? { from: plan, to: proposed } : undefined,
       photoUrls: photos,
       note: note.trim() || undefined,
+      voiceMemo: voiceMemo ?? undefined,
       blocking,
       ask: ask ?? undefined,
       lengthEstimated: keep && intent === "missing-element" && estimated ? true : undefined,
@@ -393,10 +396,17 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
           />
         </section>
 
+        <section className="flex flex-col gap-2.5">
+          <StepLabel n={isRemove ? 2 : 3} done={!!voiceMemo} optional>
+            Voice memo
+          </StepLabel>
+          <VoiceMemoCard transcript={DICTATION[isRemove ? "remove" : isWallLength ? "wall-length" : isObject ? "object-change" : "missing-element"]} onChange={setVoiceMemo} />
+        </section>
+
         {/* The Ask + priority, right above Send: Send stays disabled until
             the ask is picked, so neither can be skipped below the fold. */}
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={isRemove ? 2 : 3} done={!!ask}>
+          <StepLabel n={isRemove ? 3 : 4} done={!!ask}>
             What do you need back? <span className="text-mp-red">*</span>
           </StepLabel>
           <div role="radiogroup" aria-label="The ask" className="flex flex-wrap gap-2">

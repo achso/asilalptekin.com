@@ -3,7 +3,7 @@
 import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef } from "react";
-import { CheckCheck, CheckCircle2, ChevronRight, CloudOff, Eye, Loader2, Ruler, Undo2 } from "lucide-react";
+import { CheckCheck, CheckCircle2, ChevronRight, CloudOff, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
 import { askLabel, issueLabel } from "@/lib/floorplan";
 import { munichClock, useExpertAvailability } from "@/lib/useMunichCutoff";
 import type { AskId, Escalation, EscalationStatus, IssueType, ObjectState } from "@/lib/types";
@@ -97,6 +97,8 @@ export type EscalationCardProps = {
   lengthM?: number;
   /** Object change: what was changed, e.g. "W 0.95 → 1.10 m · ↻ 0° → 45°". */
   changeSummary?: string;
+  /** Voice memo length (s): shown as a mic + duration. */
+  voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
   /** The chevron: open the read-only ticket as the remote expert receives it. */
@@ -131,6 +133,7 @@ export function EscalationCard({
   onPress,
   onOpen,
   ask,
+  voiceMemoSeconds,
   onAdvance,
   className,
 }: EscalationCardProps) {
@@ -201,7 +204,7 @@ export function EscalationCard({
               <Ruler size={12} className="mt-0.5 shrink-0" /> <span>{changeSummary}</span>
             </div>
           )}
-          {(dimension || lengthM !== undefined) && (
+          {(dimension || lengthM !== undefined || voiceMemoSeconds !== undefined) && (
             <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
               {dimension && (
                 <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
@@ -211,6 +214,11 @@ export function EscalationCard({
               {!dimension && lengthM !== undefined && (
                 <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
                   <Ruler size={12} /> {lengthM.toFixed(2)} m long
+                </span>
+              )}
+              {voiceMemoSeconds !== undefined && (
+                <span className="flex items-center gap-1 tabular-nums">
+                  <Mic size={12} /> {Math.floor(voiceMemoSeconds / 60)}:{String(voiceMemoSeconds % 60).padStart(2, "0")}
                 </span>
               )}
             </div>
@@ -360,5 +368,6 @@ export function toEscalationCardProps(
     lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
     changeSummary: e.objectChange ? summarizeObjectChange(e.objectChange) : undefined,
     ask: e.ask,
+    voiceMemoSeconds: e.voiceMemo?.durationS,
   };
 }

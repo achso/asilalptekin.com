@@ -149,6 +149,18 @@ function Ticket({ e, onClose, onConfirm }: { e: Escalation; onClose: () => void;
               {availability ? availability.urgency(e.blocking, e.createdAt) : e.blocking ? "Work stopped" : "Not blocking"}
             </Row>
             {e.note && <Row label="Note">“{e.note}”</Row>}
+            {e.voiceMemo && (
+              <Row label="Voice memo">
+                <span className="tabular-nums">
+                  {Math.floor(e.voiceMemo.durationS / 60)}:{String(e.voiceMemo.durationS % 60).padStart(2, "0")}
+                </span>
+                {e.voiceMemo.transcript ? (
+                  <span className="block text-mp-ink">“{e.voiceMemo.transcript}”</span>
+                ) : (
+                  <span className="text-mp-muted"> · not transcribed</span>
+                )}
+              </Row>
+            )}
             <Row label="Attached">Plan dimensions · Permit {PERMIT_TEXT}</Row>
           </dl>
         </section>
