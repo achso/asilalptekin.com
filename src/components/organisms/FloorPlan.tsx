@@ -14,10 +14,9 @@ import {
   wallGeometry,
 } from "@/lib/floorplan";
 import { cn } from "@/lib/utils";
-import type { ElementCategory, EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
+import type { EscalationStatus, Point, SelectedElement, Wall } from "@/lib/types";
 import { sameElement } from "@/store/useDeviationState";
 import { CanvasWall, CanvasWallDefs } from "@/components/atoms/CanvasWall";
-import { GhostMarker } from "@/components/atoms/GhostMarker";
 
 const BLUE = "#64aeea";
 const BLUE_STRONG = "#1a7cf5";
@@ -40,13 +39,14 @@ type Props = {
   statusFor: (t: SelectedElement) => EscalationStatus | undefined;
   photoCountFor?: (t: SelectedElement) => number;
   onSelect: (t: SelectedElement | null) => void;
-  /** ghost_draft: taps inside the room place / move the Ghost Object instead of selecting. */
+  /** ghost_draft: taps inside the room place / move the ghost wall instead of selecting. */
   placing?: boolean;
   draftMarker?: Point | null;
-  draftCategory?: ElementCategory | null;
   onPlace?: (p: Point) => void;
-  /** Ghost Objects of submitted proposals, drawn in their status colour. */
-  markers?: { id: string; point: Point; status: EscalationStatus; category?: ElementCategory }[];
+  /** Ghost walls of submitted proposals, drawn in their status colour. */
+  markers?: { id: string; point: Point; status: EscalationStatus }[];
+  /** The one interactive dimension (North wall, 4.55): opens the Change Measurement popover. */
+  onDimensionTap?: (wallId: string, at: Point) => void;
 };
 
 const ROOM_ELEMENT: SelectedElement = { type: "room", id: ROOM.id };
@@ -66,9 +66,9 @@ export function FloorPlan({
   onSelect,
   placing,
   draftMarker,
-  draftCategory,
   onPlace,
   markers,
+  onDimensionTap,
 }: Props) {
   return (
     <svg
@@ -126,7 +126,12 @@ export function FloorPlan({
       <Furniture />
 
       {WALLS.map((w) => (
-        <DimensionLine key={`dim-${w.id}`} wall={w} />
+        <DimensionLine
+          key={`dim-${w.id}`}
+          wall={w}
+          // Wizard of Oz: only the North wall's dimension is wired up.
+          onTap={w.id === "w-north" && !placing ? onDimensionTap : undefined}
+        />
       ))}
 
       {WALLS.map((w) => {
@@ -172,9 +177,9 @@ export function FloorPlan({
       })}
 
       {markers?.map((m) => (
-        <GhostMarker key={m.id} at={toPx(m.point)} color={STATUS_STROKE[m.status]} category={m.category} />
+        <GhostWall key={m.id} at={toPx(m.point)} color={STATUS_STROKE[m.status]} />
       ))}
-      {draftMarker && <GhostMarker at={toPx(draftMarker)} color={RED} category={draftCategory} draft />}
+      {draftMarker && <GhostWall at={toPx(draftMarker)} color={GHOST_RED} draft />}
     </svg>
   );
 }
@@ -309,7 +314,32 @@ function OpeningShape({ wall, opening }: { wall: Wall; opening: NonNullable<Wall
   );
 }
 
-function DimensionLine({ wall }: { wall: Wall }) {
+/**
+ * The proposed wall: a hardcoded 100 × 10 px rect (≈ 0.9 m) centred on the
+ * tap. It's a proposal, not approved geometry, so it's red, dashed and faintly
+ * filled, never solid black. Submitted ones keep the dash in their status colour.
+ */
+const GHOST_RED = "#EF4444";
+function GhostWall({ at, color, draft = false }: { at: Point; color: string; draft?: boolean }) {
+  return (
+    <motion.rect
+      pointerEvents="none"
+      data-ghost={draft ? "draft" : "submitted"}
+      width={100}
+      height={10}
+      initial={false}
+      animate={{ x: at.x - 50, y: at.y - 5 }}
+      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+      stroke={color}
+      strokeDasharray="4 4"
+      strokeWidth={2}
+      fill={color === GHOST_RED ? "rgba(239, 68, 68, 0.1)" : color}
+      fillOpacity={color === GHOST_RED ? 1 : 0.12}
+    />
+  );
+}
+
+function DimensionLine({ wall, onTap }: { wall: Wall; onTap?: (wallId: string, at: Point) => void }) {
   const g = wallGeometry(wall);
   const off = 44;
   const ax = g.a.x - g.nx * off;
@@ -328,27 +358,51 @@ function DimensionLine({ wall }: { wall: Wall }) {
       <line x1={bx - g.nx * tick} y1={by - g.ny * tick} x2={bx + g.nx * tick} y2={by + g.ny * tick} />
       <line x1={g.a.x} y1={g.a.y} x2={ax} y2={ay} strokeDasharray="3 3" />
       <line x1={g.b.x} y1={g.b.y} x2={bx} y2={by} strokeDasharray="3 3" />
-      <rect
-        x={mx - (vertical ? 11 : 24)}
-        y={my - (vertical ? 24 : 11)}
-        width={vertical ? 22 : 48}
-        height={vertical ? 48 : 22}
-        fill="#f6f6f6"
-        stroke="none"
-      />
-      <text
-        x={mx}
-        y={my}
-        fill={BLUE_STRONG}
-        stroke="none"
-        fontSize={15}
-        fontWeight={500}
-        textAnchor="middle"
-        dominantBaseline="central"
+      {/* Label: value + the native lock glyph (locked plan). The North wall's
+          label is a button that opens the Change Measurement popover. */}
+      <g
         transform={vertical ? `rotate(-90 ${mx} ${my})` : undefined}
+        {...(onTap
+          ? {
+              role: "button",
+              tabIndex: 0,
+              "aria-label": `${wall.label} length ${wall.lengthM.toFixed(2)} m, locked. Change measurement`,
+              pointerEvents: "auto",
+              className: "cursor-pointer outline-none",
+              onClick: () => onTap(wall.id, { x: mx, y: my }),
+              onKeyDown: (e: React.KeyboardEvent) =>
+                (e.key === "Enter" || e.key === " ") && onTap(wall.id, { x: mx, y: my }),
+            }
+          : {})}
       >
-        {wall.lengthM.toFixed(2)}
-      </text>
+        {onTap && <rect x={mx - 40} y={my - 22} width={80} height={44} fill="transparent" stroke="none" />}
+        <rect
+          x={mx - 31}
+          y={my - 11}
+          width={62}
+          height={22}
+          rx={onTap ? 6 : 0}
+          fill={onTap ? "#e8f1fe" : "#f6f6f6"}
+          stroke="none"
+        />
+        <text
+          x={mx - 6}
+          y={my}
+          fill={BLUE_STRONG}
+          stroke="none"
+          fontSize={15}
+          fontWeight={500}
+          textAnchor="middle"
+          dominantBaseline="central"
+        >
+          {wall.lengthM.toFixed(2)}
+        </text>
+        {/* lock glyph */}
+        <g transform={`translate(${mx + 18} ${my - 5})`} stroke="none" fill="#3a3a3c">
+          <rect x={0} y={4} width={8} height={6.5} rx={1.2} />
+          <path d="M1.6 4.2V2.9a2.4 2.4 0 0 1 4.8 0v1.3" fill="none" stroke="#3a3a3c" strokeWidth={1.3} />
+        </g>
+      </g>
     </g>
   );
 }

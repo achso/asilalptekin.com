@@ -2,8 +2,8 @@ export type Point = { x: number; y: number };
 
 /**
  * The plan element a deviation is anchored to: what the contractor tapped.
- * "ghost" is a proposed element that isn't on the locked plan (placed with
- * Add Wall / Insert): it has no geometry, only its Ghost Marker position.
+ * "ghost" is the proposed wall that isn't on the locked plan (placed with
+ * Insert): it has no plan geometry, only its ghost position.
  */
 export type ElementType = "wall" | "corner" | "room" | "ghost";
 export type SelectedElement = { type: ElementType; id: string };
@@ -36,62 +36,25 @@ export type IssueType =
   | "site-condition-hazard";
 
 /**
- * What kind of thing an "Undocumented Element" is. Mirrors the top-level
- * categories of magicplan's own "All Objects" insert menu, so the expert gets
- * structured data ("undocumented Plumbing here") instead of free text.
- * Deliberately shallow: one level only; the photo carries the specifics.
+ * The two hardcoded "Intercept and Propose" paths (Wizard of Oz prototype):
+ *   wall-length  → tap the North wall's 4.55 dimension → Propose Correction
+ *                  → Dimension Mismatch
+ *   missing-wall → Insert → tap the plan → red dashed ghost wall
+ *                  → Undocumented Element → Wall
  */
-export type ElementCategory =
-  | "annotations"
-  | "doors"
-  | "windows"
-  | "structural"
-  | "plumbing"
-  | "appliances"
-  | "cabinets"
-  | "furniture"
-  | "electrical"
-  | "outdoors"
-  | "hvac";
-
-/** Locked CAD tools that open an escalation draft instead of editing. */
-export type InterceptTool = "insert" | "add-wall" | "set-size" | "delete" | "sidebar";
-
-/** Dimensions the contractor can propose a change to. */
-export type DimensionField = "wall-length" | "ceiling-height" | "room-size";
-
-/**
- * What the contractor tried to do on the locked plan, captured as the
- * proposal's intent ("Intercept and Propose").
- *   insert    → Undocumented Element (Add Wall presets Structural)
- *   delete    → Element Not on Site
- *   dimension → Dimension Mismatch on that field
- */
-export type DraftIntent =
-  | { kind: "insert"; category: ElementCategory | null; via: "insert" | "add-wall" }
-  | { kind: "delete"; via: "delete" }
-  | { kind: "dimension"; field: DimensionField; via: "set-size" | "sidebar" };
+export type DraftIntent = "wall-length" | "missing-wall";
 
 export type Escalation = {
   id: string;
   target: SelectedElement;
   targetLabel: string;
   issueType: IssueType;
-  /** Only for undocumented-element: which object category was found. */
-  category?: ElementCategory;
   /**
-   * What the contractor measured on site: the wall length for
-   * dimension-mismatch, the physical element's length for undocumented-element.
+   * What the contractor measured on site: the wall length (dimension-mismatch)
+   * or the length of the physical wall that isn't on the plan (undocumented).
    */
   measuredM?: number;
-  /** Rooms only (dimension-mismatch on the floor): the second axis, north–south. */
-  plannedWidthM?: number;
-  measuredWidthM?: number;
-  /** Only for undocumented-element, if its category has a height (see CATEGORY_MEASURES). */
-  heightM?: number;
-  /** Dimension Mismatch: which dimension was challenged. */
-  dimensionField?: DimensionField;
-  /** Only for undocumented-element: where it is, in plan metres (Ghost Marker). */
+  /** Only for undocumented-element: where the ghost wall is, in plan metres. */
   marker?: Point;
   plannedM?: number;
   /** Evidence photos (object / data URLs). At least one is required to submit. */

@@ -9,9 +9,9 @@ import { LOCKED_MESSAGE, LeftToolbar } from "@/components/organisms/LeftToolbar"
 import { RightSidebar } from "@/components/organisms/RightSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { TopBar } from "@/components/organisms/TopBar";
-import { PROJECT, ROOM, elementInfo } from "@/lib/floorplan";
+import { PROJECT, elementInfo } from "@/lib/floorplan";
 import { PANEL_W } from "@/lib/layout";
-import type { DimensionField, SelectedElement } from "@/lib/types";
+import type { SelectedElement } from "@/lib/types";
 import { useDeviationState } from "@/store/useDeviationState";
 
 /**
@@ -21,8 +21,8 @@ import { useDeviationState } from "@/store/useDeviationState";
  *   │ DeviceStatusBar                                              │
  *   │ TopBar: breadcrumbs · 🔒 Locked (Permit Approved) · expert   │
  *   ├───────────────────────────────────────────┬──────────────────┤
- *   │ LeftToolbar ┐  Insert / Add Wall / Set    │                  │
- *   │ (overlay)   │  Size / Delete → proposals  │   RightSidebar   │
+ *   │ LeftToolbar ┐  Insert → ghost wall;       │                  │
+ *   │ (overlay)   │  tap 4.55 → correction     │   RightSidebar   │
  *   │             ┘      (dot grid + plan)      │   (350px)        │
  *   │              StatusToast                  │                  │
  *   └───────────────────────────────────────────┴──────────────────┘
@@ -35,7 +35,6 @@ export default function Page() {
   const store = useDeviationState();
   const dev = useDevToolsToggle();
   const { selectedElement, draft, selectedEscalation } = store;
-  const roomEl: SelectedElement = { type: "room", id: ROOM.id };
 
   const selectedPending = selectedElement ? store.pendingRevokeFor(selectedElement) : undefined;
 
@@ -46,11 +45,11 @@ export default function Page() {
     (el: SelectedElement) => escalationFor(el)?.status,
     [escalationFor],
   );
-  // Ghost Markers of submitted Undocumented Element reports stay on the plan.
+  // Ghost walls of submitted Undocumented Element reports stay on the plan.
   const markers = useMemo(
     () =>
       store.escalations.flatMap((e) =>
-        e.marker ? [{ id: e.id, point: e.marker, status: e.status, category: e.category }] : [],
+        e.marker ? [{ id: e.id, point: e.marker, status: e.status }] : [],
       ),
     [store.escalations],
   );
@@ -59,26 +58,18 @@ export default function Page() {
     [selectElement, clearSelection],
   );
 
-  // ── Intercept and Propose ───────────────────────────────────────────────
-  // The locked toolbar's tools never edit; each opens a proposal draft.
+  // ── Intercept and Propose: two hardcoded paths ──────────────────────────
+  // 1. 4.55 popover → Propose Correction → Dimension Mismatch (North wall)
+  // 2. Insert → ghost_draft → tap the plan → Undocumented Element → Wall
   const placing = store.interactionMode === "ghost_draft";
-  const activeTool = store.pendingGhost?.via ?? draft?.intent.via ?? null;
+  const inserting = placing || draft?.intent === "missing-wall";
   const { startDraft, startGhostDraft, cancelDraft, notify } = store;
-  const onProposeDimension = useCallback(
-    (anchor: SelectedElement, field: DimensionField) =>
-      startDraft(anchor, { kind: "dimension", field, via: "sidebar" }),
+  const onProposeWallLength = useCallback(
+    (wallId: string) => startDraft({ type: "wall", id: wallId }, "wall-length"),
     [startDraft],
   );
-  const toolbar = {
-    onInsert: (c: Parameters<typeof startGhostDraft>[0]) => startGhostDraft(c, "insert"),
-    // Tapping the pressed Add Wall again leaves ghost drafting.
-    onAddWall: () => (activeTool === "add-wall" ? cancelDraft() : startGhostDraft("structural", "add-wall")),
-    onSetSize: () => startDraft(roomEl, { kind: "dimension", field: "room-size", via: "set-size" }),
-    onDelete: () =>
-      selectedElement && (selectedElement.type === "wall" || selectedElement.type === "corner")
-        ? startDraft(selectedElement, { kind: "delete", via: "delete" })
-        : notify("Select the wall or corner that isn't on site, then tap Delete.", "hint"),
-  };
+  // Tapping the pressed Insert again leaves ghost drafting.
+  const onInsert = () => (inserting ? cancelDraft() : startGhostDraft());
 
   const breadcrumbs = [
     PROJECT.floor,
@@ -115,22 +106,20 @@ export default function Page() {
               onSelect={onSelect}
               placing={placing}
               draftMarker={draft?.marker ?? null}
-              draftCategory={
-                (draft?.intent.kind === "insert" ? draft.intent.category : store.pendingGhost?.category) ?? null
-              }
               onPlace={store.placeGhost}
               onCancelPlacing={cancelDraft}
               markers={markers}
+              onProposeWallLength={onProposeWallLength}
             />
 
             <LeftToolbar
               // Room view (nothing or the floor selected) → room-level actions;
-              // a wall or corner selected → element drafting tools. Locked, but
-              // Insert / Add Wall / Set Size / Delete are intercepted into proposals.
+              // a wall or corner selected → element drafting tools. All locked
+              // except Insert, which starts ghost drafting.
               mode={selectedElement && selectedElement.type !== "room" ? "element" : "room"}
               className="z-10 ml-4 self-center justify-self-start [grid-area:stack]"
-              activeTool={activeTool}
-              {...toolbar}
+              inserting={inserting}
+              onInsert={onInsert}
               onLockedTool={() => notify(LOCKED_MESSAGE, "locked")}
             />
 
@@ -161,7 +150,6 @@ export default function Page() {
             pendingRevoke={selectedPending?.escalation}
             draft={draft}
             escalations={store.escalations}
-            onProposeDimension={onProposeDimension}
             onCancelDraft={cancelDraft}
             onSubmit={store.submitEscalation}
             onFocus={(el) => store.selectElement(el.id)}

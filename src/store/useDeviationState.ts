@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { PROJECT, elementById, elementInfo } from "@/lib/floorplan";
 import type {
   DraftIntent,
-  ElementCategory,
   ElementMedia,
   Escalation,
   EscalationDraft,
@@ -32,12 +31,12 @@ import {
  *                        open for another element, also discards that draft
  *   clearSelection()
  *
- * Intercept and Propose: the plan is locked, so CAD actions become proposals.
+ * Intercept and Propose (two hardcoded Wizard-of-Oz paths, see DraftIntent):
  *   draft                { anchor, intent, marker? } | null: the open EscalationDraftPane
- *   interactionMode      "select" | "ghost_draft" (canvas taps place / move a Ghost Marker)
- *   startDraft(a, i)     Delete… / Set Size / a tapped dimension → open the pane
- *   startGhostDraft(i)   Add Wall / Insert → ghost_draft; the pane opens on the first tap
- *   placeGhost(p)        drop (first tap) or move the Ghost Marker at p (plan metres)
+ *   interactionMode      "select" | "ghost_draft" (canvas taps place / move the ghost wall)
+ *   startDraft(a, i)     4.55 popover → Propose Correction → open the pane
+ *   startGhostDraft()    Insert → ghost_draft; the pane opens on the first canvas tap
+ *   placeGhost(p)        drop (first tap) or move the ghost wall at p (plan metres)
  *   cancelDraft()        discard the draft (and leave ghost_draft), keep the selection
  *   submitEscalation(d)  fire-and-forget: closes the pane, uploads in background
  *   revokeEscalation()   optimistic; FAILS while in_review (race guard, see below)
@@ -75,10 +74,8 @@ type State = {
   selectedElement: SelectedElement | null;
   /** The open escalation draft (null = pane closed). */
   draft: Draft | null;
-  /** ghost_draft: canvas taps place / move the Ghost Marker instead of selecting. */
+  /** ghost_draft: canvas taps place / move the ghost wall instead of selecting. */
   interactionMode: InteractionMode;
-  /** Add Wall / Insert intent waiting for its first canvas tap. */
-  pendingGhost: Extract<DraftIntent, { kind: "insert" }> | null;
   escalations: Escalation[];
   /** Standard Photos & Notes per element ("wall:w-north" → media). Independent of escalations. */
   media: Record<string, ElementMedia>;
@@ -90,7 +87,7 @@ type State = {
 type Action =
   | { type: "select"; element: SelectedElement | null }
   | { type: "startDraft"; anchor: SelectedElement; intent: DraftIntent }
-  | { type: "startGhost"; intent: Extract<DraftIntent, { kind: "insert" }> }
+  | { type: "startGhost" }
   | { type: "placeGhost"; point: Point }
   | { type: "cancelDraft" }
   | { type: "submit"; escalation: Escalation }
@@ -108,7 +105,6 @@ const initialState: State = {
   selectedElement: null,
   draft: null,
   interactionMode: "select",
-  pendingGhost: null,
   escalations: [],
   media: {},
   pendingRevokes: {},
@@ -117,7 +113,7 @@ const initialState: State = {
 };
 
 /** Closing the pane also ends ghost drafting. */
-const NO_DRAFT = { draft: null, interactionMode: "select", pendingGhost: null } as const;
+const NO_DRAFT = { draft: null, interactionMode: "select" } as const;
 
 export type InteractionMode = "select" | "ghost_draft";
 /** The open escalation draft: what was intercepted, where. */
@@ -175,7 +171,7 @@ function reducer(state: State, action: Action): State {
 
     case "startGhost":
       // Wait for the canvas tap; the selection stays (the toolbar mustn't jump).
-      return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft", pendingGhost: action.intent };
+      return { ...state, ...NO_DRAFT, interactionMode: "ghost_draft" };
 
     case "placeGhost": {
       if (state.interactionMode !== "ghost_draft") return state;
@@ -183,14 +179,12 @@ function reducer(state: State, action: Action): State {
       if (state.draft?.anchor.type === "ghost") {
         return { ...state, draft: { ...state.draft, marker: action.point } };
       }
-      if (!state.pendingGhost) return state;
-      // First tap: the proposal now has a place, so the pane opens.
+      // First tap: the proposed wall now has a place, so the pane opens.
       return {
         ...state,
-        pendingGhost: null,
         draft: {
           anchor: { type: "ghost", id: `ghost-${Date.now()}` },
-          intent: state.pendingGhost,
+          intent: "missing-wall",
           marker: action.point,
         },
       };
@@ -382,11 +376,7 @@ export function useDeviationState() {
     (anchor: SelectedElement, intent: DraftIntent) => dispatch({ type: "startDraft", anchor, intent }),
     [],
   );
-  const startGhostDraft = useCallback(
-    (category: ElementCategory | null, via: "insert" | "add-wall") =>
-      dispatch({ type: "startGhost", intent: { kind: "insert", category, via } }),
-    [],
-  );
+  const startGhostDraft = useCallback(() => dispatch({ type: "startGhost" }), []);
   const placeGhost = useCallback((point: Point) => dispatch({ type: "placeGhost", point }), []);
   const cancelDraft = useCallback(() => dispatch({ type: "cancelDraft" }), []);
 
@@ -492,7 +482,6 @@ export function useDeviationState() {
     selectedElement: state.selectedElement,
     draft: state.draft,
     interactionMode: state.interactionMode,
-    pendingGhost: state.pendingGhost,
     escalations: state.escalations,
     pendingRevokes: state.pendingRevokes,
     demo: state.demo,

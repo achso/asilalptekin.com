@@ -7,22 +7,20 @@ import { StepLabel } from "@/components/atoms/StepLabel";
 import { Switch } from "@/components/atoms/Switch";
 import { ToolButton } from "@/components/atoms/ToolButton";
 import { AttachmentBadge } from "@/components/atoms/AttachmentBadge";
-import { GhostMarker } from "@/components/atoms/GhostMarker";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
 import { EscalationPin } from "@/components/molecules/EscalationPin";
 import { EscalationCard } from "@/components/molecules/EscalationCard";
 import { ExpertAvailability } from "@/components/molecules/ExpertAvailability";
-import { CategoryChips } from "@/components/molecules/CategoryChips";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
 import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
-import { ProposableValue } from "@/components/molecules/ProposableValue";
+import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
 import { VoiceMemoToggle } from "@/components/molecules/VoiceMemoToggle";
 import { RoomDefaultSidebar } from "@/components/organisms/RoomDefaultSidebar";
 import { StatusToast } from "@/components/organisms/StatusToast";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { WALL_THICKNESS, wallById, wallGeometry } from "@/lib/floorplan";
 import { CANVAS_W, PANEL_W } from "@/lib/layout";
-import type { ElementCategory, EscalationStatus, IssueType, SelectedElement } from "@/lib/types";
+import type { EscalationStatus, IssueType, SelectedElement } from "@/lib/types";
 import type { DeviationState } from "@/store/deviationMachine";
 
 /**
@@ -165,10 +163,6 @@ export default function SandboxPage() {
             </div>
           </Specimen>
 
-          <Specimen title="CategoryChips" note="Object Category quick-select: native All Objects top level, 3-column glove-sized tiles, single-select (blue-50 + blue-500 border).">
-            <CategoryChipsDemo onChange={(v) => record(`CategoryChips → ${v}`)} />
-          </Specimen>
-
           <div className="grid gap-6 md:grid-cols-2">
             <Specimen title="NumericStepper" note="± in 5 cm steps, with the difference from plan.">
               <NumericStepperDemo />
@@ -203,14 +197,18 @@ export default function SandboxPage() {
         >
           <div className="grid gap-6 md:grid-cols-2">
             <Specimen
-              title="ProposableValue"
-              note="Intercept and Propose: a locked dimension stays read-only, but a tap opens a Dimension Mismatch draft for it."
+              title="MeasurementPopover"
+              note="Native Change Measurement popover, intercepted: the value is locked; Propose Correction opens a Dimension Mismatch draft."
             >
-              <div className="flex items-center justify-between gap-6 rounded-2xl bg-white px-4 py-2" style={{ width: PANEL_W - 40 }}>
-                <span className="text-[16px]">Ceiling Height</span>
-                <ProposableValue label="Ceiling Height" onPropose={() => record("onPropose(ceiling-height)")}>
-                  3.12 m
-                </ProposableValue>
+              <div className="relative h-[290px] rounded-xl bg-mp-canvas" style={{ width: 300 }}>
+                <span className="absolute left-[118px] top-[8px] rounded-md bg-[#e8f1fe] px-2 text-[15px] font-medium text-mp-blue">4.55</span>
+                <MeasurementPopover
+                  at={{ x: 150, y: 18 }}
+                  valueM={4.55}
+                  canvasWidth={300}
+                  onPropose={() => record("MeasurementPopover → Propose Correction")}
+                  onClose={() => record("MeasurementPopover → close")}
+                />
               </div>
             </Specimen>
 
@@ -248,19 +246,29 @@ export default function SandboxPage() {
           </Specimen>
 
           <Specimen
-            title="GhostMarker"
-            note="Where an Undocumented Element is. Draft (blue, pulsing) while placing; submitted ones take the report's status colour."
+            title="Ghost wall"
+            note="The proposed missing wall: a 100 × 10 px rect, red dashed with a faint fill while drafting; submitted ones keep the dash in their status colour."
           >
-            <svg width={300} height={70} className="rounded-xl bg-white">
+            <svg width={300} height={110} className="rounded-xl bg-white">
               {[
-                { x: 40, c: "#1a7cf5", draft: true, t: "draft" },
-                { x: 110, c: "#e5352b", t: "delivered" },
-                { x: 180, c: "#f59e0b", t: "in review" },
-                { x: 250, c: "#16a34a", t: "resolved" },
+                { y: 18, c: "#EF4444", t: "draft" },
+                { y: 42, c: "#e5352b", t: "delivered" },
+                { y: 66, c: "#f59e0b", t: "in review" },
+                { y: 90, c: "#16a34a", t: "resolved" },
               ].map((m) => (
                 <g key={m.t}>
-                  <GhostMarker at={{ x: m.x, y: 30 }} color={m.c} draft={m.draft} />
-                  <text x={m.x} y={64} fontSize={10} textAnchor="middle" fill="#6f6f73">{m.t}</text>
+                  <rect
+                    x={20}
+                    y={m.y - 5}
+                    width={100}
+                    height={10}
+                    stroke={m.c}
+                    strokeDasharray="4 4"
+                    strokeWidth={2}
+                    fill={m.t === "draft" ? "rgba(239, 68, 68, 0.1)" : m.c}
+                    fillOpacity={m.t === "draft" ? 1 : 0.12}
+                  />
+                  <text x={140} y={m.y + 4} fontSize={12} fill="#6f6f73">{m.t}</text>
                 </g>
               ))}
             </svg>
@@ -487,21 +495,6 @@ function InFlowToast(props: Partial<Pick<React.ComponentProps<typeof StatusToast
       onDismiss={() => undefined}
       className="relative inset-auto bottom-auto justify-start"
     />
-  );
-}
-
-function CategoryChipsDemo({ onChange }: { onChange: (v: ElementCategory) => void }) {
-  const [value, setValue] = useState<ElementCategory | null>("plumbing");
-  return (
-    <div className="rounded-xl bg-mp-panel p-4" style={{ width: PANEL_W }}>
-      <CategoryChips
-        value={value}
-        onChange={(v) => {
-          setValue(v);
-          onChange(v);
-        }}
-      />
-    </div>
   );
 }
 

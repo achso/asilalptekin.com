@@ -16,7 +16,7 @@ const ICON: Record<ToastTone, React.ReactNode> = {
  * StatusToast (organism): the bottom-centre message layer over the canvas.
  *
  *  - event toast  ("North wall sent for review…"): wins whenever present; tap to dismiss
- *  - idle hint    ("Something doesn't match? Use the tools or tap a dimension."):
+ *  - idle hint    ("Something doesn't match? Tap the 4.55 dimension, or use Insert."):
  *                 the default-state guidance while nothing is selected
  */
 export type StatusToastProps = {
@@ -62,7 +62,7 @@ export function StatusToast({ toast, showHint, raised, onDismiss, className }: S
             exit={{ opacity: 0 }}
             className="whitespace-nowrap rounded-full bg-black/75 px-4 py-2 text-[14px] font-medium text-white"
           >
-            Something doesn&apos;t match? Use the tools or tap a dimension to propose a change.
+            Something doesn&apos;t match? Tap the 4.55 dimension, or use Insert.
           </motion.div>
         ) : null}
       </AnimatePresence>

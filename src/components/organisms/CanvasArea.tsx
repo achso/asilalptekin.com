@@ -2,12 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Crosshair, X } from "lucide-react";
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import { FloorPicker, UndoRedo } from "@/components/molecules/CanvasControls";
 import { ElementBadges } from "@/components/molecules/ElementBadges";
+import { MeasurementPopover } from "@/components/molecules/MeasurementPopover";
 import { CANVAS_H, CANVAS_W } from "@/lib/layout";
-import { categoryLabel } from "@/lib/floorplan";
-import type { ElementCategory, EscalationStatus, Point, SelectedElement } from "@/lib/types";
+import { wallById } from "@/lib/floorplan";
+import type { EscalationStatus, Point, SelectedElement } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FloorPlan } from "./FloorPlan";
 
@@ -20,9 +21,11 @@ import { FloorPlan } from "./FloorPlan";
  * Memoised: with stable props from page.tsx it re-renders only when the
  * selection or the escalations change, not on toasts or sidebar updates.
  *
- * The canvas handles selection and status. In ghost_draft (after Insert or
- * Add Wall) a tap inside the room drops the Ghost Object instead, and an
- * on-canvas prompt says so until it's placed.
+ * The canvas handles selection and status, plus the two hardcoded intercepts:
+ *  - tapping the North wall's 4.55 dimension opens the Change Measurement
+ *    popover; Propose Correction hands the wall to onProposeWallLength
+ *  - in ghost_draft (after Insert) a tap inside the room drops the red dashed
+ *    ghost wall, and an on-canvas prompt says so until it's placed
  */
 export type CanvasAreaProps = {
   selectedElement: SelectedElement | null;
@@ -30,14 +33,15 @@ export type CanvasAreaProps = {
   /** Standard Photos & Notes count per element (yellow paperclip). */
   photoCountFor: (el: SelectedElement) => number;
   onSelect: (el: SelectedElement | null) => void;
-  /** Ghost Object placement (ghost_draft), see FloorPlan. */
+  /** Ghost wall placement (ghost_draft), see FloorPlan. */
   placing?: boolean;
   draftMarker?: Point | null;
-  draftCategory?: ElementCategory | null;
   onPlace?: (p: Point) => void;
   /** Leave ghost_draft before anything was placed. */
   onCancelPlacing?: () => void;
-  markers?: { id: string; point: Point; status: EscalationStatus; category?: ElementCategory }[];
+  markers?: { id: string; point: Point; status: EscalationStatus }[];
+  /** Change Measurement popover → Propose Correction. */
+  onProposeWallLength?: (wallId: string) => void;
   className?: string;
 };
 
@@ -48,12 +52,16 @@ export const CanvasArea = memo(function CanvasArea({
   onSelect,
   placing,
   draftMarker,
-  draftCategory,
   onPlace,
   onCancelPlacing,
   markers,
+  onProposeWallLength,
   className,
 }: CanvasAreaProps) {
+  const [popover, setPopover] = useState<{ wallId: string; at: Point } | null>(null);
+  const onDimensionTap = useCallback((wallId: string, at: Point) => setPopover({ wallId, at }), []);
+  const closePopover = useCallback(() => setPopover(null), []);
+
   return (
     <main
       aria-label="Floor plan"
@@ -74,10 +82,26 @@ export const CanvasArea = memo(function CanvasArea({
         onSelect={onSelect}
         placing={placing}
         draftMarker={draftMarker}
-        draftCategory={draftCategory}
         onPlace={onPlace}
         markers={markers}
+        onDimensionTap={onDimensionTap}
       />
+
+      <AnimatePresence>
+        {popover && (
+          <MeasurementPopover
+            key="measurement"
+            at={popover.at}
+            valueM={wallById(popover.wallId).lengthM}
+            canvasWidth={CANVAS_W}
+            onClose={closePopover}
+            onPropose={() => {
+              setPopover(null);
+              onProposeWallLength?.(popover.wallId);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Placement prompt: the canvas is in a different mode, so say so on the canvas. */}
       <AnimatePresence>
@@ -92,11 +116,7 @@ export const CanvasArea = memo(function CanvasArea({
             className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-mp-red py-1.5 pl-4 pr-1.5 text-[15px] font-semibold text-white shadow-lg"
           >
             <Crosshair size={18} aria-hidden />
-            {draftCategory === "structural"
-              ? "Tap where the wall is"
-              : draftCategory
-                ? `Tap where the ${categoryLabel(draftCategory)} item is`
-                : "Tap the plan where it is"}
+            Tap where the missing wall is
             <button
               type="button"
               onClick={onCancelPlacing}

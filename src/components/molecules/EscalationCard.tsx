@@ -3,7 +3,7 @@
 import { cva } from "class-variance-authority";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, ChevronRight, Eye, Loader2, Mic, Ruler, Undo2 } from "lucide-react";
-import { CATEGORY_MEASURES, DIMENSION_FIELDS, categoryLabel, issueLabel } from "@/lib/floorplan";
+import { issueLabel } from "@/lib/floorplan";
 import type { Escalation, EscalationStatus, IssueType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { REVOKE_DISABLED_MESSAGE, STATUS_META, canRevoke } from "@/store/deviationMachine";
@@ -85,13 +85,10 @@ export type EscalationCardProps = {
   blocking?: boolean;
   /** When `status` last changed (ms epoch); adds "Opened by Munich 13:42". */
   statusChangedAt?: number;
-  /** Wall: one length. Room: length × width (plannedWidthM / measuredWidthM). */
-  dimension?: { plannedM: number; measuredM: number; plannedWidthM?: number; measuredWidthM?: number };
-  /** Undocumented Element: size measured on site (see CATEGORY_MEASURES). */
+  /** Dimension Mismatch: plan vs measured length. */
+  dimension?: { plannedM: number; measuredM: number };
+  /** Undocumented Element: length of the physical wall measured on site. */
   lengthM?: number;
-  heightM?: number;
-  /** "Width" for doors and windows, else "Length". */
-  primaryLabel?: "Length" | "Width";
   voiceMemoSeconds?: number;
   /** Makes the card body tappable (e.g. focus the element on the canvas). */
   onPress?: () => void;
@@ -113,8 +110,6 @@ export function EscalationCard({
   statusChangedAt,
   dimension,
   lengthM,
-  heightM,
-  primaryLabel = "Length",
   voiceMemoSeconds,
   onPress,
   className,
@@ -164,16 +159,12 @@ export function EscalationCard({
             <div className="mt-1 flex items-center gap-2.5 text-[12px] text-mp-muted">
               {dimension && (
                 <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
-                  <Ruler size={12} />
-                  {dimension.plannedWidthM !== undefined && dimension.measuredWidthM !== undefined
-                    ? `${dimension.plannedM.toFixed(2)} × ${dimension.plannedWidthM.toFixed(2)} → ${dimension.measuredM.toFixed(2)} × ${dimension.measuredWidthM.toFixed(2)} m`
-                    : `${dimension.plannedM.toFixed(2)} → ${dimension.measuredM.toFixed(2)} m`}
+                  <Ruler size={12} /> {dimension.plannedM.toFixed(2)} → {dimension.measuredM.toFixed(2)} m
                 </span>
               )}
               {!dimension && lengthM !== undefined && (
                 <span className="flex items-center gap-1 whitespace-nowrap font-medium text-mp-ink">
-                  <Ruler size={12} /> {lengthM.toFixed(2)} m {primaryLabel === "Width" ? "wide" : "long"}
-                  {heightM !== undefined && ` · ${heightM.toFixed(2)} m high`}
+                  <Ruler size={12} /> {lengthM.toFixed(2)} m long
                 </span>
               )}
               {voiceMemoSeconds !== undefined && (
@@ -283,30 +274,17 @@ export function toEscalationCardProps(
     issueType: e.issueType,
     timestamp: e.createdAt,
     statusChangedAt: e.statusChangedAt,
-    // What the proposal is about rides on the anchor line:
-    // "Music Room · Plumbing", "North wall · Wall Length".
-    targetLabel: e.category
-      ? `${e.targetLabel} · ${categoryLabel(e.category)}`
-      : e.dimensionField
-        ? // The room is implied for room-level dimensions; keep the line short.
-          `${e.target.type === "room" ? "Room" : e.targetLabel} · ${DIMENSION_FIELDS[e.dimensionField].label}`
-        : e.targetLabel,
+    // A proposed wall rides on the anchor line: "Music Room · Wall".
+    targetLabel: e.target.type === "ghost" ? `${e.targetLabel} · Wall` : e.targetLabel,
     photoUrl: e.photoUrls[0],
     photoCount: e.photoUrls.length,
     note: e.note,
     blocking: e.blocking,
     dimension:
       e.plannedM !== undefined && e.measuredM !== undefined
-        ? {
-            plannedM: e.plannedM,
-            measuredM: e.measuredM,
-            plannedWidthM: e.plannedWidthM,
-            measuredWidthM: e.measuredWidthM,
-          }
+        ? { plannedM: e.plannedM, measuredM: e.measuredM }
         : undefined,
     lengthM: e.issueType === "undocumented-element" ? e.measuredM : undefined,
-    heightM: e.issueType === "undocumented-element" ? e.heightM : undefined,
-    primaryLabel: e.category ? CATEGORY_MEASURES[e.category].primary.label : undefined,
     voiceMemoSeconds: e.voiceMemo?.durationS,
   };
 }

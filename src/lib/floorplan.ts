@@ -1,4 +1,4 @@
-import type { Corner, DimensionField, ElementCategory, IssueType, Point, SelectedElement, Wall } from "./types";
+import type { Corner, IssueType, Point, SelectedElement, Wall } from "./types";
 
 /**
  * One room, captured in metres. Mirrors the 4.55 × 3.30 m "Music Room" from the
@@ -80,79 +80,6 @@ export const ISSUE_TYPES: { id: IssueType; label: string; description: string }[
 
 export const issueLabel = (id: IssueType) =>
   ISSUE_TYPES.find((t) => t.id === id)?.label ?? id;
-
-/**
- * Object categories for "Undocumented Element": the native "All Objects"
- * insert menu's top level, same order, top level only (no sub-menus).
- * "Kitchen Cabinets" is shortened to "Cabinets" to fit a glove-sized tile;
- * Garage, Fire and Safety and Restoration are left out as non-spatial here.
- */
-export const ELEMENT_CATEGORIES: { id: ElementCategory; label: string }[] = [
-  { id: "annotations", label: "Annotations" },
-  { id: "doors", label: "Doors" },
-  { id: "windows", label: "Windows" },
-  { id: "structural", label: "Structural" },
-  { id: "plumbing", label: "Plumbing" },
-  { id: "appliances", label: "Appliances" },
-  { id: "cabinets", label: "Cabinets" },
-  { id: "furniture", label: "Furniture" },
-  { id: "electrical", label: "Electrical" },
-  { id: "outdoors", label: "Outdoors" },
-  { id: "hvac", label: "HVAC" },
-];
-
-/**
- * What to measure for each category, so every value means something:
- * - A structural wall runs floor to ceiling, so its length is enough.
- * - Doors, windows, appliances and cabinets are sized as width × height.
- * - Boxed-in pipes, ducts and units stop below the ceiling, so their height
- *   decides whether anything still fits above or around them.
- * Heights are capped at the ceiling.
- */
-export type CategoryMeasure = {
-  primary: { label: "Length" | "Width"; hint: string };
-  height?: { hint: string };
-};
-
-export const CATEGORY_MEASURES: Record<ElementCategory, CategoryMeasure> = {
-  annotations: { primary: { label: "Length", hint: "Length of element" } },
-  structural: { primary: { label: "Length", hint: "Length of physical wall" } },
-  doors: { primary: { label: "Width", hint: "Width of door" }, height: { hint: "Height of door" } },
-  windows: { primary: { label: "Width", hint: "Width of window" }, height: { hint: "Height of window" } },
-  plumbing: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
-  appliances: { primary: { label: "Width", hint: "Width of appliance" }, height: { hint: "Height of appliance" } },
-  cabinets: { primary: { label: "Width", hint: "Width of cabinet" }, height: { hint: "Height of cabinet" } },
-  furniture: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
-  outdoors: { primary: { label: "Length", hint: "Length of element" } },
-  electrical: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
-  hvac: { primary: { label: "Length", hint: "Length of element" }, height: { hint: "Height of element" } },
-};
-
-export const categoryLabel = (id: ElementCategory) =>
-  ELEMENT_CATEGORIES.find((c) => c.id === id)?.label ?? id;
-
-/** Proposable dimensions: label and plan value(s). Room size has two axes. */
-export const DIMENSION_FIELDS: Record<
-  DimensionField,
-  { label: string; inputs: { key: "primary" | "width"; label: string; plannedM: (el: SelectedElement) => number }[] }
-> = {
-  "wall-length": {
-    label: "Wall Length",
-    inputs: [{ key: "primary", label: "Measured Length", plannedM: (el) => wallById(el.id).lengthM }],
-  },
-  "ceiling-height": {
-    label: "Ceiling Height",
-    inputs: [{ key: "primary", label: "Measured Ceiling Height", plannedM: () => ROOM.ceilingM }],
-  },
-  "room-size": {
-    label: "Room Size",
-    // Width runs north–south (3.30), length east–west (4.55).
-    inputs: [
-      { key: "width", label: "Measured Width", plannedM: () => ROOM.depthM },
-      { key: "primary", label: "Measured Length", plannedM: () => ROOM.widthM },
-    ],
-  },
-};
 
 export const cornerById = (id: string) => CORNERS.find((c) => c.id === id)!;
 export const wallById = (id: string) => WALLS.find((w) => w.id === id)!;
