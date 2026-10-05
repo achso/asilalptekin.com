@@ -93,8 +93,8 @@ export type Escalation = {
   photoUrls: string[];
   /** Optional free-text note from the evidence step. */
   note?: string;
-  /** Optional voice memo (mocked): its length, and the transcript once transcribed. */
-  voiceMemo?: { durationS: number; transcript?: string };
+  /** Optional voice memo from the Notes field (mocked): its length, and whether it was transcribed into the note. */
+  voiceMemo?: { durationS: number; transcribed?: boolean };
   blocking: boolean; // "work is stopped until resolved"
   /** The Ask: what the contractor needs back (required). */
   ask?: AskId;

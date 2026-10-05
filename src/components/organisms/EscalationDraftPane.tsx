@@ -6,8 +6,8 @@ import { useState } from "react";
 import { StepLabel } from "@/components/atoms/StepLabel";
 import { ModalHeader } from "@/components/molecules/ModalHeader";
 import { NumericStepper } from "@/components/molecules/NumericStepper";
-import { DEFAULT_DICTATION, PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
-import { VoiceMemoCard, type VoiceMemoValue } from "@/components/molecules/VoiceMemoCard";
+import { DEFAULT_TRANSCRIPT, type VoiceMemoValue } from "@/components/molecules/NotesAndAudioInput";
+import { PhotoEvidenceCapture } from "@/components/molecules/PhotoEvidenceCapture";
 import {
   ASKS,
   ISSUE_TYPES,
@@ -44,9 +44,9 @@ import { type Draft, draftLabel } from "@/store/useDeviationState";
  * automatically. Text is 15 px minimum; one decimal separator (".").
  */
 
-/** What the simulated speech-to-text "hears" on each golden path (MVP). */
+/** What the mocked voice memo transcribes to on each golden path (MVP). */
 const DICTATION: Record<"wall-length" | "missing-element" | "object-change" | "remove", string> = {
-  "wall-length": DEFAULT_DICTATION,
+  "wall-length": DEFAULT_TRANSCRIPT,
   "missing-element":
     "There is a wall on site that is not on the locked plan. Requesting a plan update before we build against it.",
   "object-change": "The fixture on site is a different size than the locked plan shows. Requesting confirmation before we install.",
@@ -392,21 +392,15 @@ export function EscalationDraftPane({ draft, onCancel, onSubmit, onReview, onCha
             onPhotosChange={setPhotos}
             note={note}
             onNoteChange={setNote}
-            dictation={DICTATION[isRemove ? "remove" : isWallLength ? "wall-length" : isObject ? "object-change" : "missing-element"]}
+            transcript={DICTATION[isRemove ? "remove" : isWallLength ? "wall-length" : isObject ? "object-change" : "missing-element"]}
+            onVoiceMemoChange={setVoiceMemo}
           />
-        </section>
-
-        <section className="flex flex-col gap-2.5">
-          <StepLabel n={isRemove ? 2 : 3} done={!!voiceMemo} optional>
-            Voice memo
-          </StepLabel>
-          <VoiceMemoCard transcript={DICTATION[isRemove ? "remove" : isWallLength ? "wall-length" : isObject ? "object-change" : "missing-element"]} onChange={setVoiceMemo} />
         </section>
 
         {/* The Ask + priority, right above Send: Send stays disabled until
             the ask is picked, so neither can be skipped below the fold. */}
         <section className="flex flex-col gap-2.5">
-          <StepLabel n={isRemove ? 3 : 4} done={!!ask}>
+          <StepLabel n={isRemove ? 2 : 3} done={!!ask}>
             What do you need back? <span className="text-mp-red">*</span>
           </StepLabel>
           <div role="radiogroup" aria-label="The ask" className="flex flex-wrap gap-2">

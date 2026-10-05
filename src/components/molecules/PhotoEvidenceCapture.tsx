@@ -1,10 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Mic, Plus, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Plus, X } from "lucide-react";
+import { useId, useRef } from "react";
 import { DEMO_PHOTO } from "@/lib/demoPhoto";
 import { cn } from "@/lib/utils";
+import { NotesAndAudioInput, type VoiceMemoValue } from "./NotesAndAudioInput";
 
 /**
  * PhotoEvidenceCapture (molecule)
@@ -23,10 +24,6 @@ import { cn } from "@/lib/utils";
 
 export const MAX_PHOTOS = 7;
 
-/** MVP transcript for the simulated mic (golden path: the dimension mismatch). */
-export const DEFAULT_DICTATION =
-  "The physical wall is 20cm shorter than the locked plan indicates. Requesting permission to proceed.";
-
 export type PhotoEvidenceCaptureProps = {
   photos: string[];
   onPhotosChange: (photos: string[]) => void;
@@ -36,8 +33,10 @@ export type PhotoEvidenceCaptureProps = {
   onPhotoAdded?: (url: string) => void;
   /** Offer a demo image when there is no camera (desktop review). */
   allowDemo?: boolean;
-  /** What the simulated speech-to-text "hears" (MVP: a hardcoded transcript). */
-  dictation?: string;
+  /** What the mocked voice memo transcribes to (hardcoded per golden path). */
+  transcript?: string;
+  /** The voice memo recorded in the Notes field (null: none). */
+  onVoiceMemoChange?: (memo: VoiceMemoValue | null) => void;
   className?: string;
 };
 
@@ -48,25 +47,10 @@ export function PhotoEvidenceCapture({
   onNoteChange,
   onPhotoAdded,
   allowDemo = true,
-  dictation = DEFAULT_DICTATION,
+  transcript,
+  onVoiceMemoChange,
   className,
 }: PhotoEvidenceCaptureProps) {
-  // Simulated speech-to-text: "Listening..." for 2.5 s, then the transcript
-  // lands in the note (appended if there's text already).
-  const [isRecording, setIsRecording] = useState(false);
-  const listenTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(listenTimer.current), []);
-  const latestNote = useRef(note);
-  latestNote.current = note;
-  const dictate = () => {
-    if (isRecording) return;
-    setIsRecording(true);
-    listenTimer.current = window.setTimeout(() => {
-      setIsRecording(false);
-      const prev = latestNote.current.trim();
-      onNoteChange(prev ? `${prev} ${dictation}` : dictation);
-    }, 2500);
-  };
   const input = useRef<HTMLInputElement>(null);
   const noteId = useId();
   const full = photos.length >= MAX_PHOTOS;
@@ -180,37 +164,14 @@ export function PhotoEvidenceCapture({
         Notes
       </label>
       <div className="rounded-2xl bg-white p-2.5">
-        {/* Smart Note: type, or tap the mic to dictate. The mic floats in the
-            bottom-right corner; the right padding keeps text clear of it. */}
-        <div className="relative">
-          <textarea
-            id={noteId}
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-            placeholder={isRecording ? "Listening..." : "Add note, or tap the mic to dictate..."}
-            readOnly={isRecording}
-            aria-busy={isRecording}
-            rows={3}
-            maxLength={500}
-            className={cn(
-              "block min-h-[96px] w-full resize-y rounded-xl border-0 bg-gray-100 py-2.5 pl-3 pr-14 text-[15px] leading-snug outline-none placeholder:text-[#a1a1a6] focus:ring-2 focus:ring-mp-blue/40",
-              isRecording && "ring-2 ring-mp-red/50 placeholder:text-mp-red",
-            )}
-          />
-          <button
-            type="button"
-            onClick={dictate}
-            disabled={isRecording}
-            aria-pressed={isRecording}
-            aria-label={isRecording ? "Listening" : "Dictate note"}
-            className={cn(
-              "absolute bottom-2 right-2 grid size-11 place-items-center rounded-full transition-colors",
-              isRecording ? "animate-pulse bg-mp-red text-white" : "bg-white text-mp-blue shadow-sm active:bg-blue-50",
-            )}
-          >
-            <Mic size={20} aria-hidden />
-          </button>
-        </div>
+        {/* Notes + voice memo in one footprint: type, or tap the mic to record. */}
+        <NotesAndAudioInput
+          id={noteId}
+          note={note}
+          onNoteChange={onNoteChange}
+          transcript={transcript}
+          onMemoChange={onVoiceMemoChange}
+        />
       </div>
     </div>
   );

@@ -5,8 +5,9 @@ import { Mic, Pause, Play, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type MemoState = "idle" | "recording" | "recorded" | "transcribed";
-export type VoiceMemoValue = { durationS: number; transcript?: string };
+export type NotesMode = "text" | "recording" | "recorded";
+/** The voice memo that rides along with the note (mocked: no audio is kept). */
+export type VoiceMemoValue = { durationS: number; transcribed?: boolean };
 
 /** MVP transcript (golden path: the dimension mismatch). */
 export const DEFAULT_TRANSCRIPT =
@@ -16,44 +17,53 @@ export const DEFAULT_TRANSCRIPT =
 const BARS = [6, 10, 16, 9, 20, 26, 14, 8, 18, 24, 12, 7, 15, 22, 28, 19, 10, 6, 13, 21, 25, 16, 9, 12, 18, 8, 5, 11, 17, 7];
 const BAR_W = 3;
 const BAR_GAP = 2;
-
+const WAVE_W = BARS.length * (BAR_W + BAR_GAP) - BAR_GAP;
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+/** Same box for every mode, so the field shape-shifts in place instead of growing the form. */
+const FOOTPRINT = "min-h-[96px] w-full rounded-xl bg-gray-100";
+
 /**
- * VoiceMemoCard (molecule): a WhatsApp-style voice note, mocked (no audio,
- * no speech-to-text API) to prove the UX.
+ * NotesAndAudioInput (molecule): the Notes field and the voice memo in ONE
+ * footprint (mocked audio, WhatsApp-style), so the form needs no separate
+ * Voice memo section.
  *
- *   idle         gray "Add Voice Memo" button
- *   recording    pill: pulsing red dot · timer counting up · Stop
- *   recorded     gray bubble: play · waveform · duration · green "Transcribe"
- *   transcribed  the bubble grows downwards and the transcript fades in
- *
- * Play runs a mock playback over the memo's length (bars fill as it plays).
- * The trash button throws the memo away (back to idle).
+ *   text       the note's text area, gray mic button in its bottom-right corner
+ *   recording  the text area gives way to a pill: pulsing red dot · timer · Stop
+ *   recorded   the WhatsApp bubble: play · waveform · duration · green Transcribe,
+ *              and a trash icon (deletes the audio, back to text)
+ *   Transcribe the text area comes back below the waveform, pre-filled with the
+ *              transcript, editable
  */
-export function VoiceMemoCard({
+export function NotesAndAudioInput({
+  id,
+  note,
+  onNoteChange,
   transcript = DEFAULT_TRANSCRIPT,
-  onChange,
-  className,
+  onMemoChange,
 }: {
-  /** What "Transcribe" reveals (hardcoded per golden path). */
+  /** Ties the "Notes" label to the text area. */
+  id?: string;
+  note: string;
+  onNoteChange: (note: string) => void;
+  /** What "Transcribe" produces (hardcoded per golden path). */
   transcript?: string;
-  /** The memo as it stands (null when there is none). */
-  onChange?: (memo: VoiceMemoValue | null) => void;
-  className?: string;
+  /** The memo as it stands (null: no memo). */
+  onMemoChange?: (memo: VoiceMemoValue | null) => void;
 }) {
-  const [memoState, setMemoState] = useState<MemoState>("idle");
+  const [mode, setMode] = useState<NotesMode>("text");
+  const [transcribed, setTranscribed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // 0..1 of playback
-  const tick = useRef<number | undefined>(undefined);
+  const [progress, setProgress] = useState(0); // 0..1 of mock playback
 
   // Recording: count up once a second.
+  const tick = useRef<number | undefined>(undefined);
   useEffect(() => {
-    if (memoState !== "recording") return;
+    if (mode !== "recording") return;
     tick.current = window.setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => window.clearInterval(tick.current);
-  }, [memoState]);
+  }, [mode]);
 
   // Mock playback: fill the waveform over the memo's length, then stop.
   useEffect(() => {
@@ -71,51 +81,72 @@ export function VoiceMemoCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
-  const start = () => {
+  const record = () => {
     setSeconds(0);
-    setMemoState("recording");
+    setTranscribed(false);
+    setMode("recording");
   };
   const stop = () => {
     const d = Math.max(1, seconds);
     setSeconds(d);
-    setMemoState("recorded");
-    onChange?.({ durationS: d });
+    setMode("recorded");
+    onMemoChange?.({ durationS: d });
   };
   const transcribe = () => {
-    setMemoState("transcribed");
-    onChange?.({ durationS: seconds, transcript });
+    setTranscribed(true);
+    // Pre-fill (after anything already typed), editable from here.
+    const prev = note.trim();
+    onNoteChange(prev ? `${prev} ${transcript}` : transcript);
+    onMemoChange?.({ durationS: seconds, transcribed: true });
   };
   const discard = () => {
     setPlaying(false);
     setProgress(0);
-    setSeconds(0);
-    setMemoState("idle");
-    onChange?.(null);
+    setTranscribed(false);
+    setMode("text");
+    onMemoChange?.(null);
   };
 
-  // ── State 1: idle ─────────────────────────────────────────────────────────
-  if (memoState === "idle") {
-    return (
-      <button
-        type="button"
-        onClick={start}
+  const textArea = (withMic: boolean) => (
+    <div className="relative">
+      <textarea
+        id={id}
+        value={note}
+        onChange={(e) => onNoteChange(e.target.value)}
+        placeholder="Add note..."
+        rows={3}
+        maxLength={500}
         className={cn(
-          "flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gray-100 text-[15px] font-semibold text-mp-ink active:bg-gray-200",
-          className,
+          FOOTPRINT,
+          "block resize-y border-0 py-2.5 pl-3 text-[15px] leading-snug outline-none placeholder:text-[#a1a1a6] focus:ring-2 focus:ring-mp-blue/40",
+          // The mic sits in the bottom-right corner; this padding keeps text clear of it.
+          withMic ? "pr-14" : "pr-3",
         )}
-      >
-        <Mic size={20} aria-hidden /> Add Voice Memo
-      </button>
-    );
-  }
+      />
+      {withMic && (
+        <button
+          type="button"
+          onClick={record}
+          aria-label="Record voice memo"
+          className="absolute bottom-2 right-2 grid size-11 place-items-center rounded-full bg-gray-200 text-mp-ink active:bg-gray-300"
+        >
+          <Mic size={20} aria-hidden />
+        </button>
+      )}
+    </div>
+  );
 
-  // ── State 2: recording ────────────────────────────────────────────────────
-  if (memoState === "recording") {
+  // ── text ──────────────────────────────────────────────────────────────────
+  if (mode === "text") return <div data-notes-mode="text">{textArea(true)}</div>;
+
+  // ── recording: the text area gives way to the recording pill ──────────────
+  if (mode === "recording") {
     return (
       <div
+        data-notes-mode="recording"
         role="status"
-        aria-label={`Recording, ${clock(seconds)}`}
-        className={cn("flex h-14 items-center gap-3 rounded-full border border-mp-line bg-white pl-5 pr-1.5", className)}
+        aria-label={`Recording voice memo, ${clock(seconds)}`}
+        className={cn(FOOTPRINT, "flex items-center gap-3 rounded-full border border-mp-line bg-white pl-5 pr-2")}
       >
         <span className="relative flex size-3" aria-hidden>
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-mp-red opacity-60" />
@@ -134,12 +165,11 @@ export function VoiceMemoCard({
     );
   }
 
-  // ── States 3 + 4: recorded / transcribed (the WhatsApp bubble) ────────────
-  const waveW = BARS.length * (BAR_W + BAR_GAP) - BAR_GAP;
+  // ── recorded: the WhatsApp bubble (+ the editable transcript once transcribed)
   const played = Math.round(progress * BARS.length);
   return (
-    <motion.div layout className={cn("rounded-2xl bg-gray-100 p-3", className)} data-memo-state={memoState}>
-      <div className="flex items-center gap-3">
+    <div data-notes-mode={transcribed ? "transcribed" : "recorded"} className="flex flex-col gap-2">
+      <div className={cn(FOOTPRINT, "flex items-center gap-3 p-3")}>
         <button
           type="button"
           onClick={() => setPlaying((p) => !p)}
@@ -148,10 +178,9 @@ export function VoiceMemoCard({
         >
           {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
         </button>
-
         <div className="min-w-0 flex-1">
           {/* Mock waveform: bars of varying height; played bars go dark. */}
-          <svg width="100%" height={28} viewBox={`0 0 ${waveW} 28`} preserveAspectRatio="none" aria-hidden>
+          <svg width="100%" height={28} viewBox={`0 0 ${WAVE_W} 28`} preserveAspectRatio="none" aria-hidden>
             {BARS.map((h, i) => (
               <rect
                 key={i}
@@ -168,7 +197,7 @@ export function VoiceMemoCard({
             <span className="text-[15px] tabular-nums text-mp-muted">
               {playing ? clock(Math.round(progress * seconds)) : clock(seconds)}
             </span>
-            {memoState === "recorded" && (
+            {!transcribed && (
               <button
                 type="button"
                 onClick={transcribe}
@@ -179,7 +208,6 @@ export function VoiceMemoCard({
             )}
           </div>
         </div>
-
         <button
           type="button"
           onClick={discard}
@@ -190,9 +218,9 @@ export function VoiceMemoCard({
         </button>
       </div>
 
-      {/* State 4: the bubble grows downwards and the transcript fades in. */}
+      {/* Transcribed: the text area returns below the waveform, pre-filled, editable. */}
       <AnimatePresence initial={false}>
-        {memoState === "transcribed" && (
+        {transcribed && (
           <motion.div
             key="transcript"
             initial={{ height: 0, opacity: 0 }}
@@ -200,12 +228,10 @@ export function VoiceMemoCard({
             transition={{ height: { duration: 0.22 }, opacity: { duration: 0.3, delay: 0.1 } }}
             className="overflow-hidden"
           >
-            <p data-transcript className="mt-3 border-t border-gray-200 pt-3 text-[15px] leading-snug text-mp-ink">
-              {transcript}
-            </p>
+            {textArea(false)}
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

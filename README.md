@@ -49,8 +49,8 @@ Wi-Fi and hold it in landscape. For a full-screen, app-like view, tap
 On a desktop browser the app renders inside an iPad frame (1180 × 820,
 iPad Air / Pro 11" landscape) and scales to fit the window.
 
-> **Note:** dictation in the Smart Note is simulated (no microphone access
-> needed), so it works the same over a plain-http LAN address.
+> **Note:** the voice memo is mocked (no microphone access needed), so it
+> works the same over a plain-http LAN address.
 
 ---
 
@@ -167,20 +167,24 @@ reviews it.
     a plausible minimum of **0.50 m** is required (*"At least 0.50 m"*).
   - **Evidence**: the same photo grid as the native *Photos & Notes* tab
     (the + tile opens the rear camera; on a laptop use *"No camera? Use demo
-    photo"*), at least one photo. Under it, one **Smart Note** replaces the
-    separate Notes box and voice memo: type, or tap the **mic** in the
-    field's bottom-right corner. It turns red and pulses, the placeholder
-    reads *Listening...*, and after 2.5 s a transcript for the current path
-    lands in the note (simulated speech-to-text, e.g. *"The physical wall is
-    20cm shorter than the locked plan indicates. Requesting permission to
-    proceed."*). The same note field is in every Photos & Notes tab.
-  - **Voice memo** (optional, `VoiceMemoCard`): a WhatsApp-style voice note,
-    mocked (no audio, no speech-to-text API). *Add Voice Memo* → a recording
-    pill (pulsing red dot, timer counting up, **Stop**) → a gray bubble with
-    play, a waveform and the duration, plus a green **Transcribe** link → the
-    bubble grows and the transcript fades in. Play runs a mock playback (the
-    waveform fills); the trash icon deletes it. The memo's length shows on
-    the sent card, and the ticket has a *Voice memo* row with the transcript.
+    photo"*), at least one photo. The grid is the native 4 × 2 one, untouched.
+  - **Notes + voice memo in one field** (`NotesAndAudioInput`, right under
+    the grid; mocked audio, no speech-to-text API). The field shape-shifts in
+    the same footprint instead of adding a section:
+    - **text**: the note, with a gray **mic** button in its bottom-right corner;
+    - **recording**: the text area gives way to a pill with a pulsing red dot,
+      a live timer and **Stop**;
+    - **recorded**: a WhatsApp-style bubble with play (mock playback fills the
+      waveform), the waveform, the duration, a green **Transcribe** link and a
+      trash icon (deletes the audio, back to text);
+    - **Transcribe**: the text area comes back under the waveform, pre-filled
+      with the transcript for the current path (e.g. *"The physical wall is
+      20cm shorter than the locked plan indicates. Requesting permission to
+      proceed."*), editable.
+
+    The memo's length shows on the sent card; the ticket has a *Voice memo*
+    row (*transcribed into the note* or *audio only*). Every Photos & Notes
+    tab uses the same field.
   - **The Ask** (UX audit #2), required, right above Send: *Update the plan*,
     *Tell me whether I can continue*, *Check the permit*.
   - **Priority** (UX audit #5, renamed in round 2): what the contractor is
