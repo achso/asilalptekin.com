@@ -111,10 +111,12 @@ sidebar with the intent already filled in.
    and the location in words: *Drawn on plan · runs north–south · From North
    wall, 1.40 m from west to 1.40 m from west, 2.40 m from north*. The
    contractor corrects the length with the tape measure reading if it differs.
-   Attached to an existing wall, the **host wall's dimension splits** where
-   the new wall meets it (e.g. 4.55 → *2.99 | 1.56*), live while drawing and
-   sliding, on sent reports, in the expert's snapshot, and in grey once
-   accepted into the plan, so both sides know exactly where it attaches.
+   Attached to an existing wall, the **host wall's dimension is chained**
+   like magicplan's nested dimensions: the two new segments (e.g. *2.99 |
+   1.56*) sit just outside the wall, with arrows and an extension line from
+   the attachment point, and the total (*4.55*) stays outside them. Live
+   while drawing and sliding, on sent reports, in the expert's snapshot
+   (segments inside, total outside), and in the plan's blue once accepted.
 5. Once drawn it behaves like an object, and **the plan and the length field
    are one value**: type a length or tap − / + and the wall redraws; drag its
    **end handle** to resize and the field follows. Drag the wall (the ring

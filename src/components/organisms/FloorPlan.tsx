@@ -633,7 +633,7 @@ function MergedGeometry({ plan }: { plan: PlanRevision }) {
       })}
       {/* …and the host walls' dimensions stay split where they attach. */}
       {plan.walls.flatMap((l, i) =>
-        lineSplits(l).map((sp) => <WallSplit key={`ms-${i}-${sp.wallId}`} {...sp} color="#6f6f73" />),
+        lineSplits(l).map((sp) => <WallSplit key={`ms-${i}-${sp.wallId}`} {...sp} color={BLUE_STRONG} />),
       )}
       {plan.items.map((it) => {
         const c = toPx(it.center);
@@ -682,39 +682,61 @@ function WallPreview({ start, hover }: { start: Point | null; hover: Point | nul
 }
 
 /**
- * A wall's dimension split where a new wall attaches (e.g. 4.55 → 2.99 | 1.56),
- * drawn just outside the wall, inside its plan dimension line.
+ * A wall's dimension split where a new wall attaches, nested inside the
+ * wall's total (magicplan's chained dimensions): the segments (e.g. 2.99 |
+ * 1.56) sit just outside the wall, the plan total (4.55) stays outside them.
+ * Same drawing as the plan's dimensions (grey line, arrows to the ticks, a
+ * dashed extension line from the attachment point); only the labels carry
+ * the report's colour (red while proposed).
  */
 function WallSplit({ wallId, offsetM, lengthM, color }: { wallId: string; offsetM: number; lengthM: number; color: string }) {
   const g = wallGeometry(wallById(wallId));
-  const off = 26;
-  const at = (m: number) => ({ x: g.a.x + g.ux * m * PX_PER_M - g.nx * off, y: g.a.y + g.uy * m * PX_PER_M - g.ny * off });
-  const a = at(0);
-  const sp = at(offsetM);
-  const b = at(lengthM);
-  const tick = (q: Point) => <line x1={q.x - g.nx * 5} y1={q.y - g.ny * 5} x2={q.x + g.nx * 5} y2={q.y + g.ny * 5} />;
+  const off = 24;
+  const onWall = (m: number) => ({ x: g.a.x + g.ux * m * PX_PER_M, y: g.a.y + g.uy * m * PX_PER_M });
+  const at = (m: number) => {
+    const p = onWall(m);
+    return { x: p.x - g.nx * off, y: p.y - g.ny * off };
+  };
+  const pts = [at(0), at(offsetM), at(lengthM)];
+  const tick = (q: Point, i: number) => (
+    <line key={`t${i}`} x1={q.x - g.nx * 5} y1={q.y - g.ny * 5} x2={q.x + g.nx * 5} y2={q.y + g.ny * 5} />
+  );
+  // Arrowhead at q, pointing along (dx, dy).
+  const arrow = (q: Point, dx: number, dy: number, k: string) => (
+    <path
+      key={k}
+      d={`M${q.x} ${q.y} L${q.x - dx * 7 - dy * 3} ${q.y - dy * 7 + dx * 3} L${q.x - dx * 7 + dy * 3} ${q.y - dy * 7 - dx * 3} Z`}
+      fill="#6f6f73"
+      stroke="none"
+    />
+  );
   const vertical = Math.abs(g.uy) > 0.5;
+  const cut = onWall(offsetM);
   return (
-    <g data-wall-split={`${wallId}:${offsetM}`} stroke={color} strokeWidth={1}>
-      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeDasharray="4 3" />
-      {tick(a)}
-      {tick(sp)}
-      {tick(b)}
+    <g data-wall-split={`${wallId}:${offsetM}`} stroke="#6f6f73" strokeWidth={1}>
+      <line x1={pts[0].x} y1={pts[0].y} x2={pts[2].x} y2={pts[2].y} />
+      {/* extension line from where the new wall attaches */}
+      <line x1={cut.x} y1={cut.y} x2={pts[1].x} y2={pts[1].y} strokeDasharray="3 3" />
+      {pts.map(tick)}
       {[
-        [a, sp, offsetM],
-        [sp, b, lengthM - offsetM],
-      ].map(([p, q, m], i) =>
-        (m as number) >= 0.3 ? (
-          <LengthTag
-            key={i}
-            x={((p as Point).x + (q as Point).x) / 2}
-            y={((p as Point).y + (q as Point).y) / 2}
-            text={(m as number).toFixed(2)}
-            color={color}
-            vertical={vertical}
-          />
-        ) : null,
-      )}
+        [pts[0], pts[1], offsetM],
+        [pts[1], pts[2], lengthM - offsetM],
+      ].map(([p, q, m], i) => {
+        const P = p as Point;
+        const Q = q as Point;
+        const len = Math.hypot(Q.x - P.x, Q.y - P.y) || 1;
+        const ux = (Q.x - P.x) / len;
+        const uy = (Q.y - P.y) / len;
+        return (
+          <g key={i}>
+            {arrow(P, -ux, -uy, `a${i}`)}
+            {arrow(Q, ux, uy, `b${i}`)}
+            {(m as number) >= 0.3 && (
+              <LengthTag x={(P.x + Q.x) / 2} y={(P.y + Q.y) / 2} text={(m as number).toFixed(2)} color={color} vertical={vertical} />
+            )}
+          </g>
+        );
+      })}
     </g>
   );
 }

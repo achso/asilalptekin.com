@@ -275,7 +275,7 @@ const signedCm = (d: number) => `${d >= 0 ? "+" : "−"}${Math.abs(Math.round(d 
 
 // ── Plan snapshot ───────────────────────────────────────────────────────────
 
-const PAD = 0.45;
+const PAD = 0.62;
 const T = 0.12; // wall thickness in metres
 
 /** The locked plan in metres (walls, objects), with the report drawn in red on top. */
@@ -445,8 +445,23 @@ function PlanSnapshot({ e }: { e: Escalation }) {
           const along = (m: number) =>
             vertical ? { x: at.x, y: from.y + uy * m } : { x: from.x + ux * m, y: at.y };
           const cut = along(split.offsetM);
+          // Nested like magicplan: the pieces inside, the wall's total outside them.
+          const out = OUTWARD[id];
+          const total = { x: at.x + out.x * 0.27, y: at.y + out.y * 0.27 };
           return (
             <g key={id} data-snapshot-split>
+              <text
+                data-snapshot-total
+                x={total.x}
+                y={total.y}
+                fontSize={0.15}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#6b6b70"
+                transform={vertical ? `rotate(-90 ${total.x} ${total.y})` : undefined}
+              >
+                {split.lengthM.toFixed(2)} m
+              </text>
               <line
                 x1={vertical ? cut.x - 0.09 : cut.x}
                 y1={vertical ? cut.y : cut.y - 0.09}
@@ -490,6 +505,14 @@ const SIZE_LABEL_AT: Record<"w-north" | "w-west" | "w-south" | "w-east", Point> 
   "w-south": { x: ROOM.widthM / 2, y: ROOM.depthM + 0.25 },
   "w-west": { x: -0.25, y: ROOM.depthM / 2 },
   "w-east": { x: ROOM.widthM + 0.25, y: ROOM.depthM / 2 },
+};
+
+/** Away from the room, per wall (where its labels go). */
+const OUTWARD: Record<"w-north" | "w-west" | "w-south" | "w-east", Point> = {
+  "w-north": { x: 0, y: -1 },
+  "w-south": { x: 0, y: 1 },
+  "w-west": { x: -1, y: 0 },
+  "w-east": { x: 1, y: 0 },
 };
 
 /** A door (gap + leaf + swing) or window (gap + glazing lines) on a wall, in metres. */
