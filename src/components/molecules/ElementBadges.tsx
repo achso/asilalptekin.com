@@ -3,7 +3,7 @@
 import { AnimatePresence } from "framer-motion";
 import { AttachmentBadge } from "@/components/atoms/AttachmentBadge";
 import { FloatingAnchor } from "@/components/atoms/FloatingAnchor";
-import { CORNERS, ROOM, WALLS, WALL_THICKNESS, currentPlanObjects, elementInfo } from "@/lib/floorplan";
+import { CORNERS, ROOM, WALLS, WALL_THICKNESS, currentPlanObjects, elementInfo, planRevision } from "@/lib/floorplan";
 import type { EscalationStatus, SelectedElement } from "@/lib/types";
 import { canvasBadgeFor } from "@/store/deviationMachine";
 import { EscalationPin } from "./EscalationPin";
@@ -17,11 +17,14 @@ import { EscalationPin } from "./EscalationPin";
  * An element with standard photos AND an escalation shows only the pin.
  */
 
-const ALL_ELEMENTS: SelectedElement[] = [
+/** Every element that can carry a badge, as the plan stands now (accepted changes included). */
+const allElements = (): SelectedElement[] => [
   ...WALLS.map((w) => ({ type: "wall" as const, id: w.id })),
   ...CORNERS.map((c) => ({ type: "corner" as const, id: c.id })),
   { type: "room", id: ROOM.id },
   ...currentPlanObjects().map((o) => ({ type: "object" as const, id: o.id })),
+  ...planRevision().walls.map((w) => ({ type: "added" as const, id: w.id })),
+  ...planRevision().items.map((i) => ({ type: "added" as const, id: i.id })),
 ];
 
 /** Centred on the wall's body (drawn half a thickness outside the room line). */
@@ -31,6 +34,7 @@ const OFFSET: Record<SelectedElement["type"], number> = {
   room: 0,
   ghost: 0,
   object: 0,
+  added: 0,
 };
 
 export function ElementBadges({
@@ -44,7 +48,7 @@ export function ElementBadges({
 }) {
   return (
     <AnimatePresence>
-      {ALL_ELEMENTS.map((el) => {
+      {allElements().map((el) => {
         const status = statusFor(el);
         const photos = photoCountFor(el);
         const badge = canvasBadgeFor(status, photos);

@@ -148,8 +148,8 @@ export type PlanRevision = {
   removedObjects: string[];
   /** Corrected wall lengths (dimension labels). */
   wallLengths: Record<string, number>;
-  /** Partition walls added to the plan. */
-  walls: WallLine[];
+  /** Partition walls added to the plan (id = the report it came from). */
+  walls: (WallLine & { id: string })[];
   /** Objects added to the plan (squares), with their category. */
   items: (GhostItem & { category?: string })[];
 };
@@ -168,6 +168,14 @@ export const objectById = (id: string): PlanObject => {
   const fix = revision.objects[id];
   return fix ? { ...base, ...fix } : base;
 };
+/** A wall or object added by an accepted report (selectable, holds its report's photos). */
+export const addedById = (id: string) => {
+  const wall = revision.walls.find((w) => w.id === id);
+  if (wall) return { kind: "wall" as const, wall };
+  const item = revision.items.find((i) => i.id === id);
+  return item ? { kind: "item" as const, item } : null;
+};
+
 /** The plan's objects as they stand (accepted removals left out, corrections in). */
 export const currentPlanObjects = () =>
   PLAN_OBJECTS.filter((o) => !revision.removedObjects.includes(o.id)).map((o) => objectById(o.id));
@@ -503,6 +511,14 @@ export function elementInfo(el: SelectedElement): ElementInfo {
       const o = objectById(el.id);
       return { label: o.label, summary: `${o.widthM.toFixed(2)} × ${o.depthM.toFixed(2)} m` };
     }
+    case "added": {
+      const a = addedById(el.id);
+      if (a?.kind === "wall") return { label: WALL_CATEGORY, summary: `Length ${lineLength(a.wall).toFixed(2)} m` };
+      return {
+        label: a?.item.category ?? "Added element",
+        summary: `${GHOST_ITEM_SIZE.widthM.toFixed(2)} × ${GHOST_ITEM_SIZE.depthM.toFixed(2)} m`,
+      };
+    }
     case "room": {
       return {
         label: ROOM.label,
@@ -541,6 +557,17 @@ export function elementAnchor(el: SelectedElement): { p: Point; inward: Point } 
       return { p: centre, inward: { x: 0, y: 1 } };
     case "object":
       return { p: toPx(objectById(el.id).center), inward: { x: 0, y: 1 } };
+    case "added": {
+      const a = addedById(el.id);
+      if (a?.kind === "wall") {
+        return { p: toPx({ x: (a.wall.a.x + a.wall.b.x) / 2, y: (a.wall.a.y + a.wall.b.y) / 2 }), inward: { x: 0, y: 1 } };
+      }
+      if (!a) return { p: centre, inward: { x: 0, y: 1 } };
+      // Top-right corner, so the paperclip doesn't cover the object's label.
+      const c = toPx(a.item.center);
+      const r = (GHOST_ITEM_SIZE.widthM / 2) * PX_PER_M;
+      return { p: { x: c.x + r, y: c.y - r }, inward: { x: 0, y: 1 } };
+    }
     case "room":
       // Anchor near the top of the floor so the badge/button sit on open floor.
       return { p: { x: centre.x, y: centre.y - 40 }, inward: { x: 0, y: 1 } };
@@ -553,6 +580,7 @@ export function elementById(id: string): SelectedElement | null {
   if (CORNERS.some((c) => c.id === id)) return { type: "corner", id };
   if (id === ROOM.id) return { type: "room", id };
   if (PLAN_OBJECTS.some((o) => o.id === id)) return { type: "object", id };
+  if (addedById(id)) return { type: "added", id };
   return null;
 }
 

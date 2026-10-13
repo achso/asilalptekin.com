@@ -304,6 +304,10 @@ values, a partition wall or inserted object becomes standard plan geometry,
 an object confirmed missing disappears, and a corrected wall length updates
 its dimension label (the room outline itself isn't redrawn). The preview
 and the card are removed, and the sidebar returns to the room panel.
+The report's **photos and note stay with what it changed**, as a standard
+attachment (yellow paperclip, *Photos & Notes*): an added partition wall or
+object becomes a selectable plan element with the report's evidence as its
+own; a corrected wall or object gets it added to its existing attachments.
 
 Each report moves through an explicit state machine (`lib/deviationMachine.ts`):
 

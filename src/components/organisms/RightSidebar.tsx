@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState } from "react";
 import { ChevronsUpDown, Info, Loader2, Lock, X } from "lucide-react";
-import { ROOM, elementInfo, objectById, wallById } from "@/lib/floorplan";
+import { GHOST_ITEM_SIZE, ROOM, addedById, elementInfo, lineLength, objectById, wallById } from "@/lib/floorplan";
 import type {
   ElementMedia,
   Escalation,
@@ -331,6 +331,18 @@ function dimensionRows(
         { label: "Depth", value: `${o.depthM.toFixed(2)} m`, onTap: tap("depthM") },
         { label: "Height", value: `${o.heightM.toFixed(2)} m`, onTap: tap("heightM") },
         { label: "Rotation", value: `${o.rotation}°`, onTap: tap("rotation") },
+      ];
+    }
+    case "added": {
+      // Added by an accepted report: plan geometry now, locked like the rest.
+      const a = addedById(target.id);
+      if (!a) return [];
+      if (a.kind === "wall") return [{ label: "Length", value: `${lineLength(a.wall).toFixed(2)} m` }, { label: "Added", value: "Accepted report" }];
+      return [
+        { label: "Width", value: `${GHOST_ITEM_SIZE.widthM.toFixed(2)} m` },
+        { label: "Depth", value: `${GHOST_ITEM_SIZE.depthM.toFixed(2)} m` },
+        { label: "Rotation", value: `${a.item.rotation}°` },
+        { label: "Added", value: "Accepted report" },
       ];
     }
     case "ghost":

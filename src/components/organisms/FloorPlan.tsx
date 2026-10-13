@@ -297,7 +297,7 @@ export function FloorPlan({
       })}
 
       {/* Accepted updates: merged into the plan, drawn as standard geometry. */}
-      {plan && <MergedGeometry plan={plan} />}
+      {plan && <MergedGeometry plan={plan} selected={selected} onSelect={onSelect} />}
 
       {markers?.map((m) =>
         m.items ? (
@@ -612,36 +612,63 @@ function RotateLineHandle({ line, onRotate }: { line: WallLine; onRotate: (l: Wa
 }
 
 /** Partition walls and objects added by accepted reports: solid black, like the rest of the plan. */
-function MergedGeometry({ plan }: { plan: PlanRevision }) {
+function MergedGeometry({
+  plan,
+  selected,
+  onSelect,
+}: {
+  plan: PlanRevision;
+  selected: SelectedElement | null;
+  /** Added elements are plan elements now: tap to select (Details, Photos & Notes). */
+  onSelect: (el: SelectedElement) => void;
+}) {
+  const isSel = (id: string) => selected?.type === "added" && selected.id === id;
+  const press = (id: string) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    onSelect({ type: "added", id });
+  };
   return (
-    <g pointerEvents="none" data-merged>
-      {plan.walls.map((l, i) => {
+    <g data-merged>
+      {plan.walls.map((l) => {
         const a = toPx(l.a);
         const b = toPx(l.b);
         return (
-          <line
-            key={`mw-${i}`}
-            data-merged-wall
-            x1={a.x}
-            y1={a.y}
-            x2={b.x}
-            y2={b.y}
-            stroke="#111"
-            strokeWidth={WALL_THICKNESS - 4}
-          />
+          <g key={l.id} data-merged-wall={l.id} className="cursor-pointer" onPointerDown={press(l.id)}>
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth={30} />
+            <line
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke={isSel(l.id) ? BLUE : "#111"}
+              strokeWidth={WALL_THICKNESS - 4 + (isSel(l.id) ? 4 : 0)}
+              className="transition-[stroke] duration-200"
+            />
+          </g>
         );
       })}
       {/* …and the host walls' dimensions stay split where they attach. */}
-      {plan.walls.flatMap((l, i) =>
-        lineSplits(l).map((sp) => <WallSplit key={`ms-${i}-${sp.wallId}`} {...sp} color={BLUE_STRONG} />),
-      )}
+      <g pointerEvents="none">
+        {plan.walls.flatMap((l, i) =>
+          lineSplits(l).map((sp) => <WallSplit key={`ms-${i}-${sp.wallId}`} {...sp} color={BLUE_STRONG} />),
+        )}
+      </g>
       {plan.items.map((it) => {
         const c = toPx(it.center);
         const w = GHOST_ITEM_SIZE.widthM * PX_PER_M;
         const h = GHOST_ITEM_SIZE.depthM * PX_PER_M;
         return (
-          <g key={it.id} data-merged-item transform={`translate(${c.x} ${c.y}) rotate(${it.rotation})`}>
+          <g
+            key={it.id}
+            data-merged-item={it.id}
+            className="cursor-pointer"
+            onPointerDown={press(it.id)}
+            transform={`translate(${c.x} ${c.y}) rotate(${it.rotation})`}
+          >
             <rect x={-w / 2} y={-h / 2} width={w} height={h} fill="#fff" stroke="#111" strokeWidth={1.5} />
+            {isSel(it.id) && (
+              <rect x={-w / 2 - 6} y={-h / 2 - 6} width={w + 12} height={h + 12} fill="none" stroke={BLUE} strokeWidth={2} />
+            )}
             {it.category && (
               <text fontSize={10} fontWeight={600} fill="#111" textAnchor="middle" dominantBaseline="central">
                 {it.category.length > 9 ? `${it.category.slice(0, 8)}…` : it.category}

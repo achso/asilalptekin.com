@@ -662,6 +662,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         plan,
+        media: attachEvidence(state.media, e),
         escalations: state.escalations.filter((x) => x.id !== e.id),
         // Back to the calm default: the room panel, nothing selected.
         selectedElement: null,
@@ -681,6 +682,32 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+/**
+ * The report's evidence stays with what it changed, as a standard attachment
+ * (yellow paperclip, Photos & Notes): an added wall or object gets the photos
+ * and note as its own; a corrected element gets them appended to what it has.
+ */
+function attachEvidence(media: Record<string, ElementMedia>, e: Escalation): Record<string, ElementMedia> {
+  if (!e.photoUrls.length && !e.note) return media;
+  const keys =
+    e.issueType === "undocumented-element"
+      ? e.line
+        ? [`added:${e.id}`]
+        : (e.items ?? []).map((i) => `added:${i.id}`)
+      : e.target.type === "ghost"
+        ? []
+        : [elementKey(e.target)];
+  const next = { ...media };
+  for (const k of keys) {
+    const prev = next[k] ?? EMPTY_MEDIA;
+    next[k] = {
+      photos: [...prev.photos, ...e.photoUrls],
+      note: [prev.note, e.note].filter(Boolean).join("\n"),
+    };
+  }
+  return next;
+}
+
 /** Fold one resolved report into the plan revision. */
 function mergeIntoPlan(plan: PlanRevision, e: Escalation): PlanRevision {
   const t = e.target;
@@ -694,7 +721,7 @@ function mergeIntoPlan(plan: PlanRevision, e: Escalation): PlanRevision {
     return { ...plan, wallLengths: { ...plan.wallLengths, [t.id]: e.measuredM } };
   }
   if (e.issueType === "undocumented-element") {
-    if (e.line) return { ...plan, walls: [...plan.walls, e.line] };
+    if (e.line) return { ...plan, walls: [...plan.walls, { ...e.line, id: e.id }] };
     if (e.items) return { ...plan, items: [...plan.items, ...e.items.map((i) => ({ ...i, category: e.category }))] };
   }
   // Hazards, removed walls / corners: nothing to redraw, the report just closes.

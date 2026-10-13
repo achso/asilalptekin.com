@@ -5,7 +5,8 @@ export type Point = { x: number; y: number };
  * "ghost" is the proposed element that isn't on the locked plan (placed with
  * Insert): it has no plan geometry, only its ghost position.
  */
-export type ElementType = "wall" | "corner" | "room" | "ghost" | "object";
+/** "added": a wall or object added to the plan by an accepted report. */
+export type ElementType = "wall" | "corner" | "room" | "ghost" | "object" | "added";
 
 /** Size and orientation of a plan object (metres, degrees clockwise). */
 export type ObjectDims = { widthM: number; depthM: number; heightM: number; rotation: number };
