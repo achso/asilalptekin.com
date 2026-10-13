@@ -375,6 +375,27 @@ export function rotateLine(l: WallLine, deg: number): WallLine | null {
   return { a: { x: q(a.x), y: q(a.y) }, b: { x: q(b.x), y: q(b.y) } };
 }
 
+/**
+ * Where a drawn wall meets the existing walls: for each end that sits on a
+ * wall, that wall and the distance along it from its start corner. Used to
+ * split the host wall's dimension (e.g. 4.55 → 2.99 | 1.56), so the expert
+ * and the technician can see exactly where it attaches.
+ */
+export function lineSplits(l: WallLine): { wallId: string; offsetM: number; lengthM: number }[] {
+  const out: { wallId: string; offsetM: number; lengthM: number }[] = [];
+  for (const p of [l.a, l.b]) {
+    const host = lineHost(p);
+    if (!host || out.some((o) => o.wallId === host.wallId)) continue;
+    const w = wallById(host.wallId);
+    const from = cornerById(w.from).p;
+    const to = cornerById(w.to).p;
+    const len = Math.hypot(to.x - from.x, to.y - from.y);
+    const offset = ((p.x - from.x) * (to.x - from.x) + (p.y - from.y) * (to.y - from.y)) / len;
+    if (offset > 0.01 && offset < len - 0.01) out.push({ wallId: w.id, offsetM: +offset.toFixed(2), lengthM: len });
+  }
+  return out;
+}
+
 export const lineLength = (l: WallLine) => +Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y).toFixed(2);
 
 /** The existing wall a point sits on (inner face), if any. */

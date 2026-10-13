@@ -17,6 +17,7 @@ import {
   describeLine,
   issueLabel,
   lineLength,
+  lineSplits,
   objectById,
   reportName,
 } from "@/lib/floorplan";
@@ -431,6 +432,37 @@ function PlanSnapshot({ e }: { e: Escalation }) {
         if (disputed && e.measuredM !== undefined) {
           const plan = id === "w-north" || id === "w-south" ? W : D;
           return <Label key={id} at={at} vertical={vertical} text={`${e.measuredM.toFixed(2)} m (plan ${plan.toFixed(2)})`} />;
+        }
+        // A new wall attaches here: the size splits into the two new lengths.
+        const split = e.line && lineSplits(e.line).find((sp) => sp.wallId === id);
+        if (split) {
+          const w = WALLS.find((x) => x.id === id)!;
+          const from = cornerById(w.from).p;
+          const to = cornerById(w.to).p;
+          const ux = (to.x - from.x) / split.lengthM;
+          const uy = (to.y - from.y) / split.lengthM;
+          // A point `m` along the wall, moved out to the label line.
+          const along = (m: number) =>
+            vertical ? { x: at.x, y: from.y + uy * m } : { x: from.x + ux * m, y: at.y };
+          const cut = along(split.offsetM);
+          return (
+            <g key={id} data-snapshot-split>
+              <line
+                x1={vertical ? cut.x - 0.09 : cut.x}
+                y1={vertical ? cut.y : cut.y - 0.09}
+                x2={vertical ? cut.x + 0.09 : cut.x}
+                y2={vertical ? cut.y : cut.y + 0.09}
+                stroke={RED}
+                strokeWidth={0.02}
+              />
+              <Label at={along(split.offsetM / 2)} vertical={vertical} text={`${split.offsetM.toFixed(2)} m`} />
+              <Label
+                at={along((split.offsetM + split.lengthM) / 2)}
+                vertical={vertical}
+                text={`${(split.lengthM - split.offsetM).toFixed(2)} m`}
+              />
+            </g>
+          );
         }
         if (id === "w-south" || id === "w-east") return null; // one label per axis is enough
         return (

@@ -16,6 +16,7 @@ import {
   lineAngle,
   lineHost,
   lineLength,
+  lineSplits,
   resizeLine,
   rotateLine,
   snapWallEnd,
@@ -570,6 +571,10 @@ function GhostLine({
       </g>
       <g pointerEvents="none">
         <LengthTag x={mid.x} y={mid.y} text={`${lineLength(line).toFixed(2)} m`} color={color} vertical={vertical} />
+        {/* Where it attaches: the host wall's dimension, split at that point. */}
+        {lineSplits(line).map((sp) => (
+          <WallSplit key={sp.wallId} {...sp} color={color} />
+        ))}
       </g>
     </g>
   );
@@ -626,6 +631,10 @@ function MergedGeometry({ plan }: { plan: PlanRevision }) {
           />
         );
       })}
+      {/* …and the host walls' dimensions stay split where they attach. */}
+      {plan.walls.flatMap((l, i) =>
+        lineSplits(l).map((sp) => <WallSplit key={`ms-${i}-${sp.wallId}`} {...sp} color="#6f6f73" />),
+      )}
       {plan.items.map((it) => {
         const c = toPx(it.center);
         const w = GHOST_ITEM_SIZE.widthM * PX_PER_M;
@@ -664,8 +673,48 @@ function WallPreview({ start, hover }: { start: Point | null; hover: Point | nul
           />
         </>
       )}
+      {start &&
+        lineSplits({ a: start, b: end ?? start }).map((sp) => <WallSplit key={sp.wallId} {...sp} color={GHOST_RED} />)}
       {s && <circle data-wall-start cx={s.x} cy={s.y} r={6} fill={GHOST_RED} stroke="#fff" strokeWidth={2} />}
       {h && <circle cx={h.x} cy={h.y} r={5} fill="#fff" stroke={GHOST_RED} strokeWidth={2} strokeOpacity={0.8} />}
+    </g>
+  );
+}
+
+/**
+ * A wall's dimension split where a new wall attaches (e.g. 4.55 → 2.99 | 1.56),
+ * drawn just outside the wall, inside its plan dimension line.
+ */
+function WallSplit({ wallId, offsetM, lengthM, color }: { wallId: string; offsetM: number; lengthM: number; color: string }) {
+  const g = wallGeometry(wallById(wallId));
+  const off = 26;
+  const at = (m: number) => ({ x: g.a.x + g.ux * m * PX_PER_M - g.nx * off, y: g.a.y + g.uy * m * PX_PER_M - g.ny * off });
+  const a = at(0);
+  const sp = at(offsetM);
+  const b = at(lengthM);
+  const tick = (q: Point) => <line x1={q.x - g.nx * 5} y1={q.y - g.ny * 5} x2={q.x + g.nx * 5} y2={q.y + g.ny * 5} />;
+  const vertical = Math.abs(g.uy) > 0.5;
+  return (
+    <g data-wall-split={`${wallId}:${offsetM}`} stroke={color} strokeWidth={1}>
+      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeDasharray="4 3" />
+      {tick(a)}
+      {tick(sp)}
+      {tick(b)}
+      {[
+        [a, sp, offsetM],
+        [sp, b, lengthM - offsetM],
+      ].map(([p, q, m], i) =>
+        (m as number) >= 0.3 ? (
+          <LengthTag
+            key={i}
+            x={((p as Point).x + (q as Point).x) / 2}
+            y={((p as Point).y + (q as Point).y) / 2}
+            text={(m as number).toFixed(2)}
+            color={color}
+            vertical={vertical}
+          />
+        ) : null,
+      )}
     </g>
   );
 }

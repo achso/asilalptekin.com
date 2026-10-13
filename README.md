@@ -63,7 +63,8 @@ iPad Air / Pro 11" landscape) and scales to fit the window.
 ## Demo script (≈ 60 seconds): Intercept and Propose
 
 The permit is approved, so the plan is in its **execution state**: the header
-shows **🔒 Locked (Permit Approved)**, the geometry is read-only and the
+shows **🔒 Locked (Permit Approved)** (tap it for a short explainer for
+technicians new to locked plans), the geometry is read-only and the
 plan's dimensions carry a small lock. There is no separate "Report Deviation"
 button. The contractor does what they'd do in magicplan anyway, the locked
 plan **intercepts** it, and an **Escalation Draft** slides into the right
@@ -110,6 +111,10 @@ sidebar with the intent already filled in.
    and the location in words: *Drawn on plan · runs north–south · From North
    wall, 1.40 m from west to 1.40 m from west, 2.40 m from north*. The
    contractor corrects the length with the tape measure reading if it differs.
+   Attached to an existing wall, the **host wall's dimension splits** where
+   the new wall meets it (e.g. 4.55 → *2.99 | 1.56*), live while drawing and
+   sliding, on sent reports, in the expert's snapshot, and in grey once
+   accepted into the plan, so both sides know exactly where it attaches.
 5. Once drawn it behaves like an object, and **the plan and the length field
    are one value**: type a length or tap − / + and the wall redraws; drag its
    **end handle** to resize and the field follows. Drag the wall (the ring
